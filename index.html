@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang='pt-BR'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>PORTOBELLA Brechó & Outlet</title>
+  <style>
+    body { background-color: #1E1E1E; color: #FFFFFF; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+    header { background-color: #141414; padding: 20px; text-align: center; border-bottom: 2px solid #464646; position: sticky; top: 0; z-index: 100; }
+    header h1 { margin: 0; color: #FFFFFF; font-size: 26px; letter-spacing: 3px; font-weight: 900; text-transform: uppercase; }
+    header p { margin: 5px 0 0 0; color: #A0A0A0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .busca-container { max-width: 1160px; margin: 20px auto 0 auto; padding: 0 20px; }
+    .busca-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; box-sizing: border-box; }
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; box-sizing: border-box; }
+    .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; justify-content: center; }
+    .card { background-color: #2D2D2D; border: 1px solid #464646; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+    .card img { width: 100%; height: 280px; object-fit: cover; border-radius: 8px; background-color: #141414; margin-bottom: 12px; }
+    .sem-foto { width: 100%; height: 280px; border-radius: 8px; background-color: #141414; display: flex; align-items: center; justify-content: center; color: #666666; font-size: 13px; font-weight: bold; border: 1px dashed #464646; margin-bottom: 12px; }
+    .card h3 { margin: 5px 0 2px 0; font-size: 14px; color: #FFFFFF; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+    .card .info { color: #B0B0B0; font-size: 12px; margin: 4px 0 2px 0; }
+    .card .codigo-item { color: #A0A0A0; font-size: 12px; font-weight: bold; margin: 4px 0; text-transform: uppercase; }
+    .card .preco { color: #FFFFFF; font-size: 20px; font-weight: 800; margin: 8px 0; border-top: 1px solid #3D3D3D; padding-top: 10px; }
+    .btn-pagar { display: block; width: 100%; background-color: #00a650; color: #FFFFFF; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; margin-top: 10px; text-align: center; }
+    footer { text-align: center; padding: 30px; color: #555555; font-size: 11px; margin-top: 20px; border-top: 1px solid #2D2D2D; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PORTOBELLA</h1>
+    <p>Brechó & Outlet • Vitrine Virtual</p>
+  </header>
+  <div class='busca-container'>
+    <input type='text' id='inputBusca' onkeyup='filtrarProdutos()' placeholder='Buscar por nome, tamanho ou código...' class='busca-input'>
+  </div>
+  <div class='container'>
+    <div class='vitrine' id='listaVitrine'>
+      <div class='card' data-busca=' blusa  canelada  branco  ajustada na  cintura tam: g ref: 6254'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> BLUSA  CANELADA  BRANCO  AJUSTADA NA  CINTURA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 6254</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6254', ' BLUSA  CANELADA  BRANCO  AJUSTADA NA  CINTURA', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' blusa seda preta com correntes tam: m ref: 6536'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> BLUSA SEDA PRETA COM CORRENTES</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6536</div>
+        <div class='preco'>R$ 89,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6536', ' BLUSA SEDA PRETA COM CORRENTES', 89.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' calça legging bronze tam: g ref: 6145'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CALÇA LEGGING BRONZE</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 6145</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6145', ' CALÇA LEGGING BRONZE', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' camisa  preta e quadrados branco  tam: m ref: 6788'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CAMISA  PRETA E QUADRADOS BRANCO </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6788</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6788', ' CAMISA  PRETA E QUADRADOS BRANCO ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' camisa azul com correntes tam: m ref: 2678'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CAMISA AZUL COM CORRENTES</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 2678</div>
+        <div class='preco'>R$ 39,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2678', ' CAMISA AZUL COM CORRENTES', 39.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' camisa bbranca manga bem dramatica nova tam: 38 ref: 4686'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CAMISA BBRANCA MANGA BEM DRAMATICA NOVA</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 4686</div>
+        <div class='preco'>R$ 119,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4686', ' CAMISA BBRANCA MANGA BEM DRAMATICA NOVA', 119.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' camisa marinho  com a logo branca da marca  tam: 40 ref: 6824'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CAMISA MARINHO  COM A LOGO BRANCA DA MARCA </h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 6824</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6824', ' CAMISA MARINHO  COM A LOGO BRANCA DA MARCA ', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' camisão colorido indiano tam: g ref: 6836'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CAMISÃO COLORIDO INDIANO</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 6836</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6836', ' CAMISÃO COLORIDO INDIANO', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' conjunto  alfaiataria  preto com  estrass tam: m ref: 6498'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> CONJUNTO  ALFAIATARIA  PRETO COM  ESTRASS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6498</div>
+        <div class='preco'>R$ 159,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6498', ' CONJUNTO  ALFAIATARIA  PRETO COM  ESTRASS', 159.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' vestido chemise preto tecido brilhoso novo tam: gg ref: 6684'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> VESTIDO CHEMISE PRETO TECIDO BRILHOSO NOVO</h3>
+        <div class='info'>Tamanho: GG</div>
+        <div class='codigo-item'>Código: 6684</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6684', ' VESTIDO CHEMISE PRETO TECIDO BRILHOSO NOVO', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' vestido justo canelado verde e azul e branco tam: m ref: 6730'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> VESTIDO JUSTO CANELADO VERDE E AZUL E BRANCO</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6730</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6730', ' VESTIDO JUSTO CANELADO VERDE E AZUL E BRANCO', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' vestido longo alcinha floral fundo verde tam: p ref: 6798'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> VESTIDO LONGO ALCINHA FLORAL FUNDO VERDE</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 6798</div>
+        <div class='preco'>R$ 129,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6798', ' VESTIDO LONGO ALCINHA FLORAL FUNDO VERDE', 129.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' vestido longo preto bolas brancas tam: m ref: 6766'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> VESTIDO LONGO PRETO BOLAS BRANCAS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6766</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6766', ' VESTIDO LONGO PRETO BOLAS BRANCAS', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca=' vestido preto tres marias c lastex atras tam: m ref: 6857'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3> VESTIDO PRETO TRES MARIAS C LASTEX ATRAS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6857</div>
+        <div class='preco'>R$ 79,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6857', ' VESTIDO PRETO TRES MARIAS C LASTEX ATRAS', 79.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='~casaco alfaiataria alongado roxo tam: 44 ref: 5873'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>~CASACO ALFAIATARIA ALONGADO ROXO</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 5873</div>
+        <div class='preco'>R$ 159,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5873', '~CASACO ALFAIATARIA ALONGADO ROXO', 159.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='agasalho marrom claro tam: m ref: 2748'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>AGASALHO MARROM CLARO</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 2748</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2748', 'AGASALHO MARROM CLARO', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='alça de bolsa rosa tam: u ref: 2588'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>Alça de Bolsa Rosa</h3>
+        <div class='info'>Tamanho: U</div>
+        <div class='codigo-item'>Código: 2588</div>
+        <div class='preco'>R$ 19,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2588', 'Alça de Bolsa Rosa', 19.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='alça de bolsa rosa tam: u ref: 2589'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>Alça de Bolsa Rosa</h3>
+        <div class='info'>Tamanho: U</div>
+        <div class='codigo-item'>Código: 2589</div>
+        <div class='preco'>R$ 19,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2589', 'Alça de Bolsa Rosa', 19.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='anagua nude boho tam: p ref: 1661'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>ANAGUA NUDE BOHO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 1661</div>
+        <div class='preco'>R$ 24,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('1661', 'ANAGUA NUDE BOHO', 24.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='argola prata c brilhos tam: m ref: 6389'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>ARGOLA PRATA C BRILHOS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6389</div>
+        <div class='preco'>R$ 19,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6389', 'ARGOLA PRATA C BRILHOS', 19.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='armação óculos grau  tam: m ref: 6937'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>ARMAÇÃO ÓCULOS GRAU </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6937</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6937', 'ARMAÇÃO ÓCULOS GRAU ', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='basica termica marinho tam: p ref: 5711'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BASICA TERMICA MARINHO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 5711</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5711', 'BASICA TERMICA MARINHO', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='basica termica marinho tam: g ref: 5709'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BASICA TERMICA MARINHO</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 5709</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5709', 'BASICA TERMICA MARINHO', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bata azul com flores branca e vermelha tam: 44 ref: 6086'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BATA AZUL COM FLORES BRANCA E VERMELHA</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 6086</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6086', 'BATA AZUL COM FLORES BRANCA E VERMELHA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bata branca linho flores rosa tam: g ref: 1942'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BATA BRANCA LINHO FLORES ROSA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 1942</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('1942', 'BATA BRANCA LINHO FLORES ROSA', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bata nranca fininha tam: g ref: 8606'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BATA NRANCA FININHA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 8606</div>
+        <div class='preco'>R$ 39,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8606', 'BATA NRANCA FININHA', 39.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='berm uda jeans damylher tam: 44 ref: 6760'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERM UDA JEANS DAMYLHER</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 6760</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6760', 'BERM UDA JEANS DAMYLHER', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda  fitness verde clara em poliamida tam: g ref: 6953'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA  FITNESS VERDE CLARA EM POLIAMIDA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 6953</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6953', 'BERMUDA  FITNESS VERDE CLARA EM POLIAMIDA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda alfaiataria amarelo mostarda nova tam: 36 ref: 8041'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA ALFAIATARIA AMARELO MOSTARDA NOVA</h3>
+        <div class='info'>Tamanho: 36</div>
+        <div class='codigo-item'>Código: 8041</div>
+        <div class='preco'>R$ 139,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8041', 'BERMUDA ALFAIATARIA AMARELO MOSTARDA NOVA', 139.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda alfaiataria cru tam: 44 ref: 4569'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA ALFAIATARIA CRU</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 4569</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4569', 'BERMUDA ALFAIATARIA CRU', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda alfaiataria preta com ziper frente novo tam: m ref: 7925'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA ALFAIATARIA PRETA COM ZIPER FRENTE NOVO</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 7925</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7925', 'BERMUDA ALFAIATARIA PRETA COM ZIPER FRENTE NOVO', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda alfaiataria preta e branca tam: 38 ref: 8138'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA ALFAIATARIA PRETA E BRANCA</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 8138</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8138', 'BERMUDA ALFAIATARIA PRETA E BRANCA', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda alfaiataria terracota tam: 38 ref: 4285'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA ALFAIATARIA TERRACOTA</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 4285</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4285', 'BERMUDA ALFAIATARIA TERRACOTA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda azul bebe fitness tam: m ref: 6420'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA AZUL BEBE FITNESS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6420</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6420', 'BERMUDA AZUL BEBE FITNESS', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda branca lisa  tam: 42 ref: 4893'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA BRANCA LISA </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 4893</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4893', 'BERMUDA BRANCA LISA ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda branca sarja tam: 38 ref: 6745'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA BRANCA SARJA</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 6745</div>
+        <div class='preco'>R$ 39,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6745', 'BERMUDA BRANCA SARJA', 39.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda clara sarja tam: 40 ref: 4967'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA CLARA SARJA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 4967</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4967', 'BERMUDA CLARA SARJA', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda de algodao preta bem acinturada tam: 40 ref: 3847'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA DE ALGODAO PRETA BEM ACINTURADA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 3847</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3847', 'BERMUDA DE ALGODAO PRETA BEM ACINTURADA', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda de algodao rosa pink lisa tam: pp ref: 3850'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA DE ALGODAO ROSA PINK LISA</h3>
+        <div class='info'>Tamanho: PP</div>
+        <div class='codigo-item'>Código: 3850</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3850', 'BERMUDA DE ALGODAO ROSA PINK LISA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda fitness cinza tam: m ref: 5985'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA FITNESS CINZA</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 5985</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5985', 'BERMUDA FITNESS CINZA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda fitness preta  tam: g2 ref: 4901'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA FITNESS PRETA </h3>
+        <div class='info'>Tamanho: G2</div>
+        <div class='codigo-item'>Código: 4901</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4901', 'BERMUDA FITNESS PRETA ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans  tam: 44 ref: 1944'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS </h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 1944</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('1944', 'BERMUDA JEANS ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans  femin clara tam: m ref: 6790'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS  FEMIN CLARA</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6790</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6790', 'BERMUDA JEANS  FEMIN CLARA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans com elastano  tam: 42 ref: 6982'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS COM ELASTANO </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 6982</div>
+        <div class='preco'>R$ 39,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6982', 'BERMUDA JEANS COM ELASTANO ', 39.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans john john fake tam: m ref: 8533'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS JOHN JOHN FAKE</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 8533</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8533', 'BERMUDA JEANS JOHN JOHN FAKE', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans lavagem escura lisa tam: 38 ref: 4913'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS LAVAGEM ESCURA LISA</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 4913</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4913', 'BERMUDA JEANS LAVAGEM ESCURA LISA', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda jeans nova com cinto tam: 38 ref: 4412'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA JEANS NOVA COM CINTO</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 4412</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4412', 'BERMUDA JEANS NOVA COM CINTO', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda lilas cintura alta  tam: 46 ref: 5001'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA LILAS CINTURA ALTA </h3>
+        <div class='info'>Tamanho: 46</div>
+        <div class='codigo-item'>Código: 5001</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5001', 'BERMUDA LILAS CINTURA ALTA ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda linho azul marinho com flores miudas tam: m ref: 8120'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA LINHO AZUL MARINHO COM FLORES MIUDAS</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 8120</div>
+        <div class='preco'>R$ 69,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8120', 'BERMUDA LINHO AZUL MARINHO COM FLORES MIUDAS', 69.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda linho feminina terra cota tam: 42 ref: 3425'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA LINHO FEMININA TERRA COTA</h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 3425</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3425', 'BERMUDA LINHO FEMININA TERRA COTA', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda linho mostarda tam: 40 ref: 6559'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA LINHO MOSTARDA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 6559</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6559', 'BERMUDA LINHO MOSTARDA', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda linho nude vintage tam: p ref: 8059'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA LINHO NUDE VINTAGE</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 8059</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8059', 'BERMUDA LINHO NUDE VINTAGE', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda nova jeans  tam: 42 ref: 6894'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA NOVA JEANS </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 6894</div>
+        <div class='preco'>R$ 50,00</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6894', 'BERMUDA NOVA JEANS ', 50.0)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda off estilo ciclista nova tam: p ref: 8512'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA OFF ESTILO CICLISTA NOVA</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 8512</div>
+        <div class='preco'>R$ 79,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8512', 'BERMUDA OFF ESTILO CICLISTA NOVA', 79.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda preta alfaiataria tam: 40 ref: 2107'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA PRETA ALFAIATARIA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 2107</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2107', 'BERMUDA PRETA ALFAIATARIA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda preta alfaitaria com pregas tam: 36 ref: 8147'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA PRETA ALFAITARIA COM PREGAS</h3>
+        <div class='info'>Tamanho: 36</div>
+        <div class='codigo-item'>Código: 8147</div>
+        <div class='preco'>R$ 159,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8147', 'BERMUDA PRETA ALFAITARIA COM PREGAS', 159.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda preta com dois ziper  tam: 38 ref: 8146'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA PRETA COM DOIS ZIPER </h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 8146</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8146', 'BERMUDA PRETA COM DOIS ZIPER ', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda preta lisa  tam: 50 ref: 3842'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA PRETA LISA </h3>
+        <div class='info'>Tamanho: 50</div>
+        <div class='codigo-item'>Código: 3842</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3842', 'BERMUDA PRETA LISA ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda soltinha azul e branco c lenço tam: p ref: 8481'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA SOLTINHA AZUL E BRANCO C LENÇO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 8481</div>
+        <div class='preco'>R$ 139,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8481', 'BERMUDA SOLTINHA AZUL E BRANCO C LENÇO', 139.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda verde militar tam: 40 ref: 2106'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA VERDE MILITAR</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 2106</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2106', 'BERMUDA VERDE MILITAR', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermuda xadrez bege 100%algodao  tam: 46 ref: 3814'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDA XADREZ BEGE 100%ALGODAO </h3>
+        <div class='info'>Tamanho: 46</div>
+        <div class='codigo-item'>Código: 3814</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3814', 'BERMUDA XADREZ BEGE 100%ALGODAO ', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bermudão jeans destroyed tam: 40 ref: 6738'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BERMUDÃO JEANS DESTROYED</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 6738</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6738', 'BERMUDÃO JEANS DESTROYED', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='biquini branco com bordas amarelas tam: g ref: 4504'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BIQUINI BRANCO COM BORDAS AMARELAS</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 4504</div>
+        <div class='preco'>R$ 59,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('4504', 'BIQUINI BRANCO COM BORDAS AMARELAS', 59.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='biquini flamingos fundo preto tam: m ref: 6776'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BIQUINI FLAMINGOS FUNDO PRETO</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6776</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6776', 'BIQUINI FLAMINGOS FUNDO PRETO', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer 100 lã coral  tam: m ref: 5526'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER 100 LÃ CORAL </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 5526</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5526', 'BLAZER 100 LÃ CORAL ', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alfaiataria cinza  tam: m ref: 8358'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALFAIATARIA CINZA </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 8358</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8358', 'BLAZER ALFAIATARIA CINZA ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado alfaiataria preto terracota tam: 40 ref: 5983'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO ALFAIATARIA PRETO TERRACOTA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 5983</div>
+        <div class='preco'>R$ 139,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5983', 'BLAZER ALONGADO ALFAIATARIA PRETO TERRACOTA', 139.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado amarelo novo  tam: m ref: 5967'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO AMARELO NOVO </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 5967</div>
+        <div class='preco'>R$ 169,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5967', 'BLAZER ALONGADO AMARELO NOVO ', 169.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado azul  tam: p ref: 7966'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO AZUL </h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 7966</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7966', 'BLAZER ALONGADO AZUL ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado azul c lapela preta  tam: xl ref: 5894'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO AZUL C LAPELA PRETA </h3>
+        <div class='info'>Tamanho: XL</div>
+        <div class='codigo-item'>Código: 5894</div>
+        <div class='preco'>R$ 129,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5894', 'BLAZER ALONGADO AZUL C LAPELA PRETA ', 129.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado azul liso novo tam: g ref: 5914'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO AZUL LISO NOVO</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 5914</div>
+        <div class='preco'>R$ 169,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5914', 'BLAZER ALONGADO AZUL LISO NOVO', 169.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado azul royal manga franzida tam: m ref: 6400'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO AZUL ROYAL MANGA FRANZIDA</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6400</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6400', 'BLAZER ALONGADO AZUL ROYAL MANGA FRANZIDA', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado estruturado verde bandeira  tam: p ref: 8175'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO ESTRUTURADO VERDE BANDEIRA </h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 8175</div>
+        <div class='preco'>R$ 119,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8175', 'BLAZER ALONGADO ESTRUTURADO VERDE BANDEIRA ', 119.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado lavanda  tam: m ref: 7879'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO LAVANDA </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 7879</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7879', 'BLAZER ALONGADO LAVANDA ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado leve cinza claro tam: p ref: 6398'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO LEVE CINZA CLARO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 6398</div>
+        <div class='preco'>R$ 89,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6398', 'BLAZER ALONGADO LEVE CINZA CLARO', 89.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado listrado azul e branco tam: p ref: 7821'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO LISTRADO AZUL E BRANCO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 7821</div>
+        <div class='preco'>R$ 149,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7821', 'BLAZER ALONGADO LISTRADO AZUL E BRANCO', 149.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado moleton tam: p ref: 5919'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO MOLETON</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 5919</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5919', 'BLAZER ALONGADO MOLETON', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado off com estampa cores laranja tam: g ref: 6366'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO OFF COM ESTAMPA CORES LARANJA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 6366</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6366', 'BLAZER ALONGADO OFF COM ESTAMPA CORES LARANJA', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado tweed azul claro  tam: 42 ref: 5856'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO TWEED AZUL CLARO </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 5856</div>
+        <div class='preco'>R$ 189,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('5856', 'BLAZER ALONGADO TWEED AZUL CLARO ', 189.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer alongado verde crepe bom  tam: 42 ref: 7295'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ALONGADO VERDE CREPE BOM </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 7295</div>
+        <div class='preco'>R$ 79,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7295', 'BLAZER ALONGADO VERDE CREPE BOM ', 79.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer amarelo tam: 46 ref: 2955'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AMARELO</h3>
+        <div class='info'>Tamanho: 46</div>
+        <div class='codigo-item'>Código: 2955</div>
+        <div class='preco'>R$ 119,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2955', 'BLAZER AMARELO', 119.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer animal print colorido curto tam: p ref: 2675'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER ANIMAL PRINT COLORIDO CURTO</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 2675</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2675', 'BLAZER ANIMAL PRINT COLORIDO CURTO', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul bebe forrado  tam: m ref: 6933'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL BEBE FORRADO </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 6933</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6933', 'BLAZER AZUL BEBE FORRADO ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul clarinho alongado  tam: m ref: 8032'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL CLARINHO ALONGADO </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 8032</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8032', 'BLAZER AZUL CLARINHO ALONGADO ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul claro alongado linho tam: 44 ref: 2422'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL CLARO ALONGADO LINHO</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 2422</div>
+        <div class='preco'>R$ 89,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('2422', 'BLAZER AZUL CLARO ALONGADO LINHO', 89.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul liso  tam: 44 ref: 3497'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL LISO </h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 3497</div>
+        <div class='preco'>R$ 79,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('3497', 'BLAZER AZUL LISO ', 79.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul liso  tam: xl ref: 6073'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL LISO </h3>
+        <div class='info'>Tamanho: XL</div>
+        <div class='codigo-item'>Código: 6073</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6073', 'BLAZER AZUL LISO ', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul marinho alongado  tam: m ref: 7978'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL MARINHO ALONGADO </h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 7978</div>
+        <div class='preco'>R$ 119,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7978', 'BLAZER AZUL MARINHO ALONGADO ', 119.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul marinho c listras cinza tam: m ref: 7612'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL MARINHO C LISTRAS CINZA</h3>
+        <div class='info'>Tamanho: M</div>
+        <div class='codigo-item'>Código: 7612</div>
+        <div class='preco'>R$ 49,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7612', 'BLAZER AZUL MARINHO C LISTRAS CINZA', 49.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul piscina forrado manga 3 4  tam: m  ref: 6995'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL PISCINA FORRADO MANGA 3 4 </h3>
+        <div class='info'>Tamanho: M </div>
+        <div class='codigo-item'>Código: 6995</div>
+        <div class='preco'>R$ 119,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('6995', 'BLAZER AZUL PISCINA FORRADO MANGA 3 4 ', 119.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer azul risca alfaiataria tam: pp ref: 7323'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER AZUL RISCA ALFAIATARIA</h3>
+        <div class='info'>Tamanho: PP</div>
+        <div class='codigo-item'>Código: 7323</div>
+        <div class='preco'>R$ 139,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7323', 'BLAZER AZUL RISCA ALFAIATARIA', 139.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer botoes em lã c forro acetato tam: 44 ref: 7804'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER BOTOES EM LÃ C FORRO ACETATO</h3>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 7804</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('7804', 'BLAZER BOTOES EM LÃ C FORRO ACETATO', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer branco  manga enrugada tam: g ref: 1879'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER BRANCO  MANGA ENRUGADA</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 1879</div>
+        <div class='preco'>R$ 159,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('1879', 'BLAZER BRANCO  MANGA ENRUGADA', 159.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='blazer branco algodão tam: g ref: 8318'>
+        <div class='sem-foto'>Sem Foto</div>
+        <h3>BLAZER BRANCO ALGODÃO</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 8318</div>
+        <div class='preco'>R$ 99,90</div>
+        <button type='button' class='btn-pagar' onclick="abrirOpcoesPagamento('8318', 'BLAZER BRANCO ALGODÃO', 99.9)">Comprar Peça</button>
+      </div>
+      <div class='card' data-busca='bl
