@@ -1,4 +1,4 @@
-FROM adoptopenjdk:11-jdk-hotspot
+FROM openjdk:8-jdk-alpine
 WORKDIR /app
 COPY lib/ /app/lib/
 COPY classes/ /app/classes/
