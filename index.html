@@ -48485,11 +48485,11 @@
     <p>&copy; 2026 PORTOBELLA Brechó & Outlet. Todos os direitos reservados.</p>
   </footer>
   <div id='modalCarrinho' class='modal'>
-    <div class='modal-content' style='max-width:580px;'>
+    <div class='modal-content' style='max-width:600px;'>
       <h3>🛒 Meu Carrinho</h3>
 
       <!-- LISTA DE ITENS -->
-      <div id='carrinhoItens' style='max-height:250px; overflow-y:auto; margin:15px 0;'></div>
+      <div id='carrinhoItens' style='max-height:200px; overflow-y:auto; margin:10px 0;'></div>
 
       <!-- RESUMO DO CARRINHO -->
       <div class='carrinho-resumo'>
@@ -48499,12 +48499,12 @@
       </div>
 
       <!-- ========================================== -->
-      <!-- SEÇÃO: CALCULAR FRETE + ENDEREÇO          -->
+      <!-- CALCULAR FRETE                           -->
       <!-- ========================================== -->
-      <div style='margin:15px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>
+      <div style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>
         <label style='color:#A0A0A0; font-size:13px; font-weight:bold;'>📦 Calcular Frete</label>
 
-        <!-- CEP -->
+        <!-- CEP + BOTÃO -->
         <div style='display:flex; gap:10px; margin-top:8px;'>
           <input type='text' id='cepCarrinho' placeholder='CEP (ex: 90240580)' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px;'>
           <button onclick='calcularFreteCarrinho()' style='padding:10px 20px; background:#009ee3; color:#FFF; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; font-weight:bold;'>
@@ -48513,30 +48513,33 @@
         </div>
 
         <!-- RESULTADO DO FRETE -->
-        <div id='freteResultado' class='frete-resultado' style='margin-top:8px; font-size:13px; color:#A0A0A0; display:none;'></div>
+        <div id='freteResultado' style='display:none; margin-top:10px; color:#FFF; font-size:14px;'>
+          ✅ <strong>Frete: R$ <span id='freteValor'>0,00</span></strong>
+          <span style='color:#A0A0A0; font-size:12px; margin-left:10px;'>(Prazo: <span id='fretePrazo'>-</span>)</span>
+        </div>
 
         <!-- ========================================== -->
-        <!-- CAMPOS DE ENDEREÇO (preenchidos automaticamente) -->
+        <!-- ENDEREÇO DE ENTREGA                      -->
         <!-- ========================================== -->
         <div id='enderecoCampos' style='display:none; margin-top:12px; padding-top:12px; border-top:1px solid #464646;'>
           <label style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>
 
+          <!-- RUA + NÚMERO -->
           <div style='display:flex; gap:10px; margin-top:5px;'>
             <input type='text' id='endRua' placeholder='Rua' style='flex:2; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
             <input type='text' id='endNumero' placeholder='Nº' style='flex:0.5; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
           </div>
 
+          <!-- COMPLEMENTO -->
           <div style='display:flex; gap:10px; margin-top:5px;'>
-            <input type='text' id='endComplemento' placeholder='Complemento (opcional)' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+            <input type='text' id='endComplemento' placeholder='Complemento' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
           </div>
 
+          <!-- BAIRRO + CIDADE + UF -->
           <div style='display:flex; gap:10px; margin-top:5px;'>
             <input type='text' id='endBairro' placeholder='Bairro' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
             <input type='text' id='endCidade' placeholder='Cidade' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
-          </div>
-
-          <div style='margin-top:5px;'>
-            <input type='text' id='endUf' placeholder='UF (ex: SP)' style='width:60px; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px; text-transform:uppercase;'>
+            <input type='text' id='endUf' placeholder='UF' style='flex:0.3; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px; text-transform:uppercase;'>
           </div>
         </div>
       </div>
@@ -48650,7 +48653,7 @@
     }
 
     // ========================================
-    // CALCULAR FRETE + AUTO-PREENCHER ENDEREÇO
+    // CALCULAR FRETE + CHECKBOX
     // ========================================
     function calcularFreteCarrinho() {
       let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
@@ -48674,10 +48677,13 @@
             carrinho.frete = data.frete;
             carrinho.cep = cep;
 
-            // Exibe o resultado do frete
+            // ==========================================
+            // 🔥 EXIBE O CHECKBOX COM FRETE E PRAZO
+            // ==========================================
             let resultado = document.getElementById('freteResultado');
-            resultado.className = 'frete-resultado sucesso';
-            resultado.innerHTML = '✅ Frete: R$ ' + data.frete.toFixed(2).replace('.', ',') + ' (Prazo: ' + (data.prazo || 'Não informado') + ')';
+            resultado.style.display = 'block';
+            document.getElementById('freteValor').textContent = 'R$ ' + data.frete.toFixed(2).replace('.', ',');
+            document.getElementById('fretePrazo').textContent = data.prazo || 'Não informado';
 
             // ==========================================
             // 🔥 AUTO-PREENCHER CAMPOS DE ENDEREÇO
