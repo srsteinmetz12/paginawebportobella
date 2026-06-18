@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-alpine
+FROM amazoncorretto:17-alpine
 WORKDIR /app
 COPY lib/ /app/lib/
 COPY classes/ /app/classes/
