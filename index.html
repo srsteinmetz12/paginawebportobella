@@ -48485,25 +48485,74 @@
     <p>&copy; 2026 PORTOBELLA Brechó & Outlet. Todos os direitos reservados.</p>
   </footer>
   <div id='modalCarrinho' class='modal'>
-    <div class='modal-content'>
+    <div class='modal-content' style='max-width:580px;'>
       <h3>🛒 Meu Carrinho</h3>
-      <div id='carrinhoItens' style='max-height:300px; overflow-y:auto; margin:15px 0;'></div>
+
+      <!-- LISTA DE ITENS -->
+      <div id='carrinhoItens' style='max-height:250px; overflow-y:auto; margin:15px 0;'></div>
+
+      <!-- RESUMO DO CARRINHO -->
       <div class='carrinho-resumo'>
         <div class='linha'><span>Subtotal:</span><span id='carrinhoSubtotal'>R$ 0,00</span></div>
         <div class='linha'><span>Frete:</span><span id='carrinhoFrete'>R$ 0,00</span></div>
         <div class='total'><span>TOTAL:</span><span id='carrinhoTotal'>R$ 0,00</span></div>
       </div>
+
+      <!-- ========================================== -->
+      <!-- SEÇÃO: CALCULAR FRETE + ENDEREÇO          -->
+      <!-- ========================================== -->
       <div style='margin:15px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>
-        <label>📦 Calcular Frete</label>
-        <div style='display:flex; gap:10px; margin-top:5px;'>
-          <input type='text' id='cepCarrinho' placeholder='00000-000' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px;'>
-          <button onclick='calcularFreteCarrinho()' style='padding:10px 20px; background:#009ee3; color:#FFF; border:none; border-radius:6px; cursor:pointer; white-space:nowrap;'>Calcular</button>
+        <label style='color:#A0A0A0; font-size:13px; font-weight:bold;'>📦 Calcular Frete</label>
+
+        <!-- CEP -->
+        <div style='display:flex; gap:10px; margin-top:8px;'>
+          <input type='text' id='cepCarrinho' placeholder='CEP (ex: 90240580)' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px;'>
+          <button onclick='calcularFreteCarrinho()' style='padding:10px 20px; background:#009ee3; color:#FFF; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; font-weight:bold;'>
+            🔍 Calcular
+          </button>
         </div>
-        <div id='freteResultado' class='frete-resultado'></div>
+
+        <!-- RESULTADO DO FRETE -->
+        <div id='freteResultado' class='frete-resultado' style='margin-top:8px; font-size:13px; color:#A0A0A0; display:none;'></div>
+
+        <!-- ========================================== -->
+        <!-- CAMPOS DE ENDEREÇO (preenchidos automaticamente) -->
+        <!-- ========================================== -->
+        <div id='enderecoCampos' style='display:none; margin-top:12px; padding-top:12px; border-top:1px solid #464646;'>
+          <label style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>
+
+          <div style='display:flex; gap:10px; margin-top:5px;'>
+            <input type='text' id='endRua' placeholder='Rua' style='flex:2; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+            <input type='text' id='endNumero' placeholder='Nº' style='flex:0.5; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+          </div>
+
+          <div style='display:flex; gap:10px; margin-top:5px;'>
+            <input type='text' id='endComplemento' placeholder='Complemento (opcional)' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+          </div>
+
+          <div style='display:flex; gap:10px; margin-top:5px;'>
+            <input type='text' id='endBairro' placeholder='Bairro' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+            <input type='text' id='endCidade' placeholder='Cidade' style='flex:1; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
+          </div>
+
+          <div style='margin-top:5px;'>
+            <input type='text' id='endUf' placeholder='UF (ex: SP)' style='width:60px; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px; text-transform:uppercase;'>
+          </div>
+        </div>
       </div>
-      <button class='btn-mercadopago' onclick='finalizarCompraCarrinho("mercado_pago")'>💳 PAGAR COM MERCADO PAGO</button>
-      <button class='btn-pix' onclick='finalizarCompraCarrinho("pix")'>📱 PAGAR VIA PIX</button>
-      <button class='btn-cancelar' onclick='fecharCarrinho()'>← Voltar à loja</button>
+
+      <!-- ========================================== -->
+      <!-- BOTÕES DE PAGAMENTO                       -->
+      <!-- ========================================== -->
+      <button class='btn-mercadopago' onclick='finalizarCompraCarrinho("mercado_pago")'>
+        💳 PAGAR COM MERCADO PAGO
+      </button>
+      <button class='btn-pix' onclick='finalizarCompraCarrinho("pix")'>
+        📱 PAGAR VIA PIX
+      </button>
+      <button class='btn-cancelar' onclick='fecharCarrinho()'>
+        ← Voltar à loja
+      </button>
     </div>
   </div>
   <div id='modalPix' class='modal-pix'>
@@ -48601,10 +48650,11 @@
     }
 
     // ========================================
-    // CALCULAR FRETE
+    // CALCULAR FRETE + AUTO-PREENCHER ENDEREÇO
     // ========================================
     function calcularFreteCarrinho() {
       let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
+
       if(cep.length !== 8) {
         alert('Digite um CEP válido com 8 dígitos (ex: 90240580)');
         return;
@@ -48618,27 +48668,87 @@
         .then(response => response.json())
         .then(data => {
           botao.disabled = false;
-          botao.textContent = 'Calcular';
+          botao.textContent = '🔍 Calcular';
+
           if(data.success) {
             carrinho.frete = data.frete;
             carrinho.cep = cep;
+
+            // Exibe o resultado do frete
             let resultado = document.getElementById('freteResultado');
             resultado.className = 'frete-resultado sucesso';
             resultado.innerHTML = '✅ Frete: R$ ' + data.frete.toFixed(2).replace('.', ',') + ' (Prazo: ' + (data.prazo || 'Não informado') + ')';
+
+            // ==========================================
+            // 🔥 AUTO-PREENCHER CAMPOS DE ENDEREÇO
+            // ==========================================
+            preencherEndereco(data);
+
+            // Atualiza o total do carrinho
             renderizarCarrinho();
+
           } else {
-            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+            alert('❌ Erro ao calcular frete: ' + (data.error || 'Erro desconhecido'));
           }
         })
         .catch(error => {
           botao.disabled = false;
-          botao.textContent = 'Calcular';
+          botao.textContent = '🔍 Calcular';
           alert('❌ Erro ao conectar: ' + error.message);
         });
     }
 
     // ========================================
-    // FINALIZAR COMPRA
+    // PREENCHER CAMPOS DE ENDEREÇO
+    // ========================================
+    function preencherEndereco(dados) {
+      // Exibe os campos de endereço
+      let enderecoDiv = document.getElementById('enderecoCampos');
+      enderecoDiv.style.display = 'block';
+
+      // Preenche os campos (se veio do ViaCEP)
+      if(dados.logradouro) {
+        document.getElementById('endRua').value = dados.logradouro || '';
+      }
+      if(dados.bairro) {
+        document.getElementById('endBairro').value = dados.bairro || '';
+      }
+      if(dados.cidade) {
+        document.getElementById('endCidade').value = dados.cidade || '';
+      }
+      if(dados.uf) {
+        document.getElementById('endUf').value = dados.uf || '';
+      }
+
+      // Se o ViaCEP não retornou, tenta buscar via API novamente
+      if(!dados.logradouro && !dados.bairro) {
+        buscarEnderecoCompleto(dados.cep);
+      }
+
+      // Focus no campo Número
+      setTimeout(() => {
+        document.getElementById('endNumero').focus();
+      }, 300);
+    }
+
+    // ========================================
+    // BUSCAR ENDEREÇO COMPLETO (fallback)
+    // ========================================
+    function buscarEnderecoCompleto(cep) {
+      fetch('https://viacep.com.br/ws/' + cep + '/json/')
+        .then(response => response.json())
+        .then(data => {
+          if(!data.erro) {
+            document.getElementById('endRua').value = data.logradouro || '';
+            document.getElementById('endBairro').value = data.bairro || '';
+            document.getElementById('endCidade').value = data.localidade || '';
+            document.getElementById('endUf').value = data.uf || '';
+          }
+        })
+        .catch(err => console.log('Erro ao buscar endereço:', err));
+    }
+    // ========================================
+    // FINALIZAR COMPRA (COM ENDEREÇO)
     // ========================================
     function finalizarCompraCarrinho(metodo) {
       if(carrinho.itens.length === 0) {
@@ -48646,26 +48756,72 @@
         return;
       }
 
-      let cep = document.getElementById('cepCarrinho').value.trim();
-      let endereco = prompt('Digite seu endereço completo (Rua, Nº, Bairro, Cidade):');
-      if(!endereco) return;
+      // ==========================================
+      // 🔥 PEGA OS DADOS DOS CAMPOS DE ENDEREÇO
+      // ==========================================
+      let rua = document.getElementById('endRua').value.trim();
+      let numero = document.getElementById('endNumero').value.trim();
+      let complemento = document.getElementById('endComplemento').value.trim();
+      let bairro = document.getElementById('endBairro').value.trim();
+      let cidade = document.getElementById('endCidade').value.trim();
+      let uf = document.getElementById('endUf').value.trim().toUpperCase();
+      let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
 
+      // ==========================================
+      // 🔥 VALIDA OS CAMPOS OBRIGATÓRIOS
+      // ==========================================
+      if(!rua || !numero || !bairro || !cidade || !uf || cep.length !== 8) {
+        alert('⚠️ Por favor, preencha todos os campos do endereço:\n\n' +
+          '• Rua\n' +
+          '• Número\n' +
+          '• Bairro\n' +
+          '• Cidade\n' +
+          '• UF\n' +
+          '• CEP (8 dígitos)');
+        return;
+      }
+
+      // ==========================================
+      // MONTA O ENDEREÇO COMPLETO
+      // ==========================================
+      let enderecoCompleto = rua + ', ' + numero;
+      if(complemento) enderecoCompleto += ' - ' + complemento;
+      enderecoCompleto += ' - ' + bairro + ' - ' + cidade + '/' + uf;
+
+      // ==========================================
+      // CALCULA TOTAIS
+      // ==========================================
       let subtotal = carrinho.itens.reduce((total, item) => total + (item.preco * item.quantidade), 0);
       let valorTotal = subtotal + carrinho.frete;
+
       fecharCarrinho();
 
+      // ==========================================
+      // LOADING
+      // ==========================================
       let loading = document.createElement('div');
       loading.id = 'loadingFinal';
       loading.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;color:#FFF;font-size:18px;';
       loading.innerHTML = '⏳ Processando pedido...<br><small>Aguarde</small>';
       document.body.appendChild(loading);
 
+      // ==========================================
+      // ENVIA PARA O BACKEND
+      // ==========================================
       let itens = carrinho.itens.map(item => ({ id: item.id, nome: item.nome, preco: item.preco, quantidade: item.quantidade }));
 
       fetch(URL_BACKEND + '/api/pagamentos/finalizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meio: metodo, itens: itens, subtotal: subtotal, frete: carrinho.frete, total: valorTotal, cep: cep, endereco: endereco })
+        body: JSON.stringify({
+          meio: metodo,
+          itens: itens,
+          subtotal: subtotal,
+          frete: carrinho.frete,
+          total: valorTotal,
+          cep: cep,
+          endereco: enderecoCompleto
+        })
       })
       .then(response => response.json())
       .then(data => {
@@ -48688,7 +48844,6 @@
         alert('❌ Erro ao conectar: ' + error.message);
       });
     }
-
     // ========================================
     // FILTRO DE PRODUTOS
     // ========================================
