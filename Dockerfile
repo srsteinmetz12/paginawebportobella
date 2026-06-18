@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM adoptopenjdk:11-jdk-hotspot
 WORKDIR /app
 COPY lib/ /app/lib/
 COPY classes/ /app/classes/
