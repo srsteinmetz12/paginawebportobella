@@ -743,7 +743,7 @@ public class TelaMenu extends javax.swing.JFrame {
         }
     }
     
-     public static void main(String args[]) {
+    public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         try {
             // Ativa o tema claro moderno (Flat Light). Para modo escuro, use 'FlatDarkLaf'

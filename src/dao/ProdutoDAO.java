@@ -1,7 +1,7 @@
 package dao;
 
 import connection.ConnectionDB;
-import java.awt.HeadlessException;
+//import java.awt.HeadlessException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
@@ -13,9 +13,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
+//import javax.swing.JOptionPane;
 import models.Produto;
-import util.GeradorQRCodePix;
+//import util.GeradorQRCodePix;
 import util.MensagemSistema;
 import static views.TelaFinanceiro.codPeca;
 import views.TelaFornecedor;
@@ -1032,7 +1032,7 @@ import views.TelaFornecedor;
             System.out.println("Item Salvo com sucesso!");
             System.out.println("----------------------------------");
         }catch (SQLException ex){
-            JOptionPane.showMessageDialog(null, "Erro ao salvar o Item: "+ex);
+            MensagemSistema.mostrarAvisoDark(null, "Erro ao salvar o Item: "+ex);
             System.out.println("Erro ao inserir dados: " +ex.toString());
             System.out.println("----------------------------------");
             System.out.println("Erro ao salvar o Item!");
