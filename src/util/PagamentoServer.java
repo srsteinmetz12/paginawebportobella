@@ -739,30 +739,4 @@ public class PagamentoServer {
             os.write(response.getBytes());
         }
     }
-    
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-//        try {
-//            // Ativa o tema claro moderno (Flat Light). Para modo escuro, use 'FlatDarkLaf'
-//            com.formdev.flatlaf.FlatLightLaf.setup();
-//            
-//            javax.swing.UIManager.put("Button.arc", 8);
-//            javax.swing.UIManager.put("Component.arc", 8);
-//            javax.swing.UIManager.put("TextComponent.arc", 8);
-//            
-//            javax.swing.UIManager.put("Table.rowHeight", 26);
-//            javax.swing.UIManager.put("Table.showHorizontalLines", true);
-//            javax.swing.UIManager.put("Table.showVerticalLines", true);
-//        } catch( Exception ex ) {
-//            System.err.println("Falha ao inicializar tema moderno FlatLaf");
-//            System.err.println("Erro: "+ex);
-//        }
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                
-            }
-        });
-    }
 }
