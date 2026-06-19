@@ -14,6 +14,35 @@ public class ConfigLoader {
     private static final String NOME_ARQUIVO = "config.properties";
     
     static {
+        // 🔥 NOVO: Tenta carregar das variáveis de ambiente primeiro
+        String envHost = System.getenv("DB_CLOUD_HOST");
+        if (envHost != null && !envHost.isEmpty()) {
+            // Se as variáveis de ambiente existem, monta a URL e configura
+            String envUser = System.getenv("DB_CLOUD_USER");
+            String envPassword = System.getenv("DB_CLOUD_PASSWORD");
+            String envPort = System.getenv("DB_CLOUD_PORT");
+            String envDatabase = System.getenv("DB_CLOUD_DATABASE");
+
+            if (envUser != null && envPassword != null && envPort != null && envDatabase != null) {
+                // Monta a URL de conexão
+                String cloudUrl = "jdbc:mysql://" + envHost + ":" + envPort + "/" + envDatabase + "?useSSL=true&serverTimezone=UTC";
+
+                // Coloca as propriedades no props para serem usadas pelo get()
+                props.setProperty("db.cloud_url", cloudUrl);
+                props.setProperty("db.cloud_user", envUser);
+                props.setProperty("db.cloud_password", envPassword);
+                props.setProperty("db.cloud_host", envHost);
+                props.setProperty("db.cloud_port", envPort);
+                props.setProperty("db.cloud_database", envDatabase);
+
+                System.out.println("ConfigLoader: Configurações carregadas das variáveis de ambiente.");
+//                return; // Sai do bloco static, pois já carregou
+            }
+        }
+    
+    // ==========================================
+    // SEU CÓDIGO ORIGINAL CONTINUA ABAIXO
+    // ==========================================
         boolean carregou = false;
 
         try {
@@ -51,6 +80,11 @@ public class ConfigLoader {
     }
 
     public static String get(String key) {
+        // 🔥 NOVO: Tenta variável de ambiente diretamente (fallback)
+        String envValue = System.getenv(key);
+        if (envValue != null && !envValue.isEmpty()) {
+            return envValue.trim();
+        }
         String valor = props.getProperty(key);
         return (valor != null) ? valor.trim() : null; // Clean Code: Evita retornar strings com espaços em branco acidentais
     }
