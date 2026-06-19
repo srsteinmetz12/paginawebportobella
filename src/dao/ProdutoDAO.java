@@ -312,7 +312,7 @@ import views.TelaFornecedor;
             writer.println("    // ========================================");
             writer.println("    const CHAVE_PIX = 'portobella.brecho@gmail.com'; // ⚠️ SUBSTITUA PELA SUA CHAVE PIX");
             writer.println("    const NOME_RECEBEDOR = 'Vanderleia Vieira Moraes Lemos Steinmetz'; // ⚠️ SUBSTITUA PELO SEU NOME");
-            writer.println("    const URL_BACKEND = 'https://cherub-preorder-unless.ngrok-free.dev';");
+            writer.println("    const URL_BACKEND = 'http://paginawebportobella-1.onrender.com';");
             writer.println("");
             writer.println("    // ========================================");
             writer.println("    // CARRINHO DE COMPRAS");
