@@ -48596,6 +48596,7 @@
       atualizarCarrinho();
       mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
     }
+    window.adicionarAoCarrinho = adicionarAoCarrinho;
 
     function removerDoCarrinho(id) {
       carrinho.itens = carrinho.itens.filter(item => item.id !== id);
@@ -48723,5 +48724,4 @@
         document.getElementById('endCidade').value = dados.cidade || '';
       }
       if(dados.uf) {
-        document.getElementById('endUf').value = dados.uf || '';
- 
+        docu
