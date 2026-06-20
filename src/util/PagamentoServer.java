@@ -34,7 +34,7 @@ public class PagamentoServer {
     private static final String TOKEN_MP = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128";
     
     public static void iniciar() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
         
         server.createContext("/api/pagamentos/criar", new CriarPagamentoHandler());
         server.createContext("/api/pagamentos/status", new StatusPagamentoHandler());

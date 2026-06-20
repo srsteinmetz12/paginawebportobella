@@ -1,9 +1,8 @@
 package dao;
 
 import connection.ConnectionDB;
-//import java.awt.HeadlessException;
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -13,12 +12,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-//import javax.swing.JOptionPane;
 import models.Produto;
-//import util.GeradorQRCodePix;
 import util.MensagemSistema;
 import static views.TelaFinanceiro.codPeca;
 import views.TelaFornecedor;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
     public class ProdutoDAO {
         PreparedStatement stmt = null;
@@ -329,6 +328,7 @@ import views.TelaFornecedor;
             writer.println("      atualizarCarrinho();");
             writer.println("      mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');");
             writer.println("    }");
+            writer.println("    window.adicionarAoCarrinho = adicionarAoCarrinho;");
             writer.println("");
             writer.println("    function removerDoCarrinho(id) {");
             writer.println("      carrinho.itens = carrinho.itens.filter(item => item.id !== id);");
@@ -668,28 +668,74 @@ import views.TelaFornecedor;
 
             System.out.println("Catálogo HTML PORTOBELLA gerado com sucesso!");
 
-            // GIT AUTOMÁTICO
+            // ==========================================
+            // GIT AUTOMÁTICO COM VERIFICAÇÃO COMPLETA
+            // ==========================================
             System.out.println("Iniciando sincronização automática com o GitHub...");
-            java.io.File pastaOrigem = new java.io.File(diretorioDocumentos);
-
             try {
-                new ProcessBuilder("cmd.exe", "/c", "git remote remove origin").directory(pastaOrigem).start().waitFor();
-            } catch (IOException | InterruptedException e) {}
+                java.io.File pastaOrigem = new java.io.File(diretorioDocumentos);
 
-            new ProcessBuilder("cmd.exe", "/c", "git remote add origin https://github.com").directory(pastaOrigem).start().waitFor();
-            new ProcessBuilder("cmd.exe", "/c", "git add index.html").directory(pastaOrigem).start().waitFor();
-            new ProcessBuilder("cmd.exe", "/c", "git commit -m \"Atualização automática do estoque via Java\"").directory(pastaOrigem).start().waitFor();
+                // 1. Verifica/Configura remote
+                Process remoteCheck = Runtime.getRuntime().exec(new String[]{"git", "remote", "get-url", "origin"}, null, pastaOrigem);
+                int remoteExit = remoteCheck.waitFor();
 
-            ProcessBuilder pbPush = new ProcessBuilder("cmd.exe", "/c", "git push -u origin main");
-            pbPush.directory(pastaOrigem);
-            int resultadoPush = pbPush.start().waitFor();
+                if (remoteExit != 0) {
+                    String token = "ghp_jbHaoTzV1RpikgH8fsAtqxFCnT3LlK3wvKXA";
+                    String remoteUrl = "https://srsteinmetz12:" + token + "@github.com/srsteinmetz12/paginawebportobella.git";
+                    Process addRemote = Runtime.getRuntime().exec(new String[]{"git", "remote", "add", "origin", remoteUrl}, null, pastaOrigem);
+                    addRemote.waitFor();
+                    System.out.println("📌 Remote configurado.");
+                }
 
-            if (resultadoPush == 0) {
-                System.out.println("🚀 SUCESSO! O catálogo está atualizado e online!");
-            } else {
-                System.out.println("⚠️ O HTML foi criado, mas o Git encontrou um problema ao enviar online.");
+                // 2. git add -f
+                Process addProcess = Runtime.getRuntime().exec(new String[]{"git", "add", "-f", "index.html"}, null, pastaOrigem);
+                int addResult = addProcess.waitFor();
+                System.out.println("git add resultado: " + addResult);
+
+                if (addResult == 0) {
+                    // 3. git commit
+                    Process commitProcess = Runtime.getRuntime().exec(new String[]{"git", "commit", "-m", "Atualização automática do estoque"}, null, pastaOrigem);
+                    int commitResult = commitProcess.waitFor();
+                    System.out.println("git commit resultado: " + commitResult);
+
+                    if (commitResult != 0) {
+                        BufferedReader errorReader = new BufferedReader(new InputStreamReader(commitProcess.getErrorStream()));
+                        String line;
+                        System.out.println("⚠️ Erro no commit:");
+                        while ((line = errorReader.readLine()) != null) {
+                            System.out.println("   " + line);
+                        }
+                        errorReader.close();
+                    }
+
+                    // 4. git push --force
+                    Process pushProcess = Runtime.getRuntime().exec(new String[]{"git", "push", "origin", "main", "--force"}, null, pastaOrigem);
+                    int pushResult = pushProcess.waitFor();
+                    System.out.println("git push resultado: " + pushResult);
+
+                    if (pushResult == 0) {
+                        System.out.println("🚀 SUCESSO! O catálogo está atualizado e online!");
+                    } else {
+                        BufferedReader errorReader = new BufferedReader(new InputStreamReader(pushProcess.getErrorStream()));
+                        String line;
+                        System.out.println("⚠️ Erro no push:");
+                        while ((line = errorReader.readLine()) != null) {
+                            System.out.println("   " + line);
+                        }
+                        errorReader.close();
+                    }
+                    // Força o Git a ignorar mudanças no index.html após o push
+                    Process resetProcess = Runtime.getRuntime().exec(new String[]{"git", "reset", "HEAD", "index.html"}, null, pastaOrigem);
+                    resetProcess.waitFor();
+                    
+                } else {
+                    System.out.println("⚠️ Erro ao adicionar arquivo index.html");
+                }
+
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao executar Git: " + e.getMessage());
+                e.printStackTrace();
             }
-
         } catch (java.io.IOException ex) {
             System.err.println("Erro ao escrever arquivo HTML: " + ex.getMessage());
         } finally {
@@ -871,7 +917,7 @@ import views.TelaFornecedor;
 
     
     public void processarVendasMercadoPago() throws ClassNotFoundException {
-        String token = "APP_USR-8224138031673829-061507-627628d63a0255bfe7edad866f99f9ea-3473567863"; 
+        String token = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128"; 
 
         try {
             // 1. URL CORRIGIDA: Filtra apenas pagamentos "approved" (aprovados) ordenados pelos mais novos
