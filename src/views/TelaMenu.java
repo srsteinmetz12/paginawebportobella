@@ -701,7 +701,7 @@ public class TelaMenu extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_buttonRelatoriosActionPerformed
 
-    private void buttonEstoqueActionPerformed(java.awt.event.ActionEvent evt) {                                              
+    private void buttonEstoqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonEstoqueActionPerformed
         new TelaEstoque().setVisible(true);
         this.setLocationRelativeTo(null);
         try {
@@ -714,7 +714,7 @@ public class TelaMenu extends javax.swing.JFrame {
             Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
         }
         dispose();
-    }  
+    }//GEN-LAST:event_buttonEstoqueActionPerformed
 
     private void buttonFornecedoresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonFornecedoresActionPerformed
         new TelaFornecedor().setVisible(true);
