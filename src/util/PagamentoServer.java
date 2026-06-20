@@ -33,6 +33,13 @@ public class PagamentoServer {
     // ==========================================
     private static final String TOKEN_MP = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128";
     
+    private static void addCorsHeaders(HttpExchange exchange) {
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
+    }
+    
     public static void iniciar() throws IOException {
         server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
         
@@ -63,6 +70,7 @@ public class PagamentoServer {
     static class FinalizarCompraHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
 
@@ -200,6 +208,7 @@ public class PagamentoServer {
     static class CalcularFreteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
 
@@ -462,6 +471,7 @@ public class PagamentoServer {
     static class CriarPagamentoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             
@@ -526,7 +536,7 @@ public class PagamentoServer {
                 }
                 
                 sendResponse(exchange, 200, gson.toJson(response));
-                
+                addCorsHeaders(exchange);
             } catch (Exception e) {
                 e.printStackTrace();
                 Map<String, Object> error = new HashMap<>();
@@ -672,6 +682,7 @@ public class PagamentoServer {
     static class StatusPagamentoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             
             try {
@@ -702,6 +713,7 @@ public class PagamentoServer {
     static class WebhookHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
             try {
                 String body = new BufferedReader(
                     new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
