@@ -3,6 +3,7 @@ package views;
 import dao.UsuarioDAO;
 import geradorlicencacliente.LicencaManager;
 import geradorlicencacliente.LicencaVO;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import models.Usuario;
@@ -393,6 +394,15 @@ public class TelaAcessoLogin extends javax.swing.JFrame {
             if(!user.isEmpty() && user.equals(usuario) && !password.isEmpty() && password.equals(senha)){
                 System.out.println("User: "+campoUsuario.getText()+" Senha: "+campoSenha.getText());
                 if(user.equals(usuario) && password.equals(senha)){
+                    // 🔥 INICIA O SERVIDOR DE PAGAMENTOS APÓS LOGIN VÁLIDO
+                    try {
+                        util.PagamentoServer.iniciar();
+                        System.out.println("✅ Servidor de pagamentos iniciado com sucesso!");
+                    } catch (IOException e) {
+                        System.err.println("❌ Erro ao iniciar servidor de pagamentos: " + e.getMessage());
+                        MensagemSistema.mostrarAvisoDark(this, "Erro ao iniciar servidor de pagamentos: " + e.getMessage());
+                        // Continua mesmo com erro no servidor, mas avisa o usuário
+                    }
                     telaMenu.setVisible(true);
                     System.out.println("Acessou o sistema com Sucesso!!!");
                     dispose();
@@ -414,6 +424,7 @@ public class TelaAcessoLogin extends javax.swing.JFrame {
             MensagemSistema.mostrarAvisoDark(this, "Erro: "+ex);
             System.out.println("Erro: "+ex);
         }
+        
     }//GEN-LAST:event_buttonLogarActionPerformed
 
     private void buttonLogarFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_buttonLogarFocusGained

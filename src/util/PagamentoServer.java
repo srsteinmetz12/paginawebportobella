@@ -739,4 +739,12 @@ public class PagamentoServer {
             os.write(response.getBytes());
         }
     }
+    
+    public static void main(String[] args) {
+        try {
+            iniciar();
+        } catch (IOException ex) {
+            System.err.println("Erro: "+ex);
+        }
+    }
 }
