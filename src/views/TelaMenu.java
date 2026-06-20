@@ -701,11 +701,10 @@ public class TelaMenu extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_buttonRelatoriosActionPerformed
 
-    private void buttonEstoqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonEstoqueActionPerformed
+    private void buttonEstoqueActionPerformed(java.awt.event.ActionEvent evt) {                                              
         new TelaEstoque().setVisible(true);
         this.setLocationRelativeTo(null);
         try {
-            util.PagamentoServer.iniciar();
             pdao.gerarSiteEstoque();
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
@@ -713,11 +712,9 @@ public class TelaMenu extends javax.swing.JFrame {
             Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
             Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
         }
         dispose();
-    }//GEN-LAST:event_buttonEstoqueActionPerformed
+    }  
 
     private void buttonFornecedoresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonFornecedoresActionPerformed
         new TelaFornecedor().setVisible(true);
