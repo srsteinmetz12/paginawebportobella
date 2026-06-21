@@ -169,7 +169,7 @@ import java.io.InputStreamReader;
                 // LÓGICA DE FOTOS COM CÓDIGO DO ITEM
                 // ==========================================
 //                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
-                String nomeFotoWeb = "fotos/" + codExibicao + ".jpg";
+                String nomeFotoWeb = "/fotos/" + codExibicao + ".jpg";
                 // Tenta copiar a foto do banco para a pasta web
                 boolean fotoCopiadaComSucesso = false;
 
