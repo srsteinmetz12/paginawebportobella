@@ -165,27 +165,36 @@ import java.io.InputStreamReader;
 
                 writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " tam: " + tamanho.toLowerCase() + " ref: " + codExibicao.toLowerCase() + "'>");
                 
+//                // ==========================================
+//                // LÓGICA DE FOTOS COM CÓDIGO DO ITEM
+//                // ==========================================
+////                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
+//                String nomeFotoWeb = "/fotos/" + codExibicao + ".jpg";
+//                // Tenta copiar a foto do banco para a pasta web
+//                boolean fotoCopiadaComSucesso = false;
+//
+//                if (caminhoImagemBanco != null && !caminhoImagemBanco.trim().isEmpty()) {
+//                    java.io.File fotoOriginal = new java.io.File(caminhoImagemBanco);
+//                    if (fotoOriginal.exists()) {
+//                        java.io.File fotoDestinoWeb = new java.io.File(diretorioDocumentos + "\\" + nomeFotoWeb.replace("/", "\\"));
+//                        try {
+//                            java.nio.file.Files.copy(fotoOriginal.toPath(), fotoDestinoWeb.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+//                            fotoCopiadaComSucesso = true;
+//                        } catch (java.io.IOException e) {}
+//                    }
+//                }
+//
+//                if (fotoCopiadaComSucesso) {
+//                    writer.println("        <img src='" + nomeFotoWeb + "' alt='" + descricao + "'>");
+//                } else {
+//                    writer.println("        <div class='sem-foto'>Sem Foto</div>");
+//                }
                 // ==========================================
-                // LÓGICA DE FOTOS COM CÓDIGO DO ITEM
+                // LÓGICA DE FOTO (USANDO URL DO GITHUB)
                 // ==========================================
-//                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
-                String nomeFotoWeb = "/fotos/" + codExibicao + ".jpg";
-                // Tenta copiar a foto do banco para a pasta web
-                boolean fotoCopiadaComSucesso = false;
-
-                if (caminhoImagemBanco != null && !caminhoImagemBanco.trim().isEmpty()) {
-                    java.io.File fotoOriginal = new java.io.File(caminhoImagemBanco);
-                    if (fotoOriginal.exists()) {
-                        java.io.File fotoDestinoWeb = new java.io.File(diretorioDocumentos + "\\" + nomeFotoWeb.replace("/", "\\"));
-                        try {
-                            java.nio.file.Files.copy(fotoOriginal.toPath(), fotoDestinoWeb.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                            fotoCopiadaComSucesso = true;
-                        } catch (java.io.IOException e) {}
-                    }
-                }
-
-                if (fotoCopiadaComSucesso) {
-                    writer.println("        <img src='" + nomeFotoWeb + "' alt='" + descricao + "'>");
+                String imagemUrl = rs.getString("imagem");
+                if (imagemUrl != null && !imagemUrl.trim().isEmpty()) {
+                    writer.println("        <img src='" + imagemUrl + "' alt='" + descricao + "'>");
                 } else {
                     writer.println("        <div class='sem-foto'>Sem Foto</div>");
                 }
