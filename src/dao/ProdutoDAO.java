@@ -164,10 +164,15 @@ import java.io.InputStreamReader;
                 String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
 
                 writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " tam: " + tamanho.toLowerCase() + " ref: " + codExibicao.toLowerCase() + "'>");
-
-                // Lógica de cópia de fotos
+                
+                // ==========================================
+                // LÓGICA DE FOTOS COM CÓDIGO DO ITEM
+                // ==========================================
+//                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
+                String nomeFotoWeb = "fotos/" + codExibicao + ".jpg";
+                // Tenta copiar a foto do banco para a pasta web
                 boolean fotoCopiadaComSucesso = false;
-                String nomeFotoWeb = "fotos/foto_" + contador + ".jpg";
+
                 if (caminhoImagemBanco != null && !caminhoImagemBanco.trim().isEmpty()) {
                     java.io.File fotoOriginal = new java.io.File(caminhoImagemBanco);
                     if (fotoOriginal.exists()) {
