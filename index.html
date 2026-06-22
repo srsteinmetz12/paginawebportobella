@@ -58609,4 +58609,273 @@
         alert('🛒 Seu carrinho está vazio!');
         return;
       }
-      renderizarCarri
+      renderizarCarrinho();
+      document.getElementById('modalCarrinho').style.display = 'flex';
+    }
+
+    function fecharCarrinho() {
+      document.getElementById('modalCarrinho').style.display = 'none';
+    }
+
+    function renderizarCarrinho() {
+      let container = document.getElementById('carrinhoItens');
+      let subtotal = 0;
+
+      if(carrinho.itens.length === 0) {
+        container.innerHTML = '<div class="carrinho-vazio">🛒 Seu carrinho está vazio</div>';
+        return;
+      }
+
+      let html = '';
+      carrinho.itens.forEach(item => {
+        subtotal += item.preco * item.quantidade;
+        html += '<div class="carrinho-item">';
+        html += '  <div class="carrinho-item-info">';
+        html += '    <div class="nome">' + item.nome + '</div>';
+        html += '    <div class="detalhe">Qtd: ' + item.quantidade + ' x R$ ' + item.preco.toFixed(2).replace('.', ',') + '</div>';
+        html += '  </div>';
+        html += '  <span class="carrinho-item-preco">R$ ' + (item.preco * item.quantidade).toFixed(2).replace('.', ',') + '</span>';
+        html += '  <button class="carrinho-item-remover" onclick="removerDoCarrinho(\'' + item.id + '\')">🗑️</button>';
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+
+      document.getElementById('carrinhoSubtotal').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+      let total = subtotal + carrinho.frete;
+      document.getElementById('carrinhoTotal').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+      document.getElementById('carrinhoFrete').textContent = 'R$ ' + carrinho.frete.toFixed(2).replace('.', ',');
+    }
+
+    function calcularFreteCarrinho() {
+      let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
+
+      if(cep.length !== 8) {
+        alert('Digite um CEP válido com 8 dígitos (ex: 90240580)');
+        return;
+      }
+
+      let botao = document.querySelector('#cepCarrinho + button');
+      botao.disabled = true;
+      botao.textContent = '⏳...';
+
+      fetch(URL_BACKEND + '/api/frete/calcular?cep=' + cep)
+        .then(response => response.json())
+        .then(data => {
+          botao.disabled = false;
+          botao.textContent = '🔍 Calcular';
+
+          if(data.success) {
+            carrinho.frete = data.frete;
+            carrinho.cep = cep;
+
+            let resultado = document.getElementById('freteResultado');
+            resultado.style.display = 'block';
+            document.getElementById('freteValor').textContent = 'R$ ' + data.frete.toFixed(2).replace('.', ',');
+            document.getElementById('fretePrazo').textContent = data.prazo || 'Não informado';
+
+            preencherEndereco(data);
+
+            renderizarCarrinho();
+
+          } else {
+            alert('❌ Erro ao calcular frete: ' + (data.error || 'Erro desconhecido'));
+          }
+        })
+        .catch(error => {
+          botao.disabled = false;
+          botao.textContent = '🔍 Calcular';
+          alert('❌ Erro ao conectar: ' + error.message);
+        });
+    }
+
+    function preencherEndereco(dados) {
+      let enderecoDiv = document.getElementById('enderecoCampos');
+      enderecoDiv.style.display = 'block';
+
+      if(dados.logradouro) {
+        document.getElementById('endRua').value = dados.logradouro || '';
+      }
+      if(dados.bairro) {
+        document.getElementById('endBairro').value = dados.bairro || '';
+      }
+      if(dados.cidade) {
+        document.getElementById('endCidade').value = dados.cidade || '';
+      }
+      if(dados.uf) {
+        document.getElementById('endUf').value = dados.uf || '';
+      }
+
+      if(!dados.logradouro && !dados.bairro) {
+        buscarEnderecoCompleto(dados.cep);
+      }
+
+      setTimeout(() => {
+        document.getElementById('endNumero').focus();
+      }, 300);
+    }
+
+    function buscarEnderecoCompleto(cep) {
+      fetch('https://viacep.com.br/ws/' + cep + '/json/')
+        .then(response => response.json())
+        .then(data => {
+          if(!data.erro) {
+            document.getElementById('endRua').value = data.logradouro || '';
+            document.getElementById('endBairro').value = data.bairro || '';
+            document.getElementById('endCidade').value = data.localidade || '';
+            document.getElementById('endUf').value = data.uf || '';
+          }
+        })
+        .catch(err => console.log('Erro ao buscar endereço:', err));
+    }
+
+    function finalizarCompraCarrinho(metodo) {
+      if(carrinho.itens.length === 0) {
+        alert('Seu carrinho está vazio!');
+        return;
+      }
+
+      let rua = document.getElementById('endRua').value.trim();
+      let numero = document.getElementById('endNumero').value.trim();
+      let complemento = document.getElementById('endComplemento').value.trim();
+      let bairro = document.getElementById('endBairro').value.trim();
+      let cidade = document.getElementById('endCidade').value.trim();
+      let uf = document.getElementById('endUf').value.trim().toUpperCase();
+      let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
+
+      if(!rua || !numero || !bairro || !cidade || !uf || cep.length !== 8) {
+        alert('⚠️ Por favor, preencha todos os campos do endereço:\n\n' +
+          '• Rua\n' +
+          '• Número\n' +
+          '• Bairro\n' +
+          '• Cidade\n' +
+          '• UF\n' +
+          '• CEP (8 dígitos)');
+        return;
+      }
+
+      let enderecoCompleto = rua + ', ' + numero;
+      if(complemento) enderecoCompleto += ' - ' + complemento;
+      enderecoCompleto += ' - ' + bairro + ' - ' + cidade + '/' + uf;
+
+      let subtotal = carrinho.itens.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+      let valorTotal = subtotal + carrinho.frete;
+
+      fecharCarrinho();
+
+      let loading = document.createElement('div');
+      loading.id = 'loadingFinal';
+      loading.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;color:#FFF;font-size:18px;';
+      loading.innerHTML = '⏳ Processando pedido...<br><small>Aguarde</small>';
+      document.body.appendChild(loading);
+
+      let itens = carrinho.itens.map(item => ({ id: item.id, nome: item.nome, preco: item.preco, quantidade: item.quantidade }));
+
+      fetch(URL_BACKEND + '/api/pagamentos/finalizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meio: metodo,
+          itens: itens,
+          subtotal: subtotal,
+          frete: carrinho.frete,
+          total: valorTotal,
+          cep: cep,
+          endereco: enderecoCompleto
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loadingFinal')?.remove();
+        if(data.success) {
+          if(metodo === 'pix') {
+            exibirModalPix(data.payload, data.total, 'Pedido #' + data.pedidoId);
+          } else {
+            window.location.href = data.paymentUrl;
+          }
+          carrinho.itens = [];
+          carrinho.frete = 0;
+          atualizarCarrinho();
+        } else {
+          alert('❌ Erro ao finalizar compra: ' + (data.error || 'Erro desconhecido'));
+        }
+      })
+      .catch(error => {
+        document.getElementById('loadingFinal')?.remove();
+        alert('❌ Erro ao conectar: ' + error.message);
+      });
+    }
+
+    function filtrarProdutos() {
+      let input = document.getElementById('inputBusca').value.toLowerCase();
+      let cards = document.getElementsByClassName('card');
+      for (let i = 0; i < cards.length; i++) {
+        let txtValue = cards[i].getAttribute('data-busca') || '';
+        cards[i].style.display = txtValue.indexOf(input) > -1 ? '' : 'none';
+      }
+    }
+
+    function exibirModalPix(payload, valor, nome) {
+      let container = document.getElementById('qrCodeContainer');
+      container.innerHTML = '';
+      document.getElementById('modalValor').textContent = 'R$ ' + valor.toFixed(2).replace('.', ',');
+      document.getElementById('modalDescricao').textContent = nome;
+      document.getElementById('pixCode').value = payload;
+
+      try {
+        new QRCode(container, { text: payload, width: 200, height: 200, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H });
+      } catch(e) {
+        container.innerHTML = '<p style="color:red;">⚠️ Erro ao gerar QR Code</p>';
+      }
+
+      document.getElementById('statusPagamento').className = 'status-pagamento';
+      document.getElementById('statusPagamento').textContent = '⏳ Aguardando pagamento...';
+      document.getElementById('modalPix').style.display = 'flex';
+
+      setTimeout(() => {
+        if(document.getElementById('modalPix').style.display === 'flex') {
+          if(confirm('✅ Já realizou o pagamento?\n\nClique em OK para confirmar.')) {
+            let statusDiv = document.getElementById('statusPagamento');
+            statusDiv.className = 'status-pagamento aprovado';
+            statusDiv.textContent = '✅ Pagamento confirmado! Obrigado! 🎉';
+            setTimeout(() => { fecharModalPix(); alert('✅ Pagamento confirmado!'); location.reload(); }, 2000);
+          }
+        }
+      }, 10000);
+    }
+
+    function fecharModalPix() {
+      document.getElementById('modalPix').style.display = 'none';
+    }
+
+    function copiarPix() {
+      let texto = document.getElementById('pixCode');
+      texto.select();
+      navigator.clipboard.writeText(texto.value).then(() => alert('📋 Código Pix copiado!')).catch(() => { document.execCommand('copy'); alert('📋 Código Pix copiado!'); });
+    }
+
+    function mostrarNotificacao(mensagem) {
+      let notificacao = document.createElement('div');
+      notificacao.className = 'notificacao';
+      notificacao.textContent = mensagem;
+      document.body.appendChild(notificacao);
+      setTimeout(() => { notificacao.style.opacity = '0'; notificacao.style.transition = 'opacity 0.5s'; setTimeout(() => notificacao.remove(), 500); }, 3000);
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if(event.key === 'Escape') {
+        fecharCarrinho();
+        fecharModalPix();
+      }
+    });
+
+    document.getElementById('modalCarrinho').addEventListener('click', function(event) {
+      if(event.target === this) fecharCarrinho();
+    });
+
+    document.getElementById('modalPix').addEventListener('click', function(event) {
+      if(event.target === this) fecharModalPix();
+    });
+  </script>
+</body>
+</html>
