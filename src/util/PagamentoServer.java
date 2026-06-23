@@ -134,7 +134,7 @@ public class PagamentoServer {
 
                 if ("pix".equalsIgnoreCase(meio)) {
                     // Gera payload Pix com o valor TOTAL
-                    String payloadPix = gerarPayloadPix(total, "Pedido PORTOBELLA");
+                    String payloadPix = gerarPayloadPix(total);
 
                     response.put("success", true);
                     response.put("meio", "pix");
@@ -502,7 +502,7 @@ public class PagamentoServer {
                     // ==========================================
                     System.out.println("   🔥 Gerando QR Code Pix SEM Mercado Pago...");
                     
-                    String payloadPix = gerarPayloadPix(valorTotal, nome);
+                    String payloadPix = gerarPayloadPix(valorTotal);
                     
                     response.put("success", true);
                     response.put("meio", "pix");
@@ -546,110 +546,98 @@ public class PagamentoServer {
         }
     }
     
+   // ==========================================
+    // GERAR PAYLOAD PIX COMPLETO
     // ==========================================
-    // 🔥 CONFIGURAÇÕES DO PIX (OFICIAL)
-    // ==========================================
-//    private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
-//    private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI"; // 🔥 15 caracteres (OFICIAL)
-//    private static final String CIDADE = "PORTO ALEGRE";
-
-    // ==========================================
-    // 🔥 GERAR PAYLOAD PIX (VERSÃO OFICIAL)
-    // ==========================================
-    private static String gerarPayloadPix(double valor, String descricao) {
+    public static String gerarPayloadPix(double valor) {
         try {
-            System.out.println("🔧 Gerando payload Pix (versão oficial)...");
+            System.out.println("🔧 Gerando payload Pix...");
             System.out.println("💰 Valor: R$ " + valor);
-            System.out.println("👤 Nome: " + NOME_RECEBEDOR + " (" + NOME_RECEBEDOR.length() + " caracteres)");
-            System.out.println("📍 Cidade: " + CIDADE);
-
-            // 🔥 1. Formata o valor sem ponto (ex: 95.80 -> 0000000009580)
-            String valorStr = String.format("%.0f", valor * 100);
-            String valorFormatado = valorStr.length() + valorStr;
-
+            
             StringBuilder payload = new StringBuilder();
-
-            // 2. Payload Format Indicator
-            payload.append("000201");
-
-            // 3. Merchant Account Information (FORMATO OFICIAL)
-            payload.append("010211");
-
-            // 4. GUI + Chave (FORMATO OFICIAL)
-            // 26490014br.gov.bcb.pix0127portobella.brecho@gmail.com
-            String gui = "14br.gov.bcb.pix";
-            String chave = CHAVE_PIX;
-            String guiChave = gui + "01" + String.format("%02d", chave.length()) + chave;
-            payload.append("26");
-            payload.append(String.format("%02d", guiChave.length()));
-            payload.append(guiChave);
-
-            // 5. Merchant Category Code
-            payload.append("52040000");
-
-            // 6. Transaction Currency
-            payload.append("5303986");
-
-            // 7. Transaction Amount (SE TIVER VALOR)
+            
+            // 1. Payload Format Indicator (00)
+            payload.append(emvField("00", "01"));
+            
+            // 2. Point of Initiation Method (01)
+            payload.append(emvField("01", "11"));
+            
+            // 3. Merchant Account Information - PIX (26)
+            String gui = "br.gov.bcb.pix";
+            String chavePix = CHAVE_PIX;
+            
+            // Subcampos do 26
+            String sub00 = emvField("00", gui);
+            String sub01 = emvField("01", chavePix);
+            String valor26 = sub00 + sub01;
+            
+            payload.append(emvField("26", valor26));
+            
+            // 4. Merchant Category Code (52)
+            payload.append(emvField("52", "0000"));
+            
+            // 5. Transaction Currency (53)
+            payload.append(emvField("53", "986"));
+            
+            // 6. Transaction Amount (54) - SÓ SE TIVER VALOR
             if (valor > 0) {
-                payload.append("54");
-                payload.append(valorFormatado);
+                String valorFormatado = String.format("%.2f", valor);
+                payload.append(emvField("54", valorFormatado));
             }
-
-            // 8. Country Code
-            payload.append("5802BR");
-
-            // 9. Merchant Name (OFICIAL - 15 caracteres)
-            String nome = NOME_RECEBEDOR;
-            if (nome.length() > 25) {
-                nome = nome.substring(0, 25);
-            }
-            payload.append("59");
-            payload.append(String.format("%02d", nome.length()));
-            payload.append(nome);
-
-            // 10. Merchant City
-            String cidade = CIDADE;
-            payload.append("60");
-            payload.append(String.format("%02d", cidade.length()));
-            payload.append(cidade);
-
-            // 11. TXID com *** (OFICIAL)
-            payload.append("62070503***");
-
-            // 12. CRC16
+            
+            // 7. Country Code (58)
+            payload.append(emvField("58", "BR"));
+            
+            // 8. Merchant Name (59)
+            payload.append(emvField("59", NOME_RECEBEDOR));
+            
+            // 9. Merchant City (60)
+            payload.append(emvField("60", CIDADE));
+            
+            // 10. Additional Data Field Template (62)
+            String txid = "***";
+            String sub05 = emvField("05", txid);
+            payload.append(emvField("62", sub05));
+            
+            // 11. CRC (63) - Calculado no final
             String payloadSemCRC = payload.toString();
-            String crc16 = calcularCRC16(payloadSemCRC);
-            payload.append("6304");
-            payload.append(crc16);
-
+            String crc = calcularCRC16(payloadSemCRC);
+            payload.append(emvField("63", crc));
+            
             String payloadFinal = payload.toString();
-
-            System.out.println("✅ Payload Pix gerado com sucesso!");
+            
+            System.out.println("✅ Payload gerado com sucesso!");
             System.out.println("📋 Payload: " + payloadFinal);
             System.out.println("📏 Tamanho: " + payloadFinal.length());
-            System.out.println("🔍 Comparação com oficial:");
-            System.out.println("   ✅ Nome: " + nome);
-            System.out.println("   ✅ Cidade: " + cidade);
-            System.out.println("   ✅ TXID: ***");
-
+            
             return payloadFinal;
-
+            
         } catch (Exception e) {
-            System.err.println("❌ Erro ao gerar payload Pix: " + e.getMessage());
+            System.err.println("❌ Erro ao gerar payload: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
-
+    
     // ==========================================
-    // CALCULAR CRC16 (IGUAL AO OFICIAL)
+    // CRIAR CAMPO EMV PADRÃO (ID + TAMANHO + VALOR)
+    // ==========================================
+    private static String emvField(String id, String valor) {
+        if (valor == null) {
+            valor = "";
+        }
+        int tamanho = valor.length();
+        return id + String.format("%02d", tamanho) + valor;
+    }
+    
+    // ==========================================
+    // CALCULAR CRC16 (PADRÃO PIX)
     // ==========================================
     private static String calcularCRC16(String input) {
         try {
             int crc = 0xFFFF;
             byte[] bytes = input.getBytes(StandardCharsets.ISO_8859_1);
-
+            
             for (byte b : bytes) {
                 crc ^= (b & 0xFF) << 8;
                 for (int i = 0; i < 8; i++) {
@@ -660,11 +648,11 @@ public class PagamentoServer {
                     }
                 }
             }
-
+            
             return String.format("%04X", crc & 0xFFFF);
-
+            
         } catch (Exception e) {
-            System.err.println("❌ Erro ao calcular CRC16: " + e.getMessage());
+            System.err.println("❌ Erro no CRC16: " + e.getMessage());
             return "0000";
         }
     }
@@ -827,5 +815,5 @@ public class PagamentoServer {
         } catch (IOException ex) {
             System.err.println("Erro: "+ex);
         }
-    }
+    }    
 }
