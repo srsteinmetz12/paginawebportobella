@@ -547,7 +547,7 @@ public class PagamentoServer {
     }
     
     // ==========================================
-    // 🔥 GERAR PAYLOAD PIX (FORMATO QUE FUNCIONA)
+    // 🔥 GERAR PAYLOAD PIX (FORMATO QUE FUNCIONA - SEM TXID)
     // ==========================================
     private static String gerarPayloadPix(double valor, String descricao) {
         try {
@@ -564,7 +564,7 @@ public class PagamentoServer {
             payload.append("000201");
 
             // 2. Merchant Account Information (FORMATO SIMPLES)
-            payload.append("010211"); // ✅ Formato que funciona
+            payload.append("010211");
 
             // 3. GUI (br.gov.bcb.pix - minúsculo)
             payload.append("26360014br.gov.bcb.pix");
@@ -605,19 +605,8 @@ public class PagamentoServer {
             payload.append(String.format("%02d", cidade.length()));
             payload.append(cidade);
 
-            // 11. Additional Data Field (TXID)
-            String txid = "***";
-            if (descricao != null && !descricao.isEmpty()) {
-                txid = descricao;
-                if (txid.length() > 20) {
-                    txid = txid.substring(0, 20);
-                }
-            }
-            payload.append("6207");
-            payload.append(String.format("%02d", txid.length() + 3));
-            payload.append("05");
-            payload.append(String.format("%02d", txid.length()));
-            payload.append(txid);
+            // 🔥 11. SEM TXID (REMOVER COMPLETAMENTE)
+            // Não adiciona o campo 62
 
             // 12. CRC16
             String payloadSemCRC = payload.toString();
@@ -631,6 +620,7 @@ public class PagamentoServer {
             System.out.println("📋 Payload: " + payloadFinal);
             System.out.println("📏 Tamanho: " + payloadFinal.length());
             System.out.println("📍 Cidade: PORTO ALEGRE");
+            System.out.println("📝 SEM TXID (campo removido)");
 
             return payloadFinal;
 
@@ -639,7 +629,7 @@ public class PagamentoServer {
             e.printStackTrace();
             return null;
         }
-    }  
+    }
     // ==========================================
     // CALCULAR CRC16 (para o Pix)
     // ==========================================
