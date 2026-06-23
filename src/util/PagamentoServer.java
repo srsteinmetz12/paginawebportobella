@@ -26,7 +26,8 @@ public class PagamentoServer {
     // 🔥 CONFIGURAÇÕES DO PIX (SEM MERCADO PAGO)
     // ==========================================
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com"; // ⚠️ Coloque sua chave Pix aqui
-    private static final String NOME_RECEBEDOR = "Vanderleia Vieira Moraes Lemos Steinmetz"; // ⚠️ Coloque seu nome aqui
+    private static final String NOME_RECEBEDOR = "Vanderleia Vieira"; // ⚠️ Coloque seu nome aqui
+    private static final String CIDADE = "PORTO ALEGRE";
     
     // ==========================================
     // 🔥 TOKEN DO MERCADO PAGO (SOMENTE PARA LINK)
@@ -256,7 +257,7 @@ public class PagamentoServer {
                 // ==========================================
                 // 3. MONTAR RESPOSTA
                 // ==========================================
-                Map<String, Object> response = new HashMap<String, Object>();
+                Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("cep", cep);
                 response.put("uf", uf);
@@ -270,9 +271,8 @@ public class PagamentoServer {
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
-            } catch (Exception e) {
-                e.printStackTrace();
-                Map<String, Object> error = new HashMap<String, Object>();
+            } catch (IOException e) {
+                Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
@@ -299,7 +299,7 @@ public class PagamentoServer {
                         return json.get("uf").getAsString();
                     }
                 }
-            } catch (Exception e) {
+            } catch (JsonSyntaxException | IOException e) {
                 System.out.println("   ⚠️ ViaCEP indisponível: " + e.getMessage());
             }
 
@@ -327,7 +327,7 @@ public class PagamentoServer {
                         return json.get("localidade").getAsString();
                     }
                 }
-            } catch (Exception e) {
+            } catch (JsonSyntaxException | IOException e) {
                 // Ignora erro
             }
             return "Não informado";
@@ -537,8 +537,7 @@ public class PagamentoServer {
                 
                 sendResponse(exchange, 200, gson.toJson(response));
                 addCorsHeaders(exchange);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IOException | NumberFormatException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
@@ -550,34 +549,93 @@ public class PagamentoServer {
     // ==========================================
     // 🔥 GERAR PAYLOAD PIX (SEM MERCADO PAGO)
     // ==========================================
-    private static String gerarPayloadPix(double valor, String descricao) {
-        // Formata o valor (ex: 89.90 -> 0000000008990)
-        String valorStr = String.format("%.0f", valor * 100);
-        String valorFormatado = valorStr.length() + valorStr;
+    private static String gerarPayloadPix(double valor, String pedidoId) {
+    try {
+        System.out.println("🔧 Gerando payload Pix corrigido...");
+        System.out.println("💰 Valor: R$ " + valor);
+        System.out.println("📝 Pedido ID: " + pedidoId);
         
-        // Monta o payload Pix (BR Code)
+        String valorFormatado = String.format("%.2f", valor);
+        
         StringBuilder payload = new StringBuilder();
-        payload.append("000201");
-        payload.append("26330014BR.GOV.BCB.PIX0111").append(CHAVE_PIX);
-        payload.append("52040000");
-        payload.append("5303986");
-        payload.append("54").append(valorFormatado);
-        payload.append("5802BR");
-        payload.append("59").append(String.format("%02d", NOME_RECEBEDOR.length())).append(NOME_RECEBEDOR);
-        payload.append("6008BRASIL");
         
-        // Descrição (opcional)
-        if (descricao != null && !descricao.isEmpty()) {
-            String desc = descricao.length() > 20 ? descricao.substring(0, 20) : descricao;
-            payload.append("62070503***");
+        // 1. Payload Format Indicator
+        payload.append("000201");
+        
+        // 2. Merchant Account Information
+        String gui = "0014BR.GOV.BCB.PIX";
+        String chavePix = "01" + String.format("%02d", CHAVE_PIX.length()) + CHAVE_PIX;
+        String merchantInfo = gui + chavePix;
+        payload.append("26");
+        payload.append(String.format("%02d", merchantInfo.length()));
+        payload.append(merchantInfo);
+        
+        // 3. Merchant Category Code
+        payload.append("52040000");
+        
+        // 4. Transaction Currency
+        payload.append("5303986");
+        
+        // 5. Transaction Amount
+        if (valor > 0) {
+            payload.append("54");
+            payload.append(String.format("%02d", valorFormatado.length()));
+            payload.append(valorFormatado);
         }
         
-        // Calcula CRC16
-        String crc = calcularCRC16(payload.toString());
-        payload.append("6304").append(crc);
+        // 6. Country Code
+        payload.append("5802BR");
         
-        return payload.toString();
+        // 7. Merchant Name
+        String nome = NOME_RECEBEDOR;
+        if (nome.length() > 25) {
+            nome = nome.substring(0, 25);
+        }
+        payload.append("59");
+        payload.append(String.format("%02d", nome.length()));
+        payload.append(nome);
+        
+        // 8. Merchant City (CORRIGIDO - USA A CONSTANTE)
+        String cidade = CIDADE; // ✅ USA A CONSTANTE "PORTO ALEGRE"
+        if (cidade.length() > 15) {
+            cidade = cidade.substring(0, 15);
+        }
+        payload.append("60");
+        payload.append(String.format("%02d", cidade.length()));
+        payload.append(cidade);
+        
+        // 9. Additional Data Field
+        String txid = pedidoId;
+        if (txid.length() > 25) {
+            txid = txid.substring(0, 25);
+        }
+        String additionalData = "05" + String.format("%02d", txid.length()) + txid;
+        payload.append("62");
+        payload.append(String.format("%02d", additionalData.length()));
+        payload.append(additionalData);
+        
+        // 10. CRC16
+        String payloadSemCRC = payload.toString();
+        String payloadParaCRC = payloadSemCRC + "6304";
+        String crc16 = calcularCRC16(payloadParaCRC);
+        
+        payload.append("6304");
+        payload.append(crc16);
+        
+        String payloadFinal = payload.toString();
+        
+        System.out.println("✅ Payload Pix gerado com sucesso!");
+        System.out.println("📋 Payload: " + payloadFinal);
+        System.out.println("📏 Tamanho: " + payloadFinal.length());
+        
+        return payloadFinal;
+        
+    } catch (Exception e) {
+        System.err.println("❌ Erro ao gerar payload Pix: " + e.getMessage());
+        e.printStackTrace();
+        return null;
     }
+}
     
     // ==========================================
     // CALCULAR CRC16 (para o Pix)
@@ -669,7 +727,7 @@ public class PagamentoServer {
                     System.err.println("   Erro: " + erro.toString());
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("   ❌ Erro MP: " + e.getMessage());
         }
         
@@ -698,7 +756,7 @@ public class PagamentoServer {
                 
                 sendResponse(exchange, 200, gson.toJson(response));
                 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
@@ -722,7 +780,7 @@ public class PagamentoServer {
                 System.out.println("📢 Webhook: " + body);
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
                 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
             }
         }
