@@ -26,7 +26,7 @@ public class PagamentoServer {
     // 🔥 CONFIGURAÇÕES DO PIX (SEM MERCADO PAGO)
     // ==========================================
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com"; // ⚠️ Coloque sua chave Pix aqui
-    private static final String NOME_RECEBEDOR = "Vanderleia Vieira"; // ⚠️ Coloque seu nome aqui
+    private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI"; // ⚠️ Coloque seu nome aqui
     private static final String CIDADE = "PORTO ALEGRE";
     
     // ==========================================
@@ -547,41 +547,50 @@ public class PagamentoServer {
     }
     
     // ==========================================
-    // 🔥 GERAR PAYLOAD PIX (FORMATO QUE FUNCIONA - SEM TXID)
+    // 🔥 CONFIGURAÇÕES DO PIX (OFICIAL)
+    // ==========================================
+//    private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
+//    private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI"; // 🔥 15 caracteres (OFICIAL)
+//    private static final String CIDADE = "PORTO ALEGRE";
+
+    // ==========================================
+    // 🔥 GERAR PAYLOAD PIX (VERSÃO OFICIAL)
     // ==========================================
     private static String gerarPayloadPix(double valor, String descricao) {
         try {
-            System.out.println("🔧 Gerando payload Pix (formato compatível)...");
+            System.out.println("🔧 Gerando payload Pix (versão oficial)...");
             System.out.println("💰 Valor: R$ " + valor);
+            System.out.println("👤 Nome: " + NOME_RECEBEDOR + " (" + NOME_RECEBEDOR.length() + " caracteres)");
+            System.out.println("📍 Cidade: " + CIDADE);
 
-            // Formata o valor (ex: 95.80 -> 0000000009580)
+            // 🔥 1. Formata o valor sem ponto (ex: 95.80 -> 0000000009580)
             String valorStr = String.format("%.0f", valor * 100);
-            String valorFormatado = String.format("%02d", valorStr.length()) + valorStr;
+            String valorFormatado = valorStr.length() + valorStr;
 
             StringBuilder payload = new StringBuilder();
 
-            // 1. Payload Format Indicator
+            // 2. Payload Format Indicator
             payload.append("000201");
 
-            // 2. Merchant Account Information (FORMATO SIMPLES)
+            // 3. Merchant Account Information (FORMATO OFICIAL)
             payload.append("010211");
 
-            // 3. GUI (br.gov.bcb.pix - minúsculo)
-            payload.append("26360014br.gov.bcb.pix");
-
-            // 4. Chave PIX
+            // 4. GUI + Chave (FORMATO OFICIAL)
+            // 26490014br.gov.bcb.pix0127portobella.brecho@gmail.com
+            String gui = "14br.gov.bcb.pix";
             String chave = CHAVE_PIX;
-            payload.append("01");
-            payload.append(String.format("%02d", chave.length()));
-            payload.append(chave);
+            String guiChave = gui + "01" + String.format("%02d", chave.length()) + chave;
+            payload.append("26");
+            payload.append(String.format("%02d", guiChave.length()));
+            payload.append(guiChave);
 
             // 5. Merchant Category Code
             payload.append("52040000");
 
-            // 6. Transaction Currency (BRL)
+            // 6. Transaction Currency
             payload.append("5303986");
 
-            // 7. Transaction Amount
+            // 7. Transaction Amount (SE TIVER VALOR)
             if (valor > 0) {
                 payload.append("54");
                 payload.append(valorFormatado);
@@ -590,7 +599,7 @@ public class PagamentoServer {
             // 8. Country Code
             payload.append("5802BR");
 
-            // 9. Merchant Name (máximo 25 caracteres)
+            // 9. Merchant Name (OFICIAL - 15 caracteres)
             String nome = NOME_RECEBEDOR;
             if (nome.length() > 25) {
                 nome = nome.substring(0, 25);
@@ -599,14 +608,14 @@ public class PagamentoServer {
             payload.append(String.format("%02d", nome.length()));
             payload.append(nome);
 
-            // 10. Merchant City (PORTO ALEGRE)
-            String cidade = "PORTO ALEGRE";
+            // 10. Merchant City
+            String cidade = CIDADE;
             payload.append("60");
             payload.append(String.format("%02d", cidade.length()));
             payload.append(cidade);
 
-            // 🔥 11. SEM TXID (REMOVER COMPLETAMENTE)
-            // Não adiciona o campo 62
+            // 11. TXID com *** (OFICIAL)
+            payload.append("62070503***");
 
             // 12. CRC16
             String payloadSemCRC = payload.toString();
@@ -619,8 +628,10 @@ public class PagamentoServer {
             System.out.println("✅ Payload Pix gerado com sucesso!");
             System.out.println("📋 Payload: " + payloadFinal);
             System.out.println("📏 Tamanho: " + payloadFinal.length());
-            System.out.println("📍 Cidade: PORTO ALEGRE");
-            System.out.println("📝 SEM TXID (campo removido)");
+            System.out.println("🔍 Comparação com oficial:");
+            System.out.println("   ✅ Nome: " + nome);
+            System.out.println("   ✅ Cidade: " + cidade);
+            System.out.println("   ✅ TXID: ***");
 
             return payloadFinal;
 
@@ -630,25 +641,32 @@ public class PagamentoServer {
             return null;
         }
     }
+
     // ==========================================
-    // CALCULAR CRC16 (para o Pix)
+    // CALCULAR CRC16 (IGUAL AO OFICIAL)
     // ==========================================
-    private static String calcularCRC16(String payload) {
-        int crc = 0xFFFF;
-        byte[] bytes = payload.getBytes(StandardCharsets.ISO_8859_1);
-        
-        for (byte b : bytes) {
-            crc ^= (b & 0xFF) << 8;
-            for (int i = 0; i < 8; i++) {
-                if ((crc & 0x8000) != 0) {
-                    crc = (crc << 1) ^ 0x1021;
-                } else {
-                    crc = crc << 1;
+    private static String calcularCRC16(String input) {
+        try {
+            int crc = 0xFFFF;
+            byte[] bytes = input.getBytes(StandardCharsets.ISO_8859_1);
+
+            for (byte b : bytes) {
+                crc ^= (b & 0xFF) << 8;
+                for (int i = 0; i < 8; i++) {
+                    if ((crc & 0x8000) != 0) {
+                        crc = (crc << 1) ^ 0x1021;
+                    } else {
+                        crc = crc << 1;
+                    }
                 }
             }
+
+            return String.format("%04X", crc & 0xFFFF);
+
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao calcular CRC16: " + e.getMessage());
+            return "0000";
         }
-        
-        return String.format("%04X", crc & 0xFFFF);
     }
     
     // ==========================================
