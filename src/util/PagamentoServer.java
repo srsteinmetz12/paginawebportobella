@@ -547,96 +547,99 @@ public class PagamentoServer {
     }
     
     // ==========================================
-    // 🔥 GERAR PAYLOAD PIX (SEM MERCADO PAGO)
+    // 🔥 GERAR PAYLOAD PIX (FORMATO QUE FUNCIONA)
     // ==========================================
-    private static String gerarPayloadPix(double valor, String pedidoId) {
-    try {
-        System.out.println("🔧 Gerando payload Pix corrigido...");
-        System.out.println("💰 Valor: R$ " + valor);
-        System.out.println("📝 Pedido ID: " + pedidoId);
-        
-        String valorFormatado = String.format("%.2f", valor);
-        
-        StringBuilder payload = new StringBuilder();
-        
-        // 1. Payload Format Indicator
-        payload.append("000201");
-        
-        // 2. Merchant Account Information
-        String gui = "0014BR.GOV.BCB.PIX";
-        String chavePix = "01" + String.format("%02d", CHAVE_PIX.length()) + CHAVE_PIX;
-        String merchantInfo = gui + chavePix;
-        payload.append("26");
-        payload.append(String.format("%02d", merchantInfo.length()));
-        payload.append(merchantInfo);
-        
-        // 3. Merchant Category Code
-        payload.append("52040000");
-        
-        // 4. Transaction Currency
-        payload.append("5303986");
-        
-        // 5. Transaction Amount
-        if (valor > 0) {
-            payload.append("54");
-            payload.append(String.format("%02d", valorFormatado.length()));
-            payload.append(valorFormatado);
+    private static String gerarPayloadPix(double valor, String descricao) {
+        try {
+            System.out.println("🔧 Gerando payload Pix (formato compatível)...");
+            System.out.println("💰 Valor: R$ " + valor);
+
+            // Formata o valor (ex: 95.80 -> 0000000009580)
+            String valorStr = String.format("%.0f", valor * 100);
+            String valorFormatado = String.format("%02d", valorStr.length()) + valorStr;
+
+            StringBuilder payload = new StringBuilder();
+
+            // 1. Payload Format Indicator
+            payload.append("000201");
+
+            // 2. Merchant Account Information (FORMATO SIMPLES)
+            payload.append("010211"); // ✅ Formato que funciona
+
+            // 3. GUI (br.gov.bcb.pix - minúsculo)
+            payload.append("26360014br.gov.bcb.pix");
+
+            // 4. Chave PIX
+            String chave = CHAVE_PIX;
+            payload.append("01");
+            payload.append(String.format("%02d", chave.length()));
+            payload.append(chave);
+
+            // 5. Merchant Category Code
+            payload.append("52040000");
+
+            // 6. Transaction Currency (BRL)
+            payload.append("5303986");
+
+            // 7. Transaction Amount
+            if (valor > 0) {
+                payload.append("54");
+                payload.append(valorFormatado);
+            }
+
+            // 8. Country Code
+            payload.append("5802BR");
+
+            // 9. Merchant Name (máximo 25 caracteres)
+            String nome = NOME_RECEBEDOR;
+            if (nome.length() > 25) {
+                nome = nome.substring(0, 25);
+            }
+            payload.append("59");
+            payload.append(String.format("%02d", nome.length()));
+            payload.append(nome);
+
+            // 10. Merchant City (PORTO ALEGRE)
+            String cidade = "PORTO ALEGRE";
+            payload.append("60");
+            payload.append(String.format("%02d", cidade.length()));
+            payload.append(cidade);
+
+            // 11. Additional Data Field (TXID)
+            String txid = "***";
+            if (descricao != null && !descricao.isEmpty()) {
+                txid = descricao;
+                if (txid.length() > 20) {
+                    txid = txid.substring(0, 20);
+                }
+            }
+            payload.append("6207");
+            payload.append(String.format("%02d", txid.length() + 3));
+            payload.append("05");
+            payload.append(String.format("%02d", txid.length()));
+            payload.append(txid);
+
+            // 12. CRC16
+            String payloadSemCRC = payload.toString();
+            String crc16 = calcularCRC16(payloadSemCRC);
+            payload.append("6304");
+            payload.append(crc16);
+
+            String payloadFinal = payload.toString();
+
+            System.out.println("✅ Payload Pix gerado com sucesso!");
+            System.out.println("📋 Payload: " + payloadFinal);
+            System.out.println("📏 Tamanho: " + payloadFinal.length());
+            System.out.println("📍 Cidade: PORTO ALEGRE");
+
+            return payloadFinal;
+
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao gerar payload Pix: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-        
-        // 6. Country Code
-        payload.append("5802BR");
-        
-        // 7. Merchant Name
-        String nome = NOME_RECEBEDOR;
-        if (nome.length() > 25) {
-            nome = nome.substring(0, 25);
-        }
-        payload.append("59");
-        payload.append(String.format("%02d", nome.length()));
-        payload.append(nome);
-        
-        // 8. Merchant City (CORRIGIDO - USA A CONSTANTE)
-        String cidade = CIDADE; // ✅ USA A CONSTANTE "PORTO ALEGRE"
-        if (cidade.length() > 15) {
-            cidade = cidade.substring(0, 15);
-        }
-        payload.append("60");
-        payload.append(String.format("%02d", cidade.length()));
-        payload.append(cidade);
-        
-        // 9. Additional Data Field
-        String txid = pedidoId;
-        if (txid.length() > 25) {
-            txid = txid.substring(0, 25);
-        }
-        String additionalData = "05" + String.format("%02d", txid.length()) + txid;
-        payload.append("62");
-        payload.append(String.format("%02d", additionalData.length()));
-        payload.append(additionalData);
-        
-        // 10. CRC16
-        String payloadSemCRC = payload.toString();
-        String payloadParaCRC = payloadSemCRC + "6304";
-        String crc16 = calcularCRC16(payloadParaCRC);
-        
-        payload.append("6304");
-        payload.append(crc16);
-        
-        String payloadFinal = payload.toString();
-        
-        System.out.println("✅ Payload Pix gerado com sucesso!");
-        System.out.println("📋 Payload: " + payloadFinal);
-        System.out.println("📏 Tamanho: " + payloadFinal.length());
-        
-        return payloadFinal;
-        
-    } catch (Exception e) {
-        System.err.println("❌ Erro ao gerar payload Pix: " + e.getMessage());
-        e.printStackTrace();
-        return null;
-    }
-}
-    
+    }  
     // ==========================================
     // CALCULAR CRC16 (para o Pix)
     // ==========================================
