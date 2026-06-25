@@ -856,6 +856,7 @@ public class PagamentoServer {
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
+            
         }
 
         // ==========================================
