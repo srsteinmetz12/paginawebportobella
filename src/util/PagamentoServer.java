@@ -49,6 +49,7 @@ public class PagamentoServer {
         server.createContext("/api/webhook", new WebhookHandler());
         server.createContext("/api/pagamentos/finalizar", new FinalizarCompraHandler());
         server.createContext("/api/frete/calcular", new CalcularFreteHandler());
+        server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
         
         server.setExecutor(null);
         server.start();
@@ -57,6 +58,7 @@ public class PagamentoServer {
         System.out.println("   🔥 PIX: GERADO SEM MERCADO PAGO (usando chave: " + CHAVE_PIX + ")");
         System.out.println("   💳 MERCADO PAGO: SOMENTE PARA LINK DE PAGAMENTO");
         System.out.println("   📦 Frete: Cálculo por CEP (ViaCEP + Fallback)");
+        System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
     }
     
     public static void parar() {
@@ -134,7 +136,7 @@ public class PagamentoServer {
 
                 if ("pix".equalsIgnoreCase(meio)) {
                     // Gera payload Pix com o valor TOTAL
-                    String payloadPix = gerarPayloadPix(total);
+                    String payloadPix = gerarPayloadPix(total, "Pedido PORTOBERLLA");
 
                     response.put("success", true);
                     response.put("meio", "pix");
@@ -502,7 +504,7 @@ public class PagamentoServer {
                     // ==========================================
                     System.out.println("   🔥 Gerando QR Code Pix SEM Mercado Pago...");
                     
-                    String payloadPix = gerarPayloadPix(valorTotal);
+                    String payloadPix = gerarPayloadPix(valorTotal, "Pedido PORTOBELLA");
                     
                     response.put("success", true);
                     response.put("meio", "pix");
@@ -546,10 +548,10 @@ public class PagamentoServer {
         }
     }
     
-   // ==========================================
+    // ==========================================
     // GERAR PAYLOAD PIX COMPLETO
     // ==========================================
-    public static String gerarPayloadPix(double valor) {
+    public static String gerarPayloadPix(double valor, String descricao) {
         try {
             System.out.println("🔧 Gerando payload Pix...");
             System.out.println("💰 Valor: R$ " + valor);
@@ -781,6 +783,237 @@ public class PagamentoServer {
                 
             } catch (IOException e) {
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+            }
+        }
+    }
+    // ==========================================
+    // HANDLER: NOTIFICAR SISTEMA (POPUP)
+    // ==========================================
+    static class NotificarSistemaHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                return;
+            }
+
+            try {
+                // ==========================================
+                // LER DADOS DA VENDA
+                // ==========================================
+                String body = new BufferedReader(
+                    new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                    .lines().reduce("", (a, b) -> a + b);
+
+                System.out.println("📥 Notificação recebida: " + body);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+
+                String codPeca = json.get("codPeca").getAsString();
+                String nomeCliente = json.get("destinatario").getAsString();
+                double valorTotal = json.get("total").getAsDouble();
+                String meioPagamento = json.get("meio").getAsString();
+                String endereco = json.get("endereco").getAsString();
+                boolean retirarLoja = json.has("retirarLoja") && json.get("retirarLoja").getAsBoolean();
+                String pedidoId = json.get("pedidoId").getAsString();
+                String telefone = json.has("telefone") ? json.get("telefone").getAsString() : "Não informado";
+
+                // ==========================================
+                // 🔥 SALVAR NA TABELA SACOLA (PEDIDO PENDENTE)
+                // ==========================================
+                salvarSacola(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, telefone);
+
+                // ==========================================
+                // 🔥 SALVAR NA TABELA ENTREGA
+                // ==========================================
+                salvarEntrega(pedidoId, nomeCliente, endereco, retirarLoja);
+
+                // ==========================================
+                // 🔥 NOTIFICAR O SISTEMA DESKTOP (POPUP)
+                // ==========================================
+                boolean aprovado = notificarSistemaDesktop(
+                    codPeca, 
+                    nomeCliente, 
+                    valorTotal, 
+                    meioPagamento, 
+                    retirarLoja, 
+                    endereco, 
+                    pedidoId,
+                    telefone
+                );
+
+                // ==========================================
+                // RESPOSTA
+                // ==========================================
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("aprovado", aprovado);
+                response.put("pedidoId", pedidoId);
+                response.put("mensagem", aprovado ? "Venda confirmada pelo sistema!" : "Venda aguardando confirmação!");
+
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (Exception e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+
+        // ==========================================
+        // SALVAR NA TABELA SACOLA
+        // ==========================================
+        private void salvarSacola(String codPeca, String nomeCliente, double valor, 
+                                  String meioPagamento, String pedidoId, String telefone) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+
+                String sql = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE')";
+
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, codPeca);
+                stmt.setString(2, nomeCliente);
+                stmt.setDouble(3, valor);
+                stmt.setString(4, meioPagamento);
+                stmt.setString(5, pedidoId);
+                stmt.setString(6, telefone);
+
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    System.out.println("   ✅ Sacola registrada para: " + nomeCliente);
+                }
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("   ❌ Erro ao salvar sacola: " + e.getMessage());
+            } finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+        }
+
+        // ==========================================
+        // SALVAR NA TABELA ENTREGA
+        // ==========================================
+        private void salvarEntrega(String pedidoId, String nomeCliente, String endereco, boolean retirarLoja) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+
+                String tipoEntrega = retirarLoja ? "RETIRADA" : "ENTREGA";
+                String statusEntrega = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
+
+                String sql = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
+                             "VALUES (?, ?, ?, ?, ?, NOW())";
+
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, pedidoId);
+                stmt.setString(2, nomeCliente);
+                stmt.setString(3, endereco);
+                stmt.setString(4, tipoEntrega);
+                stmt.setString(5, statusEntrega);
+
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    System.out.println("   ✅ Entrega registrada: " + tipoEntrega);
+                }
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("   ❌ Erro ao salvar entrega: " + e.getMessage());
+            } finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+        }
+
+        // ==========================================
+        // 🔥 NOTIFICAR SISTEMA DESKTOP (VIA ARQUIVO)
+        // ==========================================
+        private boolean notificarSistemaDesktop(String codPeca, String nomeCliente, double valor,
+                                                 String meioPagamento, boolean retirarLoja,
+                                                 String endereco, String pedidoId, String telefone) {
+            try {
+                // ==========================================
+                // CRIAR ARQUIVO DE NOTIFICAÇÃO
+                // ==========================================
+                String pastaNotificacoes = System.getProperty("user.home") + "/Desktop/notificacoes_venda";
+                new File(pastaNotificacoes).mkdirs();
+
+                String nomeArquivo = pastaNotificacoes + "/venda_" + pedidoId + ".json";
+
+                // ==========================================
+                // DADOS DA NOTIFICAÇÃO
+                // ==========================================
+                Map<String, Object> notificacao = new HashMap<>();
+                notificacao.put("pedidoId", pedidoId);
+                notificacao.put("codPeca", codPeca);
+                notificacao.put("cliente", nomeCliente);
+                notificacao.put("telefone", telefone);
+                notificacao.put("valor", valor);
+                notificacao.put("meioPagamento", meioPagamento);
+                notificacao.put("retirarLoja", retirarLoja);
+                notificacao.put("endereco", endereco);
+                notificacao.put("data", new java.util.Date().toString());
+                notificacao.put("status", "PENDENTE");
+
+                // ==========================================
+                // SALVAR ARQUIVO
+                // ==========================================
+                String json = gson.toJson(notificacao);
+                try (FileWriter writer = new FileWriter(nomeArquivo)) {
+                    writer.write(json);
+                }
+
+                System.out.println("   📢 Notificação criada: " + nomeArquivo);
+                System.out.println("   👤 Cliente: " + nomeCliente);
+                System.out.println("   💰 Valor: R$ " + valor);
+
+                // ==========================================
+                // AGUARDAR RESPOSTA DO SISTEMA (ATÉ 60 SEGUNDOS)
+                // ==========================================
+                long tempoLimite = System.currentTimeMillis() + 60000; // 60 segundos
+                boolean aprovado = false;
+
+                while (System.currentTimeMillis() < tempoLimite) {
+                    // Verifica se o arquivo de resposta existe
+                    String respostaArquivo = pastaNotificacoes + "/resposta_" + pedidoId + ".json";
+                    File respFile = new File(respostaArquivo);
+
+                    if (respFile.exists()) {
+                        try (FileReader reader = new FileReader(respFile)) {
+                            JsonObject respJson = gson.fromJson(reader, JsonObject.class);
+                            aprovado = respJson.has("aprovado") && respJson.get("aprovado").getAsBoolean();
+
+                            // Remove arquivo de resposta
+                            respFile.delete();
+                        }
+                        break;
+                    }
+
+                    // Aguarda 1 segundo antes de verificar novamente
+                    Thread.sleep(1000);
+                }
+
+                return aprovado;
+
+            } catch (Exception e) {
+                System.err.println("   ❌ Erro na notificação: " + e.getMessage());
+                return false;
             }
         }
     }
