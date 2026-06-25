@@ -1,12 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package paginaweb;
 
-
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import javax.swing.*;
@@ -30,14 +25,11 @@ public class MonitorNotificacoes {
         System.out.println("🔔 Iniciando monitor de notificações...");
         System.out.println("📁 Pasta: " + PASTA_NOTIFICACOES);
 
-        // Criar pasta se não existir
         new File(PASTA_NOTIFICACOES).mkdirs();
 
-        // Iniciar thread de monitoramento
         new Thread(() -> {
             while (executando) {
                 try {
-                    // Verifica arquivos de notificação
                     File pasta = new File(PASTA_NOTIFICACOES);
                     File[] arquivos = pasta.listFiles((dir, name) -> 
                         name.startsWith("venda_") && name.endsWith(".json") && !name.contains("resposta"));
@@ -45,33 +37,16 @@ public class MonitorNotificacoes {
                     if (arquivos != null) {
                         for (File arquivo : arquivos) {
                             try {
-                                // Lê a notificação
                                 String json = new String(Files.readAllBytes(arquivo.toPath()));
                                 JsonObject dados = gson.fromJson(json, JsonObject.class);
-
-                                // Exibe o popup
                                 exibirPopup(dados, arquivo.getName());
-
-                                // Aguarda resposta do usuário
-                                // A resposta é salva em um arquivo de resposta
-                                String pedidoId = dados.get("pedidoId").getAsString();
-                                String respostaArquivo = PASTA_NOTIFICACOES + "/resposta_" + pedidoId + ".json";
-
-                                // Aguarda até o popup ser fechado
-                                while (popupFrame != null && popupFrame.isVisible()) {
-                                    Thread.sleep(500);
-                                }
-
-                            } catch (JsonSyntaxException | IOException | InterruptedException e) {
+                            } catch (JsonSyntaxException | IOException e) {
                                 System.err.println("❌ Erro ao processar notificação: " + e.getMessage());
                             }
                         }
                     }
-
-                    Thread.sleep(2000); // Verifica a cada 2 segundos
-
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
-                    System.out.println("⏹️ Monitor interrompido");
                     break;
                 } catch (Exception e) {
                     System.err.println("❌ Erro no monitor: " + e.getMessage());
@@ -86,16 +61,11 @@ public class MonitorNotificacoes {
     private static void exibirPopup(JsonObject dados, String nomeArquivo) {
         SwingUtilities.invokeLater(() -> {
             // ==========================================
-            // 🔥 SINAL SONORO (BIP)
+            // SINAL SONORO (BIP DUPLO)
             // ==========================================
             Toolkit.getDefaultToolkit().beep();
-            // Alternativa: tocar som personalizado
-            try {
-                // Tenta tocar som do sistema
-                java.awt.Toolkit.getDefaultToolkit().beep();
-            } catch (Exception e) {
-                System.err.println("⚠️ Erro ao tocar som: " + e.getMessage());
-            }
+            try { Thread.sleep(300); } catch (InterruptedException e) {}
+            Toolkit.getDefaultToolkit().beep();
 
             // ==========================================
             // DADOS DA NOTIFICAÇÃO
@@ -115,11 +85,10 @@ public class MonitorNotificacoes {
             // ==========================================
             popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA");
             popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            popupFrame.setSize(500, 550);
+            popupFrame.setSize(550, 600);
             popupFrame.setLocationRelativeTo(null);
             popupFrame.setAlwaysOnTop(true);
 
-            // Painel principal
             JPanel panel = new JPanel();
             panel.setLayout(new BorderLayout(10, 10));
             panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -127,19 +96,25 @@ public class MonitorNotificacoes {
             // ==========================================
             // HEADER
             // ==========================================
+            JPanel headerPanel = new JPanel(new BorderLayout());
             JLabel lblTitulo = new JLabel("🛍️ NOVA VENDA ONLINE", JLabel.CENTER);
-            lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+            lblTitulo.setFont(new Font("Arial", Font.BOLD, 22));
             lblTitulo.setForeground(new Color(0, 158, 227));
-            panel.add(lblTitulo, BorderLayout.NORTH);
+            headerPanel.add(lblTitulo, BorderLayout.CENTER);
+            
+            JLabel lblData = new JLabel(data, JLabel.RIGHT);
+            lblData.setFont(new Font("Arial", Font.PLAIN, 11));
+            lblData.setForeground(Color.GRAY);
+            headerPanel.add(lblData, BorderLayout.SOUTH);
+            panel.add(headerPanel, BorderLayout.NORTH);
 
             // ==========================================
             // DADOS
             // ==========================================
             JPanel dadosPanel = new JPanel();
-            dadosPanel.setLayout(new GridLayout(0, 2, 10, 8));
-            dadosPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+            dadosPanel.setLayout(new GridLayout(0, 2, 10, 10));
+            dadosPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
 
-            // Formatação dos labels
             Font labelFont = new Font("Arial", Font.BOLD, 13);
             Font valueFont = new Font("Arial", Font.PLAIN, 13);
 
@@ -154,57 +129,58 @@ public class MonitorNotificacoes {
             Color corEntrega = retirarLoja ? new Color(0, 166, 80) : new Color(0, 158, 227);
             addCampoColorido(dadosPanel, "📦 Entrega:", tipoEntrega, labelFont, valueFont, corEntrega);
             
-            addCampo(dadosPanel, "📅 Data:", data, labelFont, valueFont);
-            addCampo(dadosPanel, "📍 Endereço:", endereco.length() > 40 ? endereco.substring(0, 40) + "..." : endereco, labelFont, valueFont);
+            String enderecoExibicao = endereco.length() > 50 ? endereco.substring(0, 50) + "..." : endereco;
+            addCampo(dadosPanel, "📍 Endereço:", enderecoExibicao, labelFont, valueFont);
 
             panel.add(dadosPanel, BorderLayout.CENTER);
+
+            // ==========================================
+            // INSTRUÇÕES
+            // ==========================================
+            JPanel instrucoesPanel = new JPanel();
+            instrucoesPanel.setLayout(new BorderLayout());
+            JLabel lblInstrucoes = new JLabel(
+                "<html><center><font color='#FF6B6B'>⚠️ <b>ATENÇÃO ATENDENTE</b></font><br>" +
+                "<font size='2'>Verifique se o pagamento foi confirmado no banco ou Mercado Pago.<br>" +
+                "Clique em <b>CONFIRMAR PAGAMENTO</b> para registrar a venda.</font></center></html>"
+            );
+            lblInstrucoes.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+            instrucoesPanel.add(lblInstrucoes, BorderLayout.CENTER);
+            panel.add(instrucoesPanel, BorderLayout.NORTH);
 
             // ==========================================
             // BOTÕES
             // ==========================================
             JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
-            // Botão APROVAR (Verde)
-            JButton btnAprovar = new JButton("✅ APROVAR VENDA");
-            btnAprovar.setBackground(new Color(0, 166, 80));
-            btnAprovar.setForeground(Color.WHITE);
-            btnAprovar.setFont(new Font("Arial", Font.BOLD, 14));
-            btnAprovar.setPreferredSize(new Dimension(200, 45));
-            btnAprovar.addActionListener(e -> {
+            JButton btnConfirmar = new JButton("✅ CONFIRMAR PAGAMENTO");
+            btnConfirmar.setBackground(new Color(0, 166, 80));
+            btnConfirmar.setForeground(Color.WHITE);
+            btnConfirmar.setFont(new Font("Arial", Font.BOLD, 16));
+            btnConfirmar.setPreferredSize(new Dimension(250, 50));
+            btnConfirmar.addActionListener(e -> {
                 responderNotificacao(pedidoId, true);
                 popupFrame.dispose();
                 popupFrame = null;
             });
 
-            // Botão REJEITAR (Vermelho)
-            JButton btnRejeitar = new JButton("❌ REJEITAR VENDA");
+            JButton btnRejeitar = new JButton("❌ REJEITAR");
             btnRejeitar.setBackground(new Color(200, 50, 50));
             btnRejeitar.setForeground(Color.WHITE);
             btnRejeitar.setFont(new Font("Arial", Font.BOLD, 14));
-            btnRejeitar.setPreferredSize(new Dimension(200, 45));
+            btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.addActionListener(e -> {
                 responderNotificacao(pedidoId, false);
                 popupFrame.dispose();
                 popupFrame = null;
             });
 
-            btnPanel.add(btnAprovar);
+            btnPanel.add(btnConfirmar);
             btnPanel.add(btnRejeitar);
             panel.add(btnPanel, BorderLayout.SOUTH);
 
             popupFrame.add(panel);
             popupFrame.setVisible(true);
-
-            // ==========================================
-            // SINAL SONORO NOVO (BIP DUPLO)
-            // ==========================================
-            try {
-                Toolkit.getDefaultToolkit().beep();
-                Thread.sleep(300);
-                Toolkit.getDefaultToolkit().beep();
-            } catch (InterruptedException e) {
-                System.err.println("⚠️ Erro ao tocar som: " + e.getMessage());
-            }
         });
     }
 
@@ -219,13 +195,10 @@ public class MonitorNotificacoes {
 
         JLabel val = new JLabel(valor);
         val.setFont(valueFont);
-        val.setForeground(Color.BLACK);
+        val.setForeground(Color.WHITE);
         panel.add(val);
     }
 
-    // ==========================================
-    // ADICIONAR CAMPO COLORIDO AO PAINEL
-    // ==========================================
     private static void addCampoColorido(JPanel panel, String label, String valor, Font labelFont, Font valueFont, Color cor) {
         JLabel lbl = new JLabel(label);
         lbl.setFont(labelFont);
@@ -233,58 +206,40 @@ public class MonitorNotificacoes {
         panel.add(lbl);
 
         JLabel val = new JLabel(valor);
-        val.setFont(valueFont);
-        val.setForeground(cor);
         val.setFont(new Font("Arial", Font.BOLD, 13));
+        val.setForeground(cor);
         panel.add(val);
     }
-
     // ==========================================
     // RESPONDER NOTIFICAÇÃO
     // ==========================================
     private static void responderNotificacao(String pedidoId, boolean aprovado) {
         try {
             String respostaArquivo = PASTA_NOTIFICACOES + "/resposta_" + pedidoId + ".json";
-            
             Map<String, Object> resposta = new HashMap<>();
             resposta.put("pedidoId", pedidoId);
             resposta.put("aprovado", aprovado);
             resposta.put("data", new java.util.Date().toString());
 
-            String json = gson.toJson(resposta);
             try (FileWriter writer = new FileWriter(respostaArquivo)) {
-                writer.write(json);
+                gson.toJson(resposta, writer);
             }
 
-            System.out.println("📤 Resposta enviada: " + (aprovado ? "APROVADO" : "REJEITADO"));
+            System.out.println("📤 Resposta enviada: " + (aprovado ? "APROVADO ✅" : "REJEITADO ❌"));
 
-        } catch (IOException e) {
+        } catch (JsonIOException | IOException e) {
             System.err.println("❌ Erro ao responder: " + e.getMessage());
         }
     }
 
-    // ==========================================
-    // PARAR MONITOR
-    // ==========================================
     public static void pararMonitor() {
         executando = false;
-        System.out.println("⏹️ Monitor parado.");
     }
 
-    // ==========================================
-    // MAIN PARA TESTE
-    // ==========================================
     public static void main(String[] args) {
         iniciarMonitor();
-        
-        // Mantém o programa rodando
         while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                break;
-            }
+            try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
         }
     }
 }
-

@@ -807,9 +807,6 @@ public class PagamentoServer {
             }
 
             try {
-                // ==========================================
-                // LER DADOS DA VENDA
-                // ==========================================
                 String body = new BufferedReader(
                     new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                     .lines().reduce("", (a, b) -> a + b);
@@ -826,39 +823,47 @@ public class PagamentoServer {
                 boolean retirarLoja = json.has("retirarLoja") && json.get("retirarLoja").getAsBoolean();
                 String pedidoId = json.get("pedidoId").getAsString();
                 String telefone = json.has("telefone") ? json.get("telefone").getAsString() : "Não informado";
+                String itens = json.get("itens").toString();
+
+                System.out.println("📝 Dados da venda:");
+                System.out.println("   Cliente: " + nomeCliente);
+                System.out.println("   Telefone: " + telefone);
+                System.out.println("   Valor: R$ " + valorTotal);
+                System.out.println("   Peça: " + codPeca);
+                System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
                 // ==========================================
-                // 🔥 SALVAR NA TABELA SACOLA (PEDIDO PENDENTE)
-                // ==========================================
-                salvarSacola(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, telefone);
-
-                // ==========================================
-                // 🔥 SALVAR NA TABELA ENTREGA
-                // ==========================================
-                salvarEntrega(pedidoId, nomeCliente, endereco, retirarLoja);
-
-                // ==========================================
-                // 🔥 NOTIFICAR O SISTEMA DESKTOP (POPUP)
+                // NOTIFICAR SISTEMA DESKTOP (AGUARDA CONFIRMAÇÃO)
                 // ==========================================
                 boolean aprovado = notificarSistemaDesktop(
-                    codPeca, 
-                    nomeCliente, 
-                    valorTotal, 
-                    meioPagamento, 
-                    retirarLoja, 
-                    endereco, 
-                    pedidoId,
-                    telefone
+                    codPeca, nomeCliente, valorTotal, meioPagamento, 
+                    retirarLoja, endereco, pedidoId, telefone, itens
                 );
 
                 // ==========================================
-                // RESPOSTA
+                // SE APROVADO, REGISTRA NAS TABELAS
                 // ==========================================
+                if (aprovado) {
+                    // Salvar na tabela SACOLA
+                    salvarSacola(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, telefone);
+
+                    // Salvar na tabela ENTREGA
+                    salvarEntrega(pedidoId, nomeCliente, endereco, retirarLoja);
+
+                    // Salvar na tabela VENDAS
+                    salvarVenda(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, endereco, retirarLoja);
+
+                    // Atualizar estoque
+                    atualizarEstoque(codPeca);
+
+                    System.out.println("   ✅ Todas as tabelas atualizadas!");
+                }
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("aprovado", aprovado);
                 response.put("pedidoId", pedidoId);
-                response.put("mensagem", aprovado ? "Venda confirmada pelo sistema!" : "Venda aguardando confirmação!");
+                response.put("mensagem", aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada pelo atendente!");
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
@@ -873,143 +878,160 @@ public class PagamentoServer {
         // ==========================================
         // SALVAR NA TABELA SACOLA
         // ==========================================
-        private void salvarSacola(String codPeca, String nomeCliente, double valor, 
+        private void salvarSacola(String codPeca, String cliente, double valor, 
                                   String meioPagamento, String pedidoId, String telefone) {
-            Connection con = null;
-            PreparedStatement stmt = null;
+            try (Connection con = ConnectionDB.getConnectionCloud();
+                 PreparedStatement stmt = con.prepareStatement(
+                     "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'CONFIRMADO')")) {
 
-            try {
-                con = ConnectionDB.getConnectionCloud();
-
-                String sql = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE')";
-
-                stmt = con.prepareStatement(sql);
                 stmt.setString(1, codPeca);
-                stmt.setString(2, nomeCliente);
+                stmt.setString(2, cliente);
                 stmt.setDouble(3, valor);
                 stmt.setString(4, meioPagamento);
                 stmt.setString(5, pedidoId);
                 stmt.setString(6, telefone);
+                stmt.executeUpdate();
+                System.out.println("   ✅ Sacola registrada: " + pedidoId);
 
-                int rows = stmt.executeUpdate();
-                if (rows > 0) {
-                    System.out.println("   ✅ Sacola registrada para: " + nomeCliente);
-                }
-
-            } catch (ClassNotFoundException | SQLException e) {
+            } catch (Exception e) {
                 System.err.println("   ❌ Erro ao salvar sacola: " + e.getMessage());
-            } finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-                try { if (con != null) con.close(); } catch (SQLException e) {}
             }
         }
 
         // ==========================================
         // SALVAR NA TABELA ENTREGA
         // ==========================================
-        private void salvarEntrega(String pedidoId, String nomeCliente, String endereco, boolean retirarLoja) {
-            Connection con = null;
-            PreparedStatement stmt = null;
+        private void salvarEntrega(String pedidoId, String cliente, String endereco, boolean retirarLoja) {
+            try (Connection con = ConnectionDB.getConnectionCloud();
+                 PreparedStatement stmt = con.prepareStatement(
+                     "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
+                     "VALUES (?, ?, ?, ?, ?, NOW())")) {
 
-            try {
-                con = ConnectionDB.getConnectionCloud();
+                String tipo = retirarLoja ? "RETIRADA" : "ENTREGA";
+                String status = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
 
-                String tipoEntrega = retirarLoja ? "RETIRADA" : "ENTREGA";
-                String statusEntrega = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
-
-                String sql = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
-                             "VALUES (?, ?, ?, ?, ?, NOW())";
-
-                stmt = con.prepareStatement(sql);
                 stmt.setString(1, pedidoId);
-                stmt.setString(2, nomeCliente);
+                stmt.setString(2, cliente);
                 stmt.setString(3, endereco);
-                stmt.setString(4, tipoEntrega);
-                stmt.setString(5, statusEntrega);
+                stmt.setString(4, tipo);
+                stmt.setString(5, status);
+                stmt.executeUpdate();
+                System.out.println("   ✅ Entrega registrada: " + tipo);
 
-                int rows = stmt.executeUpdate();
-                if (rows > 0) {
-                    System.out.println("   ✅ Entrega registrada: " + tipoEntrega);
-                }
-
-            } catch (ClassNotFoundException | SQLException e) {
+            } catch (Exception e) {
                 System.err.println("   ❌ Erro ao salvar entrega: " + e.getMessage());
-            } finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-                try { if (con != null) con.close(); } catch (SQLException e) {}
             }
         }
 
         // ==========================================
-        // 🔥 NOTIFICAR SISTEMA DESKTOP (VIA ARQUIVO)
+        // SALVAR NA TABELA VENDAS
         // ==========================================
-        private boolean notificarSistemaDesktop(String codPeca, String nomeCliente, double valor,
+        private void salvarVenda(String codPeca, String cliente, double valor, 
+                                 String meioPagamento, String pedidoId, String endereco, boolean retirarLoja) {
+            try (Connection con = ConnectionDB.getConnectionCloud();
+                 PreparedStatement stmt = con.prepareStatement(
+                     "INSERT INTO vendas (datavenda, codpeca, cliente, valor_total, meio_pagamento, pedido_id, endereco_entrega, retirar_loja, status_pagamento) " +
+                     "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'CONFIRMADO')")) {
+
+                stmt.setString(1, codPeca);
+                stmt.setString(2, cliente);
+                stmt.setDouble(3, valor);
+                stmt.setString(4, meioPagamento);
+                stmt.setString(5, pedidoId);
+                stmt.setString(6, endereco);
+                stmt.setBoolean(7, retirarLoja);
+                stmt.executeUpdate();
+                System.out.println("   ✅ Venda registrada: " + pedidoId);
+
+            } catch (Exception e) {
+                System.err.println("   ❌ Erro ao salvar venda: " + e.getMessage());
+            }
+        }
+
+        // ==========================================
+        // ATUALIZAR ESTOQUE
+        // ==========================================
+        private void atualizarEstoque(String codPeca) {
+            try (Connection con = ConnectionDB.getConnectionCloud();
+                 PreparedStatement stmt = con.prepareStatement(
+                     "UPDATE estoque SET status = 'VENDIDO' WHERE codpeca = ? AND status = 'DISPONIVEL'")) {
+
+                stmt.setString(1, codPeca);
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    System.out.println("   ✅ Estoque atualizado: " + codPeca + " -> VENDIDO");
+                } else {
+                    System.out.println("   ⚠️ Produto já vendido ou não encontrado: " + codPeca);
+                }
+
+            } catch (Exception e) {
+                System.err.println("   ❌ Erro ao atualizar estoque: " + e.getMessage());
+            }
+        }
+
+        // ==========================================
+        // NOTIFICAR SISTEMA DESKTOP (POPUP)
+        // ==========================================
+        private boolean notificarSistemaDesktop(String codPeca, String cliente, double valor,
                                                  String meioPagamento, boolean retirarLoja,
-                                                 String endereco, String pedidoId, String telefone) {
+                                                 String endereco, String pedidoId, String telefone,
+                                                 String itens) {
             try {
+                String pasta = System.getProperty("user.home") + "/Desktop/notificacoes_venda";
+                new File(pasta).mkdirs();
+
                 // ==========================================
                 // CRIAR ARQUIVO DE NOTIFICAÇÃO
-                // ==========================================
-                String pastaNotificacoes = System.getProperty("user.home") + "/Desktop/notificacoes_venda";
-                new File(pastaNotificacoes).mkdirs();
-
-                String nomeArquivo = pastaNotificacoes + "/venda_" + pedidoId + ".json";
-
-                // ==========================================
-                // DADOS DA NOTIFICAÇÃO
                 // ==========================================
                 Map<String, Object> notificacao = new HashMap<>();
                 notificacao.put("pedidoId", pedidoId);
                 notificacao.put("codPeca", codPeca);
-                notificacao.put("cliente", nomeCliente);
+                notificacao.put("cliente", cliente);
                 notificacao.put("telefone", telefone);
                 notificacao.put("valor", valor);
                 notificacao.put("meioPagamento", meioPagamento);
                 notificacao.put("retirarLoja", retirarLoja);
                 notificacao.put("endereco", endereco);
+                notificacao.put("itens", itens);
                 notificacao.put("data", new java.util.Date().toString());
                 notificacao.put("status", "PENDENTE");
 
-                // ==========================================
-                // SALVAR ARQUIVO
-                // ==========================================
-                String json = gson.toJson(notificacao);
+                String nomeArquivo = pasta + "/venda_" + pedidoId + ".json";
                 try (FileWriter writer = new FileWriter(nomeArquivo)) {
-                    writer.write(json);
+                    gson.toJson(notificacao, writer);
                 }
 
                 System.out.println("   📢 Notificação criada: " + nomeArquivo);
-                System.out.println("   👤 Cliente: " + nomeCliente);
+                System.out.println("   👤 Cliente: " + cliente);
                 System.out.println("   💰 Valor: R$ " + valor);
 
                 // ==========================================
-                // AGUARDAR RESPOSTA DO SISTEMA (ATÉ 60 SEGUNDOS)
+                // AGUARDAR RESPOSTA DO ATENDENTE (ATÉ 60 SEGUNDOS)
                 // ==========================================
-                long tempoLimite = System.currentTimeMillis() + 60000; // 60 segundos
-                boolean aprovado = false;
-
+                long tempoLimite = System.currentTimeMillis() + 60000;
                 while (System.currentTimeMillis() < tempoLimite) {
-                    // Verifica se o arquivo de resposta existe
-                    String respostaArquivo = pastaNotificacoes + "/resposta_" + pedidoId + ".json";
+                    String respostaArquivo = pasta + "/resposta_" + pedidoId + ".json";
                     File respFile = new File(respostaArquivo);
-
                     if (respFile.exists()) {
                         try (FileReader reader = new FileReader(respFile)) {
-                            JsonObject respJson = gson.fromJson(reader, JsonObject.class);
-                            aprovado = respJson.has("aprovado") && respJson.get("aprovado").getAsBoolean();
-
-                            // Remove arquivo de resposta
+                            JsonObject resp = gson.fromJson(reader, JsonObject.class);
+                            boolean aprovado = resp.has("aprovado") && resp.get("aprovado").getAsBoolean();
                             respFile.delete();
-                        }
-                        break;
-                    }
 
-                    // Aguarda 1 segundo antes de verificar novamente
+                            // Remove o arquivo de notificação
+                            new File(nomeArquivo).delete();
+
+                            return aprovado;
+                        }
+                    }
                     Thread.sleep(1000);
                 }
 
-                return aprovado;
+                // Timeout - cancela a venda
+                System.out.println("   ⏰ Timeout - venda cancelada");
+                new File(nomeArquivo).delete();
+                return false;
 
             } catch (Exception e) {
                 System.err.println("   ❌ Erro na notificação: " + e.getMessage());
