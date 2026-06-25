@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
@@ -616,7 +617,6 @@ public class PagamentoServer {
             
         } catch (Exception e) {
             System.err.println("❌ Erro ao gerar payload: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
@@ -787,7 +787,7 @@ public class PagamentoServer {
         }
     }
     // ==========================================
-    // HANDLER: NOTIFICAR SISTEMA (POPUP)
+    // HANDLER: NOTIFICAR SISTEMA DESKTOP
     // ==========================================
     static class NotificarSistemaHandler implements HttpHandler {
         @Override
@@ -833,41 +833,24 @@ public class PagamentoServer {
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
                 // ==========================================
-                // NOTIFICAR SISTEMA DESKTOP (AGUARDA CONFIRMAÇÃO)
+                // SALVAR NOTIFICAÇÃO PARA O DESKTOP (SEM BLOQUEAR)
                 // ==========================================
-                boolean aprovado = notificarSistemaDesktop(
+                enviarNotificacaoDesktop(
                     codPeca, nomeCliente, valorTotal, meioPagamento, 
                     retirarLoja, endereco, pedidoId, telefone, itens
                 );
 
                 // ==========================================
-                // SE APROVADO, REGISTRA NAS TABELAS
+                // RETORNA SUCESSO IMEDIATO PARA O CLIENTE
                 // ==========================================
-                if (aprovado) {
-                    // Salvar na tabela SACOLA
-                    salvarSacola(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, telefone);
-
-                    // Salvar na tabela ENTREGA
-                    salvarEntrega(pedidoId, nomeCliente, endereco, retirarLoja);
-
-                    // Salvar na tabela VENDAS
-                    salvarVenda(codPeca, nomeCliente, valorTotal, meioPagamento, pedidoId, endereco, retirarLoja);
-
-                    // Atualizar estoque
-                    atualizarEstoque(codPeca);
-
-                    System.out.println("   ✅ Todas as tabelas atualizadas!");
-                }
-
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
-                response.put("aprovado", aprovado);
                 response.put("pedidoId", pedidoId);
-                response.put("mensagem", aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada pelo atendente!");
+                response.put("mensagem", "Notificação enviada para a loja!");
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
-            } catch (Exception e) {
+            } catch (JsonSyntaxException | IOException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
@@ -876,114 +859,16 @@ public class PagamentoServer {
         }
 
         // ==========================================
-        // SALVAR NA TABELA SACOLA
+        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (ASSÍNCRONA)
         // ==========================================
-        private void salvarSacola(String codPeca, String cliente, double valor, 
-                                  String meioPagamento, String pedidoId, String telefone) {
-            try (Connection con = ConnectionDB.getConnectionCloud();
-                 PreparedStatement stmt = con.prepareStatement(
-                     "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'CONFIRMADO')")) {
-
-                stmt.setString(1, codPeca);
-                stmt.setString(2, cliente);
-                stmt.setDouble(3, valor);
-                stmt.setString(4, meioPagamento);
-                stmt.setString(5, pedidoId);
-                stmt.setString(6, telefone);
-                stmt.executeUpdate();
-                System.out.println("   ✅ Sacola registrada: " + pedidoId);
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro ao salvar sacola: " + e.getMessage());
-            }
-        }
-
-        // ==========================================
-        // SALVAR NA TABELA ENTREGA
-        // ==========================================
-        private void salvarEntrega(String pedidoId, String cliente, String endereco, boolean retirarLoja) {
-            try (Connection con = ConnectionDB.getConnectionCloud();
-                 PreparedStatement stmt = con.prepareStatement(
-                     "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
-                     "VALUES (?, ?, ?, ?, ?, NOW())")) {
-
-                String tipo = retirarLoja ? "RETIRADA" : "ENTREGA";
-                String status = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
-
-                stmt.setString(1, pedidoId);
-                stmt.setString(2, cliente);
-                stmt.setString(3, endereco);
-                stmt.setString(4, tipo);
-                stmt.setString(5, status);
-                stmt.executeUpdate();
-                System.out.println("   ✅ Entrega registrada: " + tipo);
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro ao salvar entrega: " + e.getMessage());
-            }
-        }
-
-        // ==========================================
-        // SALVAR NA TABELA VENDAS
-        // ==========================================
-        private void salvarVenda(String codPeca, String cliente, double valor, 
-                                 String meioPagamento, String pedidoId, String endereco, boolean retirarLoja) {
-            try (Connection con = ConnectionDB.getConnectionCloud();
-                 PreparedStatement stmt = con.prepareStatement(
-                     "INSERT INTO vendas (datavenda, codpeca, cliente, valor_total, meio_pagamento, pedido_id, endereco_entrega, retirar_loja, status_pagamento) " +
-                     "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'CONFIRMADO')")) {
-
-                stmt.setString(1, codPeca);
-                stmt.setString(2, cliente);
-                stmt.setDouble(3, valor);
-                stmt.setString(4, meioPagamento);
-                stmt.setString(5, pedidoId);
-                stmt.setString(6, endereco);
-                stmt.setBoolean(7, retirarLoja);
-                stmt.executeUpdate();
-                System.out.println("   ✅ Venda registrada: " + pedidoId);
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro ao salvar venda: " + e.getMessage());
-            }
-        }
-
-        // ==========================================
-        // ATUALIZAR ESTOQUE
-        // ==========================================
-        private void atualizarEstoque(String codPeca) {
-            try (Connection con = ConnectionDB.getConnectionCloud();
-                 PreparedStatement stmt = con.prepareStatement(
-                     "UPDATE estoque SET status = 'VENDIDO' WHERE codpeca = ? AND status = 'DISPONIVEL'")) {
-
-                stmt.setString(1, codPeca);
-                int rows = stmt.executeUpdate();
-                if (rows > 0) {
-                    System.out.println("   ✅ Estoque atualizado: " + codPeca + " -> VENDIDO");
-                } else {
-                    System.out.println("   ⚠️ Produto já vendido ou não encontrado: " + codPeca);
-                }
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro ao atualizar estoque: " + e.getMessage());
-            }
-        }
-
-        // ==========================================
-        // NOTIFICAR SISTEMA DESKTOP (POPUP)
-        // ==========================================
-        private boolean notificarSistemaDesktop(String codPeca, String cliente, double valor,
-                                                 String meioPagamento, boolean retirarLoja,
-                                                 String endereco, String pedidoId, String telefone,
-                                                 String itens) {
+        private void enviarNotificacaoDesktop(String codPeca, String cliente, double valor,
+                                               String meioPagamento, boolean retirarLoja,
+                                               String endereco, String pedidoId, String telefone,
+                                               String itens) {
             try {
                 String pasta = System.getProperty("user.home") + "/Desktop/notificacoes_venda";
                 new File(pasta).mkdirs();
 
-                // ==========================================
-                // CRIAR ARQUIVO DE NOTIFICAÇÃO
-                // ==========================================
                 Map<String, Object> notificacao = new HashMap<>();
                 notificacao.put("pedidoId", pedidoId);
                 notificacao.put("codPeca", codPeca);
@@ -1007,36 +892,166 @@ public class PagamentoServer {
                 System.out.println("   💰 Valor: R$ " + valor);
 
                 // ==========================================
-                // AGUARDAR RESPOSTA DO ATENDENTE (ATÉ 60 SEGUNDOS)
+                // INICIA THREAD PARA AGUARDAR RESPOSTA DO ATENDENTE
                 // ==========================================
-                long tempoLimite = System.currentTimeMillis() + 60000;
-                while (System.currentTimeMillis() < tempoLimite) {
-                    String respostaArquivo = pasta + "/resposta_" + pedidoId + ".json";
-                    File respFile = new File(respostaArquivo);
-                    if (respFile.exists()) {
-                        try (FileReader reader = new FileReader(respFile)) {
-                            JsonObject resp = gson.fromJson(reader, JsonObject.class);
-                            boolean aprovado = resp.has("aprovado") && resp.get("aprovado").getAsBoolean();
-                            respFile.delete();
+                new Thread(() -> {
+                    try {
+                        long tempoLimite = System.currentTimeMillis() + 60000; // 60 segundos
+                        while (System.currentTimeMillis() < tempoLimite) {
+                            String respostaArquivo = pasta + "/resposta_" + pedidoId + ".json";
+                            File respFile = new File(respostaArquivo);
+                            if (respFile.exists()) {
+                                try (FileReader reader = new FileReader(respFile)) {
+                                    JsonObject resp = gson.fromJson(reader, JsonObject.class);
+                                    boolean aprovado = resp.has("aprovado") && resp.get("aprovado").getAsBoolean();
+                                    respFile.delete();
+                                    new File(nomeArquivo).delete();
 
-                            // Remove o arquivo de notificação
-                            new File(nomeArquivo).delete();
-
-                            return aprovado;
+                                    if (aprovado) {
+                                        System.out.println("   ✅ Venda APROVADA pelo atendente!");
+                                        // Registra a venda nas tabelas
+                                        registrarVenda(codPeca, cliente, valor, meioPagamento, pedidoId, endereco, retirarLoja, telefone);
+                                        atualizarEstoque(codPeca);
+                                    } else {
+                                        System.out.println("   ❌ Venda REJEITADA pelo atendente!");
+                                    }
+                                }
+                                break;
+                            }
+                            Thread.sleep(1000);
                         }
+                    } catch (JsonIOException | JsonSyntaxException | IOException | InterruptedException e) {
+                        System.err.println("   ❌ Erro ao aguardar resposta: " + e.getMessage());
                     }
-                    Thread.sleep(1000);
-                }
+                }).start();
 
-                // Timeout - cancela a venda
-                System.out.println("   ⏰ Timeout - venda cancelada");
-                new File(nomeArquivo).delete();
-                return false;
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro na notificação: " + e.getMessage());
-                return false;
+            } catch (JsonIOException | IOException e) {
+                System.err.println("   ❌ Erro ao enviar notificação: " + e.getMessage());
             }
+        }
+    }
+    
+    // ==========================================
+    // REGISTRAR VENDA NAS TABELAS
+    // ==========================================
+    private static void registrarVenda(String codPeca, String cliente, double valor, 
+                                        String meioPagamento, String pedidoId, 
+                                        String endereco, boolean retirarLoja, String telefone) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ConnectionDB.getConnectionCloud();
+
+            // ==========================================
+            // 1. REGISTRAR NA TABELA VENDAS
+            // ==========================================
+            String sqlVenda = "INSERT INTO vendas (datavenda, codpeca, cliente, valor_total, meio_pagamento, " +
+                             "pedido_id, endereco_entrega, retirar_loja, telefone, status_pagamento) " +
+                             "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMADO')";
+
+            stmt = con.prepareStatement(sqlVenda);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, cliente);
+            stmt.setDouble(3, valor);
+            stmt.setString(4, meioPagamento);
+            stmt.setString(5, pedidoId);
+            stmt.setString(6, endereco);
+            stmt.setBoolean(7, retirarLoja);
+            stmt.setString(8, telefone);
+            stmt.executeUpdate();
+            System.out.println("   ✅ Venda registrada: " + pedidoId);
+            stmt.close();
+
+            // ==========================================
+            // 2. REGISTRAR NA TABELA SACOLA
+            // ==========================================
+            String sqlSacola = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
+                              "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'CONFIRMADO')";
+
+            stmt = con.prepareStatement(sqlSacola);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, cliente);
+            stmt.setDouble(3, valor);
+            stmt.setString(4, meioPagamento);
+            stmt.setString(5, pedidoId);
+            stmt.setString(6, telefone);
+            stmt.executeUpdate();
+            System.out.println("   ✅ Sacola registrada: " + pedidoId);
+            stmt.close();
+
+            // ==========================================
+            // 3. REGISTRAR NA TABELA ENTREGA
+            // ==========================================
+            String tipoEntrega = retirarLoja ? "RETIRADA" : "ENTREGA";
+            String statusEntrega = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
+
+            String sqlEntrega = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
+                               "VALUES (?, ?, ?, ?, ?, NOW())";
+
+            stmt = con.prepareStatement(sqlEntrega);
+            stmt.setString(1, pedidoId);
+            stmt.setString(2, cliente);
+            stmt.setString(3, endereco);
+            stmt.setString(4, tipoEntrega);
+            stmt.setString(5, statusEntrega);
+            stmt.executeUpdate();
+            System.out.println("   ✅ Entrega registrada: " + tipoEntrega);
+            stmt.close();
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // ATUALIZAR ESTOQUE (BAIXA DO PRODUTO)
+    // ==========================================
+    private static void atualizarEstoque(String codPeca) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ConnectionDB.getConnectionCloud();
+
+            // ==========================================
+            // 1. ATUALIZAR STATUS DA PEÇA PARA VENDIDO
+            // ==========================================
+            String sqlUpdate = "UPDATE estoque SET status = 'VENDIDO' WHERE codpeca = ? AND status = 'DISPONIVEL'";
+
+            stmt = con.prepareStatement(sqlUpdate);
+            stmt.setString(1, codPeca);
+            int rows = stmt.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("   ✅ Estoque atualizado: " + codPeca + " -> VENDIDO");
+            } else {
+                System.out.println("   ⚠️ Produto já vendido ou não encontrado: " + codPeca);
+            }
+            stmt.close();
+
+            // ==========================================
+            // 2. REGISTRAR MOVIMENTAÇÃO DE ESTOQUE
+            // ==========================================
+            String sqlMov = "INSERT INTO movimentacao_estoque (codpeca, data_movimento, status_anterior, status_novo, observacao) " +
+                           "SELECT ?, NOW(), status, 'VENDIDO', 'Venda confirmada - Pedido #' || ? FROM estoque WHERE codpeca = ?";
+
+            stmt = con.prepareStatement(sqlMov);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, codPeca);
+            stmt.setString(3, codPeca);
+            stmt.executeUpdate();
+            System.out.println("   ✅ Movimentação registrada: " + codPeca);
+            stmt.close();
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("   ❌ Erro ao atualizar estoque: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
         }
     }
     
