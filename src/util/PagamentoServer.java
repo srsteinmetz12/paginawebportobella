@@ -860,16 +860,33 @@ public class PagamentoServer {
         }
 
         // ==========================================
-        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (ASSÍNCRONA)
+        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (ASSÍNCRONA) - VERSÃO COMPLETA
         // ==========================================
         private void enviarNotificacaoDesktop(String codPeca, String cliente, double valor,
                                                String meioPagamento, boolean retirarLoja,
                                                String endereco, String pedidoId, String telefone,
                                                String itens) {
             try {
-                String pasta = System.getProperty("user.home") + "/Desktop/notificacoes_venda";
-                new File(pasta).mkdirs();
+                // ==========================================
+                // DEFINIR CAMINHO DA PASTA
+                // ==========================================
+                String userHome = System.getProperty("user.home");
+                String pasta = userHome + File.separator + "Desktop" + File.separator + "notificacoes_venda";
 
+                System.out.println("   📁 Pasta: " + pasta);
+
+                // ==========================================
+                // CRIAR PASTA SE NÃO EXISTIR
+                // ==========================================
+                File pastaFile = new File(pasta);
+                if (!pastaFile.exists()) {
+                    boolean criada = pastaFile.mkdirs();
+                    System.out.println("   📁 Pasta criada: " + criada);
+                }
+
+                // ==========================================
+                // CRIAR MAPA DA NOTIFICAÇÃO
+                // ==========================================
                 Map<String, Object> notificacao = new HashMap<>();
                 notificacao.put("pedidoId", pedidoId);
                 notificacao.put("codPeca", codPeca);
@@ -883,51 +900,71 @@ public class PagamentoServer {
                 notificacao.put("data", new java.util.Date().toString());
                 notificacao.put("status", "PENDENTE");
 
-                String nomeArquivo = pasta + "/venda_" + pedidoId + ".json";
+                // ==========================================
+                // SALVAR ARQUIVO JSON
+                // ==========================================
+                String nomeArquivo = pasta + File.separator + "venda_" + pedidoId + ".json";
+
                 try (FileWriter writer = new FileWriter(nomeArquivo)) {
                     gson.toJson(notificacao, writer);
+                    writer.flush();
                 }
 
+                File arquivo = new File(nomeArquivo);
                 System.out.println("   📢 Notificação criada: " + nomeArquivo);
+                System.out.println("   📄 Tamanho: " + arquivo.length() + " bytes");
+                System.out.println("   ✅ Arquivo existe? " + arquivo.exists());
                 System.out.println("   👤 Cliente: " + cliente);
                 System.out.println("   💰 Valor: R$ " + valor);
 
                 // ==========================================
-                // INICIA THREAD PARA AGUARDAR RESPOSTA DO ATENDENTE
+                // INICIAR THREAD PARA AGUARDAR RESPOSTA
                 // ==========================================
                 new Thread(() -> {
                     try {
-                        long tempoLimite = System.currentTimeMillis() + 60000; // 60 segundos
-                        while (System.currentTimeMillis() < tempoLimite) {
-                            String respostaArquivo = pasta + "/resposta_" + pedidoId + ".json";
+                        long tempoLimite = System.currentTimeMillis() + 60000;
+                        boolean respondido = false;
+
+                        while (!respondido && System.currentTimeMillis() < tempoLimite) {
+                            String respostaArquivo = pasta + File.separator + "resposta_" + pedidoId + ".json";
                             File respFile = new File(respostaArquivo);
+
                             if (respFile.exists()) {
                                 try (FileReader reader = new FileReader(respFile)) {
                                     JsonObject resp = gson.fromJson(reader, JsonObject.class);
                                     boolean aprovado = resp.has("aprovado") && resp.get("aprovado").getAsBoolean();
+
                                     respFile.delete();
                                     new File(nomeArquivo).delete();
 
                                     if (aprovado) {
                                         System.out.println("   ✅ Venda APROVADA pelo atendente!");
-                                        // Registra a venda nas tabelas
                                         registrarVenda(codPeca, cliente, valor, meioPagamento, pedidoId, endereco, retirarLoja, telefone);
                                         atualizarEstoque(codPeca);
                                     } else {
                                         System.out.println("   ❌ Venda REJEITADA pelo atendente!");
                                     }
+                                    respondido = true;
                                 }
-                                break;
                             }
-                            Thread.sleep(1000);
+
+                            if (!respondido) {
+                                Thread.sleep(1000);
+                            }
                         }
-                    } catch (JsonIOException | JsonSyntaxException | IOException | InterruptedException e) {
+
+                        if (!respondido) {
+                            System.out.println("   ⏰ Timeout: Sem resposta para o pedido " + pedidoId);
+                        }
+
+                    } catch (Exception e) {
                         System.err.println("   ❌ Erro ao aguardar resposta: " + e.getMessage());
                     }
                 }).start();
 
-            } catch (JsonIOException | IOException e) {
+            } catch (Exception e) {
                 System.err.println("   ❌ Erro ao enviar notificação: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
