@@ -860,7 +860,7 @@ public class PagamentoServer {
         }
 
         // ==========================================
-        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (ASSÍNCRONA) - VERSÃO COMPLETA
+        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (CORRIGIDO)
         // ==========================================
         private void enviarNotificacaoDesktop(String codPeca, String cliente, double valor,
                                                String meioPagamento, boolean retirarLoja,
@@ -868,20 +868,24 @@ public class PagamentoServer {
                                                String itens) {
             try {
                 // ==========================================
-                // DEFINIR CAMINHO DA PASTA
+                // CAMINHO CORRETO PARA O DESKTOP
                 // ==========================================
                 String userHome = System.getProperty("user.home");
                 String pasta = userHome + File.separator + "Desktop" + File.separator + "notificacoes_venda";
 
-                System.out.println("   📁 Pasta: " + pasta);
+                // ALTERNATIVA: caminho fixo
+                // String pasta = "C:\\Users\\DBC\\Desktop\\notificacoes_venda";
 
-                // ==========================================
-                // CRIAR PASTA SE NÃO EXISTIR
-                // ==========================================
+                System.out.println("   📁 Pasta de notificações: " + pasta);
+
                 File pastaFile = new File(pasta);
                 if (!pastaFile.exists()) {
                     boolean criada = pastaFile.mkdirs();
                     System.out.println("   📁 Pasta criada: " + criada);
+                    if (!criada) {
+                        System.err.println("   ❌ ERRO: Não foi possível criar a pasta!");
+                        return;
+                    }
                 }
 
                 // ==========================================
@@ -891,7 +895,7 @@ public class PagamentoServer {
                 notificacao.put("pedidoId", pedidoId);
                 notificacao.put("codPeca", codPeca);
                 notificacao.put("cliente", cliente);
-                notificacao.put("telefone", telefone);
+                notificacao.put("telefone", telefone != null ? telefone : "Não informado");
                 notificacao.put("valor", valor);
                 notificacao.put("meioPagamento", meioPagamento);
                 notificacao.put("retirarLoja", retirarLoja);
@@ -904,7 +908,6 @@ public class PagamentoServer {
                 // SALVAR ARQUIVO JSON
                 // ==========================================
                 String nomeArquivo = pasta + File.separator + "venda_" + pedidoId + ".json";
-
                 try (FileWriter writer = new FileWriter(nomeArquivo)) {
                     gson.toJson(notificacao, writer);
                     writer.flush();
@@ -916,6 +919,7 @@ public class PagamentoServer {
                 System.out.println("   ✅ Arquivo existe? " + arquivo.exists());
                 System.out.println("   👤 Cliente: " + cliente);
                 System.out.println("   💰 Valor: R$ " + valor);
+                System.out.println("   📱 Telefone: " + telefone);
 
                 // ==========================================
                 // INICIAR THREAD PARA AGUARDAR RESPOSTA
