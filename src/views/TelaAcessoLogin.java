@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import models.Usuario;
+import paginaweb.NotificacaoVendasService;
 import util.ConfigLoader;
 import util.MensagemSistema;
 
@@ -150,6 +151,7 @@ public class TelaAcessoLogin extends javax.swing.JFrame {
         
         // 🚀 COMANDO DE FECHAMENTO CONTÁBIL: Encerra toda a JVM com segurança
         btnFecharJanela.addActionListener(e -> {
+            NotificacaoVendasService.parar();
             System.exit(0);
         });
         
@@ -394,15 +396,28 @@ public class TelaAcessoLogin extends javax.swing.JFrame {
             if(!user.isEmpty() && user.equals(usuario) && !password.isEmpty() && password.equals(senha)){
                 System.out.println("User: "+campoUsuario.getText()+" Senha: "+campoSenha.getText());
                 if(user.equals(usuario) && password.equals(senha)){
-                    // 🔥 INICIA O SERVIDOR DE PAGAMENTOS APÓS LOGIN VÁLIDO
+                    // ==========================================
+                    // 🔥 INICIA O SERVIDOR DE PAGAMENTOS
+                    // ==========================================
                     try {
                         util.PagamentoServer.iniciar();
                         System.out.println("✅ Servidor de pagamentos iniciado com sucesso!");
                     } catch (IOException e) {
                         System.err.println("❌ Erro ao iniciar servidor de pagamentos: " + e.getMessage());
                         MensagemSistema.mostrarAvisoDark(this, "Erro ao iniciar servidor de pagamentos: " + e.getMessage());
-                        // Continua mesmo com erro no servidor, mas avisa o usuário
                     }
+                    
+                    // ==========================================
+                    // 🔥 INICIA O SERVIÇO DE NOTIFICAÇÃO DE VENDAS
+                    // ==========================================
+                    try {
+                        NotificacaoVendasService.iniciar();
+                        System.out.println("✅ Serviço de notificação de vendas iniciado com sucesso!");
+                    } catch (Exception e) {
+                        System.err.println("❌ Erro ao iniciar serviço de notificações: " + e.getMessage());
+                        MensagemSistema.mostrarAvisoDark(this, "Erro ao iniciar serviço de notificações: " + e.getMessage());
+                    }
+                    
                     telaMenu.setVisible(true);
                     System.out.println("Acessou o sistema com Sucesso!!!");
                     dispose();

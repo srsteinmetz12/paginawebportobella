@@ -14,8 +14,11 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PagamentoServer {
@@ -51,6 +54,7 @@ public class PagamentoServer {
         server.createContext("/api/pagamentos/finalizar", new FinalizarCompraHandler());
         server.createContext("/api/frete/calcular", new CalcularFreteHandler());
         server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
+        server.createContext("/api/pagamentos/consultar", new ConsultarNotificacoesHandler());
         
         server.setExecutor(null);
         server.start();
@@ -60,6 +64,7 @@ public class PagamentoServer {
         System.out.println("   💳 MERCADO PAGO: SOMENTE PARA LINK DE PAGAMENTO");
         System.out.println("   📦 Frete: Cálculo por CEP (ViaCEP + Fallback)");
         System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
+        System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
     }
     
     public static void parar() {
@@ -833,12 +838,10 @@ public class PagamentoServer {
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
                 // ==========================================
-                // SALVAR NOTIFICAÇÃO PARA O DESKTOP (SEM BLOQUEAR)
+                // 🔥 SALVAR NO BANCO DE DADOS
                 // ==========================================
-                enviarNotificacaoDesktop(
-                    codPeca, nomeCliente, valorTotal, meioPagamento, 
-                    retirarLoja, endereco, pedidoId, telefone, itens
-                );
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, valorTotal, meioPagamento, 
+                                      retirarLoja, endereco, pedidoId, telefone, itens);
 
                 // ==========================================
                 // RETORNA SUCESSO IMEDIATO PARA O CLIENTE
@@ -860,115 +863,116 @@ public class PagamentoServer {
         }
 
         // ==========================================
-        // ENVIAR NOTIFICAÇÃO PARA O DESKTOP (CORRIGIDO)
+        // SALVAR NOTIFICAÇÃO NO BANCO DE DADOS
         // ==========================================
-        private void enviarNotificacaoDesktop(String codPeca, String cliente, double valor,
+        private void salvarNotificacaoNoBanco(String codPeca, String cliente, double valor,
                                                String meioPagamento, boolean retirarLoja,
                                                String endereco, String pedidoId, String telefone,
                                                String itens) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+
             try {
-                // ==========================================
-                // CAMINHO CORRETO PARA O DESKTOP
-                // ==========================================
-                String userHome = System.getProperty("user.home");
-                String pasta = userHome + File.separator + "Desktop" + File.separator + "notificacoes_venda";
+                con = ConnectionDB.getConnectionCloud();
 
-                // ALTERNATIVA: caminho fixo
-                // String pasta = "C:\\Users\\DBC\\Desktop\\notificacoes_venda";
+                String sql = "INSERT INTO notificacoes_pendentes " +
+                             "(pedido_id, cod_peca, cliente, telefone, valor, meio_pagamento, " +
+                             "endereco, retirar_loja, itens, data_criacao, status, lida) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
 
-                System.out.println("   📁 Pasta de notificações: " + pasta);
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, pedidoId);
+                stmt.setString(2, codPeca);
+                stmt.setString(3, cliente);
+                stmt.setString(4, telefone);
+                stmt.setDouble(5, valor);
+                stmt.setString(6, meioPagamento);
+                stmt.setString(7, endereco);
+                stmt.setBoolean(8, retirarLoja);
+                stmt.setString(9, itens);
 
-                File pastaFile = new File(pasta);
-                if (!pastaFile.exists()) {
-                    boolean criada = pastaFile.mkdirs();
-                    System.out.println("   📁 Pasta criada: " + criada);
-                    if (!criada) {
-                        System.err.println("   ❌ ERRO: Não foi possível criar a pasta!");
-                        return;
-                    }
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    System.out.println("   ✅ Notificação salva no banco! ID: " + pedidoId);
                 }
 
-                // ==========================================
-                // CRIAR MAPA DA NOTIFICAÇÃO
-                // ==========================================
-                Map<String, Object> notificacao = new HashMap<>();
-                notificacao.put("pedidoId", pedidoId);
-                notificacao.put("codPeca", codPeca);
-                notificacao.put("cliente", cliente);
-                notificacao.put("telefone", telefone != null ? telefone : "Não informado");
-                notificacao.put("valor", valor);
-                notificacao.put("meioPagamento", meioPagamento);
-                notificacao.put("retirarLoja", retirarLoja);
-                notificacao.put("endereco", endereco);
-                notificacao.put("itens", itens);
-                notificacao.put("data", new java.util.Date().toString());
-                notificacao.put("status", "PENDENTE");
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("   ❌ Erro ao salvar notificação: " + e.getMessage());
+            } finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+        }
+    }
+    
+    // ==========================================
+    // HANDLER: CONSULTAR NOTIFICAÇÕES
+    // ==========================================
+    static class ConsultarNotificacoesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
-                // ==========================================
-                // SALVAR ARQUIVO JSON
-                // ==========================================
-                String nomeArquivo = pasta + File.separator + "venda_" + pedidoId + ".json";
-                try (FileWriter writer = new FileWriter(nomeArquivo)) {
-                    gson.toJson(notificacao, writer);
-                    writer.flush();
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            try {
+                List<Map<String, Object>> notificacoes = new ArrayList<>();
+                Connection con = null;
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
+
+                try {
+                    con = ConnectionDB.getConnectionCloud();
+
+                    // Busca notificações PENDENTES e NÃO LIDAS
+                    String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                                 "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
+                                 "FROM notificacoes_pendentes " +
+                                 "WHERE status = 'PENDENTE' AND lida = 0 " +
+                                 "ORDER BY data_criacao ASC";
+
+                    stmt = con.prepareStatement(sql);
+                    rs = stmt.executeQuery();
+
+                    while (rs.next()) {
+                        Map<String, Object> notif = new HashMap<>();
+                        notif.put("id", rs.getInt("id"));
+                        notif.put("pedidoId", rs.getString("pedido_id"));
+                        notif.put("codPeca", rs.getString("cod_peca"));
+                        notif.put("cliente", rs.getString("cliente"));
+                        notif.put("telefone", rs.getString("telefone"));
+                        notif.put("valor", rs.getDouble("valor"));
+                        notif.put("meioPagamento", rs.getString("meio_pagamento"));
+                        notif.put("endereco", rs.getString("endereco"));
+                        notif.put("retirarLoja", rs.getBoolean("retirar_loja"));
+                        notif.put("itens", rs.getString("itens"));
+                        notif.put("dataCriacao", rs.getTimestamp("data_criacao").toString());
+                        notificacoes.add(notif);
+                    }
+
+                } finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                    try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                    try { if (con != null) con.close(); } catch (SQLException e) {}
                 }
 
-                File arquivo = new File(nomeArquivo);
-                System.out.println("   📢 Notificação criada: " + nomeArquivo);
-                System.out.println("   📄 Tamanho: " + arquivo.length() + " bytes");
-                System.out.println("   ✅ Arquivo existe? " + arquivo.exists());
-                System.out.println("   👤 Cliente: " + cliente);
-                System.out.println("   💰 Valor: R$ " + valor);
-                System.out.println("   📱 Telefone: " + telefone);
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("notificacoes", notificacoes);
+                response.put("total", notificacoes.size());
 
-                // ==========================================
-                // INICIAR THREAD PARA AGUARDAR RESPOSTA
-                // ==========================================
-                new Thread(() -> {
-                    try {
-                        long tempoLimite = System.currentTimeMillis() + 60000;
-                        boolean respondido = false;
+                sendResponse(exchange, 200, gson.toJson(response));
 
-                        while (!respondido && System.currentTimeMillis() < tempoLimite) {
-                            String respostaArquivo = pasta + File.separator + "resposta_" + pedidoId + ".json";
-                            File respFile = new File(respostaArquivo);
-
-                            if (respFile.exists()) {
-                                try (FileReader reader = new FileReader(respFile)) {
-                                    JsonObject resp = gson.fromJson(reader, JsonObject.class);
-                                    boolean aprovado = resp.has("aprovado") && resp.get("aprovado").getAsBoolean();
-
-                                    respFile.delete();
-                                    new File(nomeArquivo).delete();
-
-                                    if (aprovado) {
-                                        System.out.println("   ✅ Venda APROVADA pelo atendente!");
-                                        registrarVenda(codPeca, cliente, valor, meioPagamento, pedidoId, endereco, retirarLoja, telefone);
-                                        atualizarEstoque(codPeca);
-                                    } else {
-                                        System.out.println("   ❌ Venda REJEITADA pelo atendente!");
-                                    }
-                                    respondido = true;
-                                }
-                            }
-
-                            if (!respondido) {
-                                Thread.sleep(1000);
-                            }
-                        }
-
-                        if (!respondido) {
-                            System.out.println("   ⏰ Timeout: Sem resposta para o pedido " + pedidoId);
-                        }
-
-                    } catch (Exception e) {
-                        System.err.println("   ❌ Erro ao aguardar resposta: " + e.getMessage());
-                    }
-                }).start();
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro ao enviar notificação: " + e.getMessage());
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException | SQLException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
             }
         }
     }
