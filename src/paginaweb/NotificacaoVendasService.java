@@ -289,7 +289,7 @@ public class NotificacaoVendasService {
             int total = totalNotificacoes.get();
             
             String titulo = "🛍️ NOVA VENDA ONLINE";
-            String infoFila;
+            String infoFila = null;
             
             if (total > 0) {
                 infoFila = "📋 " + atual + "ª de " + total;
