@@ -127,20 +127,16 @@ public class NotificacaoVendasService {
             try { Thread.sleep(300); } catch (InterruptedException e) {}
             Toolkit.getDefaultToolkit().beep();
 
-            // ==========================================
-            // CRIAR POPUP SEM DECORAÇÃO (para arrastar)
-            // ==========================================
-            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA VITRINE ON LINE");
+            // CRIAR POPUP
+            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA");
             popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             popupFrame.setSize(580, 620);
             popupFrame.setLocationRelativeTo(null);
             popupFrame.setAlwaysOnTop(true);
             popupFrame.setResizable(false);
-            popupFrame.setUndecorated(true); // Remove decoração para arrastar
+            popupFrame.setUndecorated(true);
 
-            // ==========================================
             // PAINEL PRINCIPAL
-            // ==========================================
             JPanel panel = new JPanel();
             panel.setLayout(new BorderLayout(10, 10));
             panel.setBorder(BorderFactory.createCompoundBorder(
@@ -148,9 +144,7 @@ public class NotificacaoVendasService {
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)
             ));
 
-            // ==========================================
             // BARRA DE TÍTULO (PARA ARRASTAR)
-            // ==========================================
             JPanel titleBar = new JPanel(new BorderLayout());
             titleBar.setBackground(new Color(45, 45, 45));
             titleBar.setPreferredSize(new Dimension(0, 35));
@@ -161,7 +155,6 @@ public class NotificacaoVendasService {
             lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
             titleBar.add(lblTitle, BorderLayout.WEST);
             
-            // Botão Fechar (X)
             JButton btnClose = new JButton("✕");
             btnClose.setFont(new Font("Segoe UI", Font.BOLD, 14));
             btnClose.setForeground(Color.WHITE);
@@ -186,9 +179,7 @@ public class NotificacaoVendasService {
             });
             titleBar.add(btnClose, BorderLayout.EAST);
             
-            // ==========================================
-            // 🔥 ADICIONA ARRASTAR À BARRA DE TÍTULO
-            // ==========================================
+            // ADICIONA ARRASTAR À BARRA DE TÍTULO
             final int[] coordX = {0};
             final int[] coordY = {0};
             
@@ -209,9 +200,7 @@ public class NotificacaoVendasService {
 
             panel.add(titleBar, BorderLayout.NORTH);
 
-            // ==========================================
             // CORPO DO POPUP
-            // ==========================================
             JPanel bodyPanel = new JPanel();
             bodyPanel.setLayout(new BorderLayout(10, 10));
             bodyPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
@@ -254,9 +243,7 @@ public class NotificacaoVendasService {
 
             panel.add(bodyPanel, BorderLayout.CENTER);
 
-            // ==========================================
             // BOTÕES
-            // ==========================================
             JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
             JButton btnConfirmar = new JButton("✅ CONFIRMAR PAGAMENTO");
@@ -266,13 +253,15 @@ public class NotificacaoVendasService {
             btnConfirmar.setPreferredSize(new Dimension(250, 50));
             btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnConfirmar.addActionListener(e -> {
-                responderNotificacao(id, pedidoId, true);
-                // ==========================================
-                // 🔥 FECHA A JANELA
-                // ==========================================
+                // Fecha a janela imediatamente
                 popupFrame.dispose();
                 popupFrame = null;
-                notificacoesProcessadas.remove(id);
+                
+                // Processa a resposta em uma thread separada
+                new Thread(() -> {
+                    responderNotificacao(id, pedidoId, true);
+                    notificacoesProcessadas.remove(id);
+                }).start();
             });
 
             JButton btnRejeitar = new JButton("❌ REJEITAR");
@@ -282,13 +271,15 @@ public class NotificacaoVendasService {
             btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnRejeitar.addActionListener(e -> {
-                responderNotificacao(id, pedidoId, false);
-                // ==========================================
-                // 🔥 FECHA A JANELA
-                // ==========================================
+                // Fecha a janela imediatamente
                 popupFrame.dispose();
                 popupFrame = null;
-                notificacoesProcessadas.remove(id);
+                
+                // Processa a resposta em uma thread separada
+                new Thread(() -> {
+                    responderNotificacao(id, pedidoId, false);
+                    notificacoesProcessadas.remove(id);
+                }).start();
             });
 
             btnPanel.add(btnConfirmar);
@@ -324,6 +315,9 @@ public class NotificacaoVendasService {
         panel.add(val);
     }
 
+    // ==========================================
+    // RESPONDER NOTIFICAÇÃO (SEM JOPTIONPANE)
+    // ==========================================
     private static void responderNotificacao(int id, String pedidoId, boolean aprovado) {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -366,18 +360,26 @@ public class NotificacaoVendasService {
                 
                 notificacoesProcessadas.remove(id);
                 
-                JOptionPane.showMessageDialog(null, 
-                    "✅ " + (aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada!"),
-                    "Sucesso", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                // ==========================================
+                // MOSTRA MENSAGEM EM UMA THREAD SEPARADA
+                // ==========================================
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null, 
+                        "✅ " + (aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada!"),
+                        "Sucesso", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                });
             }
             
         } catch (Exception e) {
             System.err.println("❌ Erro ao responder notificação: " + e.getMessage());
-            JOptionPane.showMessageDialog(null, 
-                "❌ Erro ao processar resposta: " + e.getMessage(),
-                "Erro", 
-                JOptionPane.ERROR_MESSAGE);
+            
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(null, 
+                    "❌ Erro ao processar resposta: " + e.getMessage(),
+                    "Erro", 
+                    JOptionPane.ERROR_MESSAGE);
+            });
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
             try { if (con != null) con.close(); } catch (SQLException e) {}
