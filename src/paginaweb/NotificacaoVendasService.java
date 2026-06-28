@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NotificacaoVendasService {
 
@@ -28,9 +29,10 @@ public class NotificacaoVendasService {
     // 🔥 FILA DE NOTIFICAÇÕES (FIFO)
     // ==========================================
     private static final Queue<Notificacao> filaNotificacoes = new LinkedList<>();
-    private static final Object lockFila = new Object();
-    private static boolean processando = false;
-    private static boolean popupAberto = false;
+    private static final AtomicBoolean processando = new AtomicBoolean(false);
+    private static final AtomicBoolean popupAberto = new AtomicBoolean(false);
+    private static final AtomicInteger totalNotificacoes = new AtomicInteger(0);
+    private static final AtomicInteger notificacaoAtual = new AtomicInteger(0);
 
     // ==========================================
     // CLASSE PARA ARMAZENAR DADOS DA NOTIFICAÇÃO
@@ -71,11 +73,14 @@ public class NotificacaoVendasService {
         System.out.println("📋 Modo FIFO - Processando em ordem de chegada");
         System.out.println("🔔 ========================================");
 
-        synchronized (lockFila) {
+        // Resetar estados
+        synchronized (filaNotificacoes) {
             filaNotificacoes.clear();
-            processando = false;
-            popupAberto = false;
         }
+        processando.set(false);
+        popupAberto.set(false);
+        totalNotificacoes.set(0);
+        notificacaoAtual.set(0);
 
         scheduler = Executors.newScheduledThreadPool(2);
         
@@ -103,7 +108,7 @@ public class NotificacaoVendasService {
                     System.err.println("❌ Erro ao processar fila: " + e.getMessage());
                 }
             }
-        }, 1, 3, TimeUnit.SECONDS);
+        }, 1, 2, TimeUnit.SECONDS);
     }
 
     // ==========================================
@@ -126,8 +131,8 @@ public class NotificacaoVendasService {
             stmt = con.prepareStatement(sql);
             rs = stmt.executeQuery();
 
-            synchronized (lockFila) {
-                int adicionadas = 0;
+            int adicionadas = 0;
+            synchronized (filaNotificacoes) {
                 while (rs.next()) {
                     int id = rs.getInt("id");
                     
@@ -153,6 +158,7 @@ public class NotificacaoVendasService {
                 }
                 
                 if (adicionadas > 0) {
+                    totalNotificacoes.set(filaNotificacoes.size());
                     System.out.println("📋 Total na fila: " + filaNotificacoes.size() + " notificação(ões)");
                 }
             }
@@ -170,43 +176,35 @@ public class NotificacaoVendasService {
     // PROCESSAR FILA (FIFO)
     // ==========================================
     private static void processarFila() {
-        synchronized (lockFila) {
-            // ==========================================
-            // VERIFICA SE PODE PROCESSAR
-            // ==========================================
-            if (popupAberto) {
-                System.out.println("⏳ Popup aberto, aguardando...");
-                return;
-            }
-            
-            if (processando) {
-                System.out.println("⏳ Processando, aguardando...");
-                return;
-            }
-            
+        // Verifica se pode processar
+        if (popupAberto.get()) {
+            return;
+        }
+        
+        if (processando.get()) {
+            return;
+        }
+        
+        Notificacao notif = null;
+        synchronized (filaNotificacoes) {
             if (filaNotificacoes.isEmpty()) {
                 return;
             }
-            
-            // ==========================================
-            // PEGA A PRIMEIRA NOTIFICAÇÃO DA FILA
-            // ==========================================
-            Notificacao notif = filaNotificacoes.poll();
-            
-            if (notif == null) {
-                return;
-            }
-            
-            processando = true;
-            popupAberto = true;
-            
-            System.out.println("🔄 Processando notificação: " + notif.pedidoId + " (Fila restante: " + filaNotificacoes.size() + ")");
-            
-            // ==========================================
-            // EXIBE O POPUP (FORA DO LOCK)
-            // ==========================================
-            exibirPopup(notif);
+            notif = filaNotificacoes.poll();
         }
+        
+        if (notif == null) {
+            return;
+        }
+        
+        // Marca como processando
+        processando.set(true);
+        popupAberto.set(true);
+        
+        System.out.println("🔄 Processando notificação: " + notif.pedidoId + " (Restam: " + filaNotificacoes.size() + ")");
+        
+        // Exibe o popup
+        exibirPopup(notif);
     }
 
     // ==========================================
@@ -247,13 +245,25 @@ public class NotificacaoVendasService {
             titleBar.setBackground(new Color(45, 45, 45));
             titleBar.setPreferredSize(new Dimension(0, 35));
             
+            // ==========================================
+            // 🔥 CALCULA O CONTADOR CORRETAMENTE
+            // ==========================================
+            int restantes;
+            synchronized (filaNotificacoes) {
+                restantes = filaNotificacoes.size();
+            }
+            int atual = notificacaoAtual.incrementAndGet();
+            int total = totalNotificacoes.get();
+            
             String titulo = "🛍️ NOVA VENDA ONLINE";
-            int tamanhoFila;
-            synchronized (lockFila) {
-                tamanhoFila = filaNotificacoes.size();
-                if (tamanhoFila > 0) {
-                    titulo += " (" + (tamanhoFila + 1) + " na fila)";
+            String infoFila = null;
+            
+            if (total > 0) {
+                infoFila = "📋 " + atual + "ª de " + total;
+                if (restantes > 0) {
+                    infoFila += " (mais " + restantes + " aguardando)";
                 }
+                titulo += " (" + infoFila + ")";
             }
             
             JLabel lblTitle = new JLabel(titulo);
@@ -280,15 +290,10 @@ public class NotificacaoVendasService {
                 }
             });
             btnClose.addActionListener(e -> {
-                // ==========================================
-                // 🔥 FECHA O POPUP E LIBERA A FILA
-                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
-                synchronized (lockFila) {
-                    popupAberto = false;
-                    processando = false;
-                }
+                popupAberto.set(false);
+                processando.set(false);
                 System.out.println("🚪 Popup fechado pelo usuário (X)");
             });
             titleBar.add(btnClose, BorderLayout.EAST);
@@ -323,15 +328,6 @@ public class NotificacaoVendasService {
             JPanel infoFilaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             infoFilaPanel.setBackground(Color.WHITE);
             infoFilaPanel.setOpaque(true);
-            
-            String infoFila;
-            synchronized (lockFila) {
-                int tamanho = filaNotificacoes.size();
-                infoFila = "📋 Notificação " + (tamanho + 1) + " de " + (tamanho + 1);
-                if (tamanho > 0) {
-                    infoFila += " (mais " + tamanho + " aguardando)";
-                }
-            }
             
             JLabel lblInfoFila = new JLabel(infoFila);
             lblInfoFila.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -387,26 +383,18 @@ public class NotificacaoVendasService {
             btnConfirmar.setPreferredSize(new Dimension(250, 50));
             btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnConfirmar.addActionListener(e -> {
-                // ==========================================
-                // 🔥 FECHA POPUP
-                // ==========================================
+                // Fecha popup
                 popupFrame.dispose();
                 popupFrame = null;
                 
                 System.out.println("✅ Cliente confirmou pagamento: " + notif.pedidoId);
                 
-                // ==========================================
-                // PROCESSAR EM THREAD SEPARADA
-                // ==========================================
+                // Processa em thread separada
                 new Thread(() -> {
                     responderNotificacao(notif.id, notif.pedidoId, true);
-                    // ==========================================
-                    // 🔥 LIBERA A FILA APÓS PROCESSAR
-                    // ==========================================
-                    synchronized (lockFila) {
-                        popupAberto = false;
-                        processando = false;
-                    }
+                    // Libera a fila
+                    popupAberto.set(false);
+                    processando.set(false);
                     System.out.println("🔄 Fila liberada para próxima notificação");
                 }).start();
             });
@@ -418,26 +406,18 @@ public class NotificacaoVendasService {
             btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnRejeitar.addActionListener(e -> {
-                // ==========================================
-                // 🔥 FECHA POPUP
-                // ==========================================
+                // Fecha popup
                 popupFrame.dispose();
                 popupFrame = null;
                 
                 System.out.println("❌ Cliente rejeitou pagamento: " + notif.pedidoId);
                 
-                // ==========================================
-                // PROCESSAR EM THREAD SEPARADA
-                // ==========================================
+                // Processa em thread separada
                 new Thread(() -> {
                     responderNotificacao(notif.id, notif.pedidoId, false);
-                    // ==========================================
-                    // 🔥 LIBERA A FILA APÓS PROCESSAR
-                    // ==========================================
-                    synchronized (lockFila) {
-                        popupAberto = false;
-                        processando = false;
-                    }
+                    // Libera a fila
+                    popupAberto.set(false);
+                    processando.set(false);
                     System.out.println("🔄 Fila liberada para próxima notificação");
                 }).start();
             });
@@ -613,11 +593,11 @@ public class NotificacaoVendasService {
             popupFrame.dispose();
             popupFrame = null;
         }
-        synchronized (lockFila) {
+        synchronized (filaNotificacoes) {
             filaNotificacoes.clear();
-            processando = false;
-            popupAberto = false;
         }
+        processando.set(false);
+        popupAberto.set(false);
         System.out.println("⏹️ Serviço de notificações parado.");
     }
 }
