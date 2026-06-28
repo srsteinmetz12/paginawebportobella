@@ -1,6 +1,5 @@
 package paginaweb;
 
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import connection.ConnectionDB;
@@ -11,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,12 @@ public class NotificacaoVendasService {
     private static JFrame popupFrame;
 
     // ==========================================
+    // 🔥 CONTROLE DE NOTIFICAÇÕES PROCESSADAS
+    // ==========================================
+    private static final Set<Integer> notificacoesProcessadas = new HashSet<>();
+    private static int notificacaoAtualId = -1;
+
+    // ==========================================
     // INICIAR O SERVIÇO DE NOTIFICAÇÕES
     // ==========================================
     public static void iniciar() {
@@ -31,6 +38,9 @@ public class NotificacaoVendasService {
         System.out.println("🔔 ========================================");
         System.out.println("🔄 Consultando notificações a cada 5 segundos...");
         System.out.println("🔔 ========================================");
+
+        // Limpa o controle ao iniciar
+        notificacoesProcessadas.clear();
 
         scheduler = Executors.newScheduledThreadPool(1);
         
@@ -67,6 +77,14 @@ public class NotificacaoVendasService {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
+                
+                // ==========================================
+                // 🔥 VERIFICA SE JÁ FOI PROCESSADA
+                // ==========================================
+                if (notificacoesProcessadas.contains(id)) {
+                    continue; // Pula notificações já processadas
+                }
+                
                 String pedidoId = rs.getString("pedido_id");
                 String cliente = rs.getString("cliente");
                 String telefone = rs.getString("telefone");
@@ -77,13 +95,31 @@ public class NotificacaoVendasService {
                 String endereco = rs.getString("endereco");
                 String dataCriacao = rs.getString("data_criacao");
 
-                System.out.println("📥 Nova notificação encontrada: " + pedidoId);
+                System.out.println("📥 Nova notificação encontrada: " + pedidoId + " (ID: " + id + ")");
+                
+                // ==========================================
+                // 🔥 MARCA COMO PROCESSADA
+                // ==========================================
+                notificacoesProcessadas.add(id);
+                notificacaoAtualId = id;
 
                 // ==========================================
-                // EXIBIR POPUP
+                // EXIBIR POPUP (BLOQUEANTE)
                 // ==========================================
                 exibirPopup(id, pedidoId, cliente, telefone, valor, codPeca, 
                             meioPagamento, retirarLoja, endereco, dataCriacao);
+                
+                // ==========================================
+                // 🔥 AGUARDA O POPUP SER FECHADO
+                // ==========================================
+                while (popupFrame != null && popupFrame.isVisible()) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -103,13 +139,20 @@ public class NotificacaoVendasService {
                                      boolean retirarLoja, String endereco, String dataCriacao) {
         
         SwingUtilities.invokeLater(() -> {
+            // ==========================================
+            // FECHA POPUP ANTERIOR SE EXISTIR
+            // ==========================================
+            if (popupFrame != null && popupFrame.isVisible()) {
+                popupFrame.dispose();
+            }
+
             // SINAL SONORO
             Toolkit.getDefaultToolkit().beep();
             try { Thread.sleep(300); } catch (InterruptedException e) {}
             Toolkit.getDefaultToolkit().beep();
 
             // CRIAR POPUP
-            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA");
+            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA #" + id);
             popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             popupFrame.setSize(580, 620);
             popupFrame.setLocationRelativeTo(null);
@@ -182,6 +225,10 @@ public class NotificacaoVendasService {
                 responderNotificacao(id, pedidoId, true);
                 popupFrame.dispose();
                 popupFrame = null;
+                // ==========================================
+                // 🔥 REMOVE DO CONTROLE APÓS RESPONDER
+                // ==========================================
+                notificacoesProcessadas.remove(id);
             });
 
             JButton btnRejeitar = new JButton("❌ REJEITAR");
@@ -194,6 +241,10 @@ public class NotificacaoVendasService {
                 responderNotificacao(id, pedidoId, false);
                 popupFrame.dispose();
                 popupFrame = null;
+                // ==========================================
+                // 🔥 REMOVE DO CONTROLE APÓS RESPONDER
+                // ==========================================
+                notificacoesProcessadas.remove(id);
             });
 
             btnPanel.add(btnConfirmar);
@@ -269,13 +320,17 @@ public class NotificacaoVendasService {
                         boolean retirarLoja = rs.getBoolean("retirar_loja");
                         String telefone = rs.getString("telefone");
                         
-                        // Registrar venda e baixar estoque
                         registrarVenda(codPeca, cliente, valor, meioPagamento, pedidoId, endereco, retirarLoja, telefone);
                         atualizarEstoque(codPeca);
                     }
                     rs.close();
                     stmtSelect.close();
                 }
+                
+                // ==========================================
+                // 🔥 REMOVE DO CONTROLE
+                // ==========================================
+                notificacoesProcessadas.remove(id);
                 
                 JOptionPane.showMessageDialog(null, 
                     "✅ " + (aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada!"),
@@ -375,6 +430,10 @@ public class NotificacaoVendasService {
                 scheduler.shutdownNow();
             }
         }
+        if (popupFrame != null) {
+            popupFrame.dispose();
+        }
+        notificacoesProcessadas.clear();
         System.out.println("⏹️ Serviço de notificações parado.");
     }
 }
