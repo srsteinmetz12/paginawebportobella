@@ -15,6 +15,7 @@ import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NotificacaoVendasService {
 
@@ -27,7 +28,8 @@ public class NotificacaoVendasService {
     // 🔥 FILA DE NOTIFICAÇÕES (FIFO)
     // ==========================================
     private static final Queue<Notificacao> filaNotificacoes = new LinkedList<>();
-    private static boolean processandoFila = false;
+    private static final AtomicBoolean processandoFila = new AtomicBoolean(false);
+    private static final AtomicBoolean popupAberto = new AtomicBoolean(false);
 
     private static final Object lock = new Object();
 
@@ -70,10 +72,10 @@ public class NotificacaoVendasService {
         System.out.println("📋 Modo FIFO - Processando em ordem de chegada");
         System.out.println("🔔 ========================================");
 
-        // Limpa a fila ao iniciar
         synchronized (lock) {
             filaNotificacoes.clear();
-            processandoFila = false;
+            processandoFila.set(false);
+            popupAberto.set(false);
         }
 
         scheduler = Executors.newScheduledThreadPool(2);
@@ -120,7 +122,7 @@ public class NotificacaoVendasService {
                          "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
                          "FROM notificacoes_pendentes " +
                          "WHERE status = 'PENDENTE' AND lida = 0 " +
-                         "ORDER BY data_criacao ASC"; // 🔥 ORDEM DE CHEGADA
+                         "ORDER BY data_criacao ASC";
             
             stmt = con.prepareStatement(sql);
             rs = stmt.executeQuery();
@@ -130,7 +132,6 @@ public class NotificacaoVendasService {
                 while (rs.next()) {
                     int id = rs.getInt("id");
                     
-                    // Verifica se já está na fila ou processada
                     boolean jaNaFila = filaNotificacoes.stream().anyMatch(n -> n.id == id);
                     
                     if (!jaNaFila) {
@@ -170,9 +171,19 @@ public class NotificacaoVendasService {
     // PROCESSAR FILA (FIFO)
     // ==========================================
     private static void processarFila() {
+        // ==========================================
+        // VERIFICA SE PODE PROCESSAR
+        // ==========================================
+        if (popupAberto.get()) {
+            return; // Popup já está aberto, aguarda
+        }
+        
+        if (processandoFila.get()) {
+            return; // Já está processando
+        }
+        
         synchronized (lock) {
-            // Se já está processando ou fila vazia, sai
-            if (processandoFila || filaNotificacoes.isEmpty()) {
+            if (filaNotificacoes.isEmpty()) {
                 return;
             }
             
@@ -183,7 +194,8 @@ public class NotificacaoVendasService {
                 return;
             }
             
-            processandoFila = true;
+            processandoFila.set(true);
+            popupAberto.set(true);
             
             System.out.println("🔄 Processando notificação: " + notif.pedidoId + " (Fila restante: " + filaNotificacoes.size() + ")");
             
@@ -229,9 +241,6 @@ public class NotificacaoVendasService {
             titleBar.setBackground(new Color(45, 45, 45));
             titleBar.setPreferredSize(new Dimension(0, 35));
             
-            // ==========================================
-            // 🔥 MOSTRA QUANTOS NA FILA
-            // ==========================================
             String titulo = "🛍️ NOVA VENDA ONLINE";
             synchronized (lock) {
                 if (filaNotificacoes.size() > 0) {
@@ -263,14 +272,13 @@ public class NotificacaoVendasService {
                 }
             });
             btnClose.addActionListener(e -> {
+                // ==========================================
+                // 🔥 FECHA O POPUP E LIBERA A FILA
+                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
-                // ==========================================
-                // 🔥 LIBERA A FILA PARA A PRÓXIMA NOTIFICAÇÃO
-                // ==========================================
-                synchronized (lock) {
-                    processandoFila = false;
-                }
+                popupAberto.set(false);
+                processandoFila.set(false);
             });
             titleBar.add(btnClose, BorderLayout.EAST);
             
@@ -300,18 +308,17 @@ public class NotificacaoVendasService {
             bodyPanel.setLayout(new BorderLayout(10, 10));
             bodyPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 
-            // ==========================================
-            // 🔥 INFORMA POSIÇÃO NA FILA
-            // ==========================================
+            // INFORMA POSIÇÃO NA FILA
             JPanel infoFilaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             infoFilaPanel.setBackground(Color.WHITE);
             infoFilaPanel.setOpaque(true);
             
             String infoFila;
             synchronized (lock) {
-                infoFila = "📋 " + (filaNotificacoes.size() + 1) + "ª notificação de " + (filaNotificacoes.size() + 1);
-                if (filaNotificacoes.size() > 0) {
-                    infoFila += " (mais " + filaNotificacoes.size() + " aguardando)";
+                int tamanho = filaNotificacoes.size();
+                infoFila = "📋 Notificação " + (tamanho + 1) + " de " + (tamanho + 1);
+                if (tamanho > 0) {
+                    infoFila += " (mais " + tamanho + " aguardando)";
                 }
             }
             
@@ -369,17 +376,16 @@ public class NotificacaoVendasService {
             btnConfirmar.setPreferredSize(new Dimension(250, 50));
             btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnConfirmar.addActionListener(e -> {
+                // ==========================================
+                // 🔥 FECHA POPUP E LIBERA FILA
+                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
+                popupAberto.set(false);
+                processandoFila.set(false);
                 
                 new Thread(() -> {
                     responderNotificacao(notif.id, notif.pedidoId, true);
-                    // ==========================================
-                    // 🔥 LIBERA A FILA PARA PRÓXIMA NOTIFICAÇÃO
-                    // ==========================================
-                    synchronized (lock) {
-                        processandoFila = false;
-                    }
                 }).start();
             });
 
@@ -390,17 +396,16 @@ public class NotificacaoVendasService {
             btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnRejeitar.addActionListener(e -> {
+                // ==========================================
+                // 🔥 FECHA POPUP E LIBERA FILA
+                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
+                popupAberto.set(false);
+                processandoFila.set(false);
                 
                 new Thread(() -> {
                     responderNotificacao(notif.id, notif.pedidoId, false);
-                    // ==========================================
-                    // 🔥 LIBERA A FILA PARA PRÓXIMA NOTIFICAÇÃO
-                    // ==========================================
-                    synchronized (lock) {
-                        processandoFila = false;
-                    }
                 }).start();
             });
 
@@ -577,7 +582,8 @@ public class NotificacaoVendasService {
         }
         synchronized (lock) {
             filaNotificacoes.clear();
-            processandoFila = false;
+            processandoFila.set(false);
+            popupAberto.set(false);
         }
         System.out.println("⏹️ Serviço de notificações parado.");
     }
