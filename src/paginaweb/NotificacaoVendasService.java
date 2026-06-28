@@ -10,8 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,33 +22,93 @@ public class NotificacaoVendasService {
     private static ScheduledExecutorService scheduler;
     private static boolean executando = true;
     private static JFrame popupFrame;
+    
+    // ==========================================
+    // 🔥 FILA DE NOTIFICAÇÕES (FIFO)
+    // ==========================================
+    private static final Queue<Notificacao> filaNotificacoes = new LinkedList<>();
+    private static boolean processandoFila = false;
 
-    private static final Set<Integer> notificacoesProcessadas = new HashSet<>();
-    private static int notificacaoAtualId = -1;
+    private static final Object lock = new Object();
+
+    // ==========================================
+    // CLASSE PARA ARMAZENAR DADOS DA NOTIFICAÇÃO
+    // ==========================================
+    private static class Notificacao {
+        int id;
+        String pedidoId;
+        String cliente;
+        String telefone;
+        double valor;
+        String codPeca;
+        String meioPagamento;
+        boolean retirarLoja;
+        String endereco;
+        String dataCriacao;
+
+        Notificacao(int id, String pedidoId, String cliente, String telefone, 
+                    double valor, String codPeca, String meioPagamento, 
+                    boolean retirarLoja, String endereco, String dataCriacao) {
+            this.id = id;
+            this.pedidoId = pedidoId;
+            this.cliente = cliente;
+            this.telefone = telefone;
+            this.valor = valor;
+            this.codPeca = codPeca;
+            this.meioPagamento = meioPagamento;
+            this.retirarLoja = retirarLoja;
+            this.endereco = endereco;
+            this.dataCriacao = dataCriacao;
+        }
+    }
 
     public static void iniciar() {
         System.out.println("🔔 ========================================");
         System.out.println("🔔 SERVIÇO DE NOTIFICAÇÕES - PORTOBELLA");
         System.out.println("🔔 ========================================");
         System.out.println("🔄 Consultando notificações a cada 5 segundos...");
+        System.out.println("📋 Modo FIFO - Processando em ordem de chegada");
         System.out.println("🔔 ========================================");
 
-        notificacoesProcessadas.clear();
+        // Limpa a fila ao iniciar
+        synchronized (lock) {
+            filaNotificacoes.clear();
+            processandoFila = false;
+        }
 
-        scheduler = Executors.newScheduledThreadPool(1);
+        scheduler = Executors.newScheduledThreadPool(2);
         
+        // ==========================================
+        // TAREFA 1: BUSCAR NOTIFICAÇÕES NO BANCO
+        // ==========================================
         scheduler.scheduleAtFixedRate(() -> {
             if (executando) {
                 try {
-                    verificarNotificacoes();
+                    buscarNotificacoes();
                 } catch (Exception e) {
-                    System.err.println("❌ Erro ao verificar notificações: " + e.getMessage());
+                    System.err.println("❌ Erro ao buscar notificações: " + e.getMessage());
                 }
             }
         }, 0, 5, TimeUnit.SECONDS);
+        
+        // ==========================================
+        // TAREFA 2: PROCESSAR FILA
+        // ==========================================
+        scheduler.scheduleAtFixedRate(() -> {
+            if (executando) {
+                try {
+                    processarFila();
+                } catch (Exception e) {
+                    System.err.println("❌ Erro ao processar fila: " + e.getMessage());
+                }
+            }
+        }, 1, 2, TimeUnit.SECONDS);
     }
 
-    private static void verificarNotificacoes() {
+    // ==========================================
+    // BUSCAR NOTIFICAÇÕES NO BANCO
+    // ==========================================
+    private static void buscarNotificacoes() {
         Connection con = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -60,43 +120,40 @@ public class NotificacaoVendasService {
                          "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
                          "FROM notificacoes_pendentes " +
                          "WHERE status = 'PENDENTE' AND lida = 0 " +
-                         "ORDER BY data_criacao ASC LIMIT 10";
+                         "ORDER BY data_criacao ASC"; // 🔥 ORDEM DE CHEGADA
             
             stmt = con.prepareStatement(sql);
             rs = stmt.executeQuery();
 
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                
-                if (notificacoesProcessadas.contains(id)) {
-                    continue;
+            synchronized (lock) {
+                int adicionadas = 0;
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    
+                    // Verifica se já está na fila ou processada
+                    boolean jaNaFila = filaNotificacoes.stream().anyMatch(n -> n.id == id);
+                    
+                    if (!jaNaFila) {
+                        Notificacao notif = new Notificacao(
+                            id,
+                            rs.getString("pedido_id"),
+                            rs.getString("cliente"),
+                            rs.getString("telefone"),
+                            rs.getDouble("valor"),
+                            rs.getString("cod_peca"),
+                            rs.getString("meio_pagamento"),
+                            rs.getBoolean("retirar_loja"),
+                            rs.getString("endereco"),
+                            rs.getString("data_criacao")
+                        );
+                        filaNotificacoes.add(notif);
+                        adicionadas++;
+                        System.out.println("📥 Notificação adicionada à fila: " + notif.pedidoId + " (ID: " + id + ")");
+                    }
                 }
                 
-                String pedidoId = rs.getString("pedido_id");
-                String cliente = rs.getString("cliente");
-                String telefone = rs.getString("telefone");
-                double valor = rs.getDouble("valor");
-                String codPeca = rs.getString("cod_peca");
-                String meioPagamento = rs.getString("meio_pagamento");
-                boolean retirarLoja = rs.getBoolean("retirar_loja");
-                String endereco = rs.getString("endereco");
-                String dataCriacao = rs.getString("data_criacao");
-
-                System.out.println("📥 Nova notificação encontrada: " + pedidoId + " (ID: " + id + ")");
-                
-                notificacoesProcessadas.add(id);
-                notificacaoAtualId = id;
-
-                exibirPopup(id, pedidoId, cliente, telefone, valor, codPeca, 
-                            meioPagamento, retirarLoja, endereco, dataCriacao);
-                
-                while (popupFrame != null && popupFrame.isVisible()) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
+                if (adicionadas > 0) {
+                    System.out.println("📋 Total na fila: " + filaNotificacoes.size() + " notificação(ões)");
                 }
             }
 
@@ -110,12 +167,35 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // EXIBIR POPUP (COM ARRASTAR E FECHAMENTO)
+    // PROCESSAR FILA (FIFO)
     // ==========================================
-    private static void exibirPopup(int id, String pedidoId, String cliente, String telefone,
-                                     double valor, String codPeca, String meioPagamento,
-                                     boolean retirarLoja, String endereco, String dataCriacao) {
-        
+    private static void processarFila() {
+        synchronized (lock) {
+            // Se já está processando ou fila vazia, sai
+            if (processandoFila || filaNotificacoes.isEmpty()) {
+                return;
+            }
+            
+            // Pega a primeira notificação da fila
+            Notificacao notif = filaNotificacoes.poll();
+            
+            if (notif == null) {
+                return;
+            }
+            
+            processandoFila = true;
+            
+            System.out.println("🔄 Processando notificação: " + notif.pedidoId + " (Fila restante: " + filaNotificacoes.size() + ")");
+            
+            // Exibe o popup
+            exibirPopup(notif);
+        }
+    }
+
+    // ==========================================
+    // EXIBIR POPUP
+    // ==========================================
+    private static void exibirPopup(Notificacao notif) {
         SwingUtilities.invokeLater(() -> {
             // Fecha popup anterior se existir
             if (popupFrame != null && popupFrame.isVisible()) {
@@ -149,7 +229,17 @@ public class NotificacaoVendasService {
             titleBar.setBackground(new Color(45, 45, 45));
             titleBar.setPreferredSize(new Dimension(0, 35));
             
-            JLabel lblTitle = new JLabel("🛍️ NOVA VENDA ONLINE");
+            // ==========================================
+            // 🔥 MOSTRA QUANTOS NA FILA
+            // ==========================================
+            String titulo = "🛍️ NOVA VENDA ONLINE";
+            synchronized (lock) {
+                if (filaNotificacoes.size() > 0) {
+                    titulo += " (" + (filaNotificacoes.size() + 1) + " na fila)";
+                }
+            }
+            
+            JLabel lblTitle = new JLabel(titulo);
             lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
             lblTitle.setForeground(new Color(212, 175, 55));
             lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
@@ -175,11 +265,16 @@ public class NotificacaoVendasService {
             btnClose.addActionListener(e -> {
                 popupFrame.dispose();
                 popupFrame = null;
-                notificacoesProcessadas.remove(id);
+                // ==========================================
+                // 🔥 LIBERA A FILA PARA A PRÓXIMA NOTIFICAÇÃO
+                // ==========================================
+                synchronized (lock) {
+                    processandoFila = false;
+                }
             });
             titleBar.add(btnClose, BorderLayout.EAST);
             
-            // ADICIONA ARRASTAR À BARRA DE TÍTULO
+            // ADICIONA ARRASTAR
             final int[] coordX = {0};
             final int[] coordY = {0};
             
@@ -205,6 +300,27 @@ public class NotificacaoVendasService {
             bodyPanel.setLayout(new BorderLayout(10, 10));
             bodyPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 
+            // ==========================================
+            // 🔥 INFORMA POSIÇÃO NA FILA
+            // ==========================================
+            JPanel infoFilaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            infoFilaPanel.setBackground(Color.WHITE);
+            infoFilaPanel.setOpaque(true);
+            
+            String infoFila;
+            synchronized (lock) {
+                infoFila = "📋 " + (filaNotificacoes.size() + 1) + "ª notificação de " + (filaNotificacoes.size() + 1);
+                if (filaNotificacoes.size() > 0) {
+                    infoFila += " (mais " + filaNotificacoes.size() + " aguardando)";
+                }
+            }
+            
+            JLabel lblInfoFila = new JLabel(infoFila);
+            lblInfoFila.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblInfoFila.setForeground(new Color(100, 100, 100));
+            infoFilaPanel.add(lblInfoFila);
+            bodyPanel.add(infoFilaPanel, BorderLayout.NORTH);
+
             // DADOS
             JPanel dadosPanel = new JPanel();
             dadosPanel.setLayout(new GridLayout(0, 2, 10, 10));
@@ -213,18 +329,18 @@ public class NotificacaoVendasService {
             Font labelFont = new Font("Segoe UI", Font.BOLD, 13);
             Font valueFont = new Font("Segoe UI", Font.PLAIN, 13);
 
-            addCampo(dadosPanel, "📋 Pedido:", pedidoId, labelFont, valueFont);
-            addCampo(dadosPanel, "👤 Cliente:", cliente, labelFont, valueFont);
-            addCampo(dadosPanel, "📱 Telefone:", telefone, labelFont, valueFont);
-            addCampo(dadosPanel, "💰 Valor:", "R$ " + String.format("%.2f", valor).replace(".", ","), labelFont, valueFont);
-            addCampo(dadosPanel, "🏷️ Código:", codPeca, labelFont, valueFont);
-            addCampo(dadosPanel, "💳 Pagamento:", meioPagamento.toUpperCase(), labelFont, valueFont);
+            addCampo(dadosPanel, "📋 Pedido:", notif.pedidoId, labelFont, valueFont);
+            addCampo(dadosPanel, "👤 Cliente:", notif.cliente, labelFont, valueFont);
+            addCampo(dadosPanel, "📱 Telefone:", notif.telefone, labelFont, valueFont);
+            addCampo(dadosPanel, "💰 Valor:", "R$ " + String.format("%.2f", notif.valor).replace(".", ","), labelFont, valueFont);
+            addCampo(dadosPanel, "🏷️ Código:", notif.codPeca, labelFont, valueFont);
+            addCampo(dadosPanel, "💳 Pagamento:", notif.meioPagamento.toUpperCase(), labelFont, valueFont);
             
-            String tipoEntrega = retirarLoja ? "📍 RETIRADA NA LOJA" : "🚚 ENTREGA";
-            Color corEntrega = retirarLoja ? new Color(0, 166, 80) : new Color(0, 158, 227);
+            String tipoEntrega = notif.retirarLoja ? "📍 RETIRADA NA LOJA" : "🚚 ENTREGA";
+            Color corEntrega = notif.retirarLoja ? new Color(0, 166, 80) : new Color(0, 158, 227);
             addCampoColorido(dadosPanel, "📦 Entrega:", tipoEntrega, labelFont, valueFont, corEntrega);
             
-            String enderecoExibicao = endereco.length() > 50 ? endereco.substring(0, 50) + "..." : endereco;
+            String enderecoExibicao = notif.endereco.length() > 50 ? notif.endereco.substring(0, 50) + "..." : notif.endereco;
             addCampo(dadosPanel, "📍 Endereço:", enderecoExibicao, labelFont, valueFont);
 
             bodyPanel.add(dadosPanel, BorderLayout.CENTER);
@@ -253,14 +369,17 @@ public class NotificacaoVendasService {
             btnConfirmar.setPreferredSize(new Dimension(250, 50));
             btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnConfirmar.addActionListener(e -> {
-                // Fecha a janela imediatamente
                 popupFrame.dispose();
                 popupFrame = null;
                 
-                // Processa a resposta em uma thread separada
                 new Thread(() -> {
-                    responderNotificacao(id, pedidoId, true);
-                    notificacoesProcessadas.remove(id);
+                    responderNotificacao(notif.id, notif.pedidoId, true);
+                    // ==========================================
+                    // 🔥 LIBERA A FILA PARA PRÓXIMA NOTIFICAÇÃO
+                    // ==========================================
+                    synchronized (lock) {
+                        processandoFila = false;
+                    }
                 }).start();
             });
 
@@ -271,14 +390,17 @@ public class NotificacaoVendasService {
             btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnRejeitar.addActionListener(e -> {
-                // Fecha a janela imediatamente
                 popupFrame.dispose();
                 popupFrame = null;
                 
-                // Processa a resposta em uma thread separada
                 new Thread(() -> {
-                    responderNotificacao(id, pedidoId, false);
-                    notificacoesProcessadas.remove(id);
+                    responderNotificacao(notif.id, notif.pedidoId, false);
+                    // ==========================================
+                    // 🔥 LIBERA A FILA PARA PRÓXIMA NOTIFICAÇÃO
+                    // ==========================================
+                    synchronized (lock) {
+                        processandoFila = false;
+                    }
                 }).start();
             });
 
@@ -315,9 +437,6 @@ public class NotificacaoVendasService {
         panel.add(val);
     }
 
-    // ==========================================
-    // RESPONDER NOTIFICAÇÃO (SEM JOPTIONPANE)
-    // ==========================================
     private static void responderNotificacao(int id, String pedidoId, boolean aprovado) {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -358,11 +477,6 @@ public class NotificacaoVendasService {
                     stmtSelect.close();
                 }
                 
-                notificacoesProcessadas.remove(id);
-                
-                // ==========================================
-                // MOSTRA MENSAGEM EM UMA THREAD SEPARADA
-                // ==========================================
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null, 
                         "✅ " + (aprovado ? "Venda confirmada e registrada!" : "Venda rejeitada!"),
@@ -461,7 +575,10 @@ public class NotificacaoVendasService {
             popupFrame.dispose();
             popupFrame = null;
         }
-        notificacoesProcessadas.clear();
+        synchronized (lock) {
+            filaNotificacoes.clear();
+            processandoFila = false;
+        }
         System.out.println("⏹️ Serviço de notificações parado.");
     }
 }
