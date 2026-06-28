@@ -23,15 +23,9 @@ public class NotificacaoVendasService {
     private static boolean executando = true;
     private static JFrame popupFrame;
 
-    // ==========================================
-    // 🔥 CONTROLE DE NOTIFICAÇÕES PROCESSADAS
-    // ==========================================
     private static final Set<Integer> notificacoesProcessadas = new HashSet<>();
     private static int notificacaoAtualId = -1;
 
-    // ==========================================
-    // INICIAR O SERVIÇO DE NOTIFICAÇÕES
-    // ==========================================
     public static void iniciar() {
         System.out.println("🔔 ========================================");
         System.out.println("🔔 SERVIÇO DE NOTIFICAÇÕES - PORTOBELLA");
@@ -39,7 +33,6 @@ public class NotificacaoVendasService {
         System.out.println("🔄 Consultando notificações a cada 5 segundos...");
         System.out.println("🔔 ========================================");
 
-        // Limpa o controle ao iniciar
         notificacoesProcessadas.clear();
 
         scheduler = Executors.newScheduledThreadPool(1);
@@ -55,9 +48,6 @@ public class NotificacaoVendasService {
         }, 0, 5, TimeUnit.SECONDS);
     }
 
-    // ==========================================
-    // VERIFICAR NOTIFICAÇÕES NO BANCO
-    // ==========================================
     private static void verificarNotificacoes() {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -78,11 +68,8 @@ public class NotificacaoVendasService {
             while (rs.next()) {
                 int id = rs.getInt("id");
                 
-                // ==========================================
-                // 🔥 VERIFICA SE JÁ FOI PROCESSADA
-                // ==========================================
                 if (notificacoesProcessadas.contains(id)) {
-                    continue; // Pula notificações já processadas
+                    continue;
                 }
                 
                 String pedidoId = rs.getString("pedido_id");
@@ -97,21 +84,12 @@ public class NotificacaoVendasService {
 
                 System.out.println("📥 Nova notificação encontrada: " + pedidoId + " (ID: " + id + ")");
                 
-                // ==========================================
-                // 🔥 MARCA COMO PROCESSADA
-                // ==========================================
                 notificacoesProcessadas.add(id);
                 notificacaoAtualId = id;
 
-                // ==========================================
-                // EXIBIR POPUP (BLOQUEANTE)
-                // ==========================================
                 exibirPopup(id, pedidoId, cliente, telefone, valor, codPeca, 
                             meioPagamento, retirarLoja, endereco, dataCriacao);
                 
-                // ==========================================
-                // 🔥 AGUARDA O POPUP SER FECHADO
-                // ==========================================
                 while (popupFrame != null && popupFrame.isVisible()) {
                     try {
                         Thread.sleep(500);
@@ -132,16 +110,14 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // EXIBIR POPUP
+    // EXIBIR POPUP (COM ARRASTAR E FECHAMENTO)
     // ==========================================
     private static void exibirPopup(int id, String pedidoId, String cliente, String telefone,
                                      double valor, String codPeca, String meioPagamento,
                                      boolean retirarLoja, String endereco, String dataCriacao) {
         
         SwingUtilities.invokeLater(() -> {
-            // ==========================================
-            // FECHA POPUP ANTERIOR SE EXISTIR
-            // ==========================================
+            // Fecha popup anterior se existir
             if (popupFrame != null && popupFrame.isVisible()) {
                 popupFrame.dispose();
             }
@@ -151,38 +127,102 @@ public class NotificacaoVendasService {
             try { Thread.sleep(300); } catch (InterruptedException e) {}
             Toolkit.getDefaultToolkit().beep();
 
-            // CRIAR POPUP
-            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA #" + id);
+            // ==========================================
+            // CRIAR POPUP SEM DECORAÇÃO (para arrastar)
+            // ==========================================
+            popupFrame = new JFrame("🔔 NOVA VENDA - PORTOBELLA VITRINE ON LINE");
             popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             popupFrame.setSize(580, 620);
             popupFrame.setLocationRelativeTo(null);
             popupFrame.setAlwaysOnTop(true);
             popupFrame.setResizable(false);
+            popupFrame.setUndecorated(true); // Remove decoração para arrastar
 
+            // ==========================================
+            // PAINEL PRINCIPAL
+            // ==========================================
             JPanel panel = new JPanel();
             panel.setLayout(new BorderLayout(10, 10));
-            panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+            panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(212, 175, 55), 2),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+            ));
 
-            // HEADER
-            JPanel headerPanel = new JPanel(new BorderLayout());
-            JLabel lblTitulo = new JLabel("🛍️ NOVA VENDA ONLINE", JLabel.CENTER);
-            lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
-            lblTitulo.setForeground(new Color(0, 158, 227));
-            headerPanel.add(lblTitulo, BorderLayout.CENTER);
+            // ==========================================
+            // BARRA DE TÍTULO (PARA ARRASTAR)
+            // ==========================================
+            JPanel titleBar = new JPanel(new BorderLayout());
+            titleBar.setBackground(new Color(45, 45, 45));
+            titleBar.setPreferredSize(new Dimension(0, 35));
             
-            JLabel lblData = new JLabel("📅 " + dataCriacao, JLabel.RIGHT);
-            lblData.setFont(new Font("Arial", Font.PLAIN, 11));
-            lblData.setForeground(Color.GRAY);
-            headerPanel.add(lblData, BorderLayout.SOUTH);
-            panel.add(headerPanel, BorderLayout.NORTH);
+            JLabel lblTitle = new JLabel("🛍️ NOVA VENDA ONLINE");
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblTitle.setForeground(new Color(212, 175, 55));
+            lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
+            titleBar.add(lblTitle, BorderLayout.WEST);
+            
+            // Botão Fechar (X)
+            JButton btnClose = new JButton("✕");
+            btnClose.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            btnClose.setForeground(Color.WHITE);
+            btnClose.setBackground(new Color(45, 45, 45));
+            btnClose.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+            btnClose.setFocusPainted(false);
+            btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnClose.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    btnClose.setBackground(new Color(160, 40, 40));
+                }
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    btnClose.setBackground(new Color(45, 45, 45));
+                }
+            });
+            btnClose.addActionListener(e -> {
+                popupFrame.dispose();
+                popupFrame = null;
+                notificacoesProcessadas.remove(id);
+            });
+            titleBar.add(btnClose, BorderLayout.EAST);
+            
+            // ==========================================
+            // 🔥 ADICIONA ARRASTAR À BARRA DE TÍTULO
+            // ==========================================
+            final int[] coordX = {0};
+            final int[] coordY = {0};
+            
+            titleBar.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mousePressed(java.awt.event.MouseEvent evt) {
+                    coordX[0] = evt.getX();
+                    coordY[0] = evt.getY();
+                }
+            });
+            
+            titleBar.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+                @Override
+                public void mouseDragged(java.awt.event.MouseEvent evt) {
+                    popupFrame.setLocation(evt.getXOnScreen() - coordX[0], evt.getYOnScreen() - coordY[0]);
+                }
+            });
+
+            panel.add(titleBar, BorderLayout.NORTH);
+
+            // ==========================================
+            // CORPO DO POPUP
+            // ==========================================
+            JPanel bodyPanel = new JPanel();
+            bodyPanel.setLayout(new BorderLayout(10, 10));
+            bodyPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 
             // DADOS
             JPanel dadosPanel = new JPanel();
             dadosPanel.setLayout(new GridLayout(0, 2, 10, 10));
             dadosPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
 
-            Font labelFont = new Font("Arial", Font.BOLD, 13);
-            Font valueFont = new Font("Arial", Font.PLAIN, 13);
+            Font labelFont = new Font("Segoe UI", Font.BOLD, 13);
+            Font valueFont = new Font("Segoe UI", Font.PLAIN, 13);
 
             addCampo(dadosPanel, "📋 Pedido:", pedidoId, labelFont, valueFont);
             addCampo(dadosPanel, "👤 Cliente:", cliente, labelFont, valueFont);
@@ -198,7 +238,7 @@ public class NotificacaoVendasService {
             String enderecoExibicao = endereco.length() > 50 ? endereco.substring(0, 50) + "..." : endereco;
             addCampo(dadosPanel, "📍 Endereço:", enderecoExibicao, labelFont, valueFont);
 
-            panel.add(dadosPanel, BorderLayout.CENTER);
+            bodyPanel.add(dadosPanel, BorderLayout.CENTER);
 
             // INSTRUÇÕES
             JPanel instrucoesPanel = new JPanel();
@@ -210,40 +250,44 @@ public class NotificacaoVendasService {
             );
             lblInstrucoes.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
             instrucoesPanel.add(lblInstrucoes, BorderLayout.CENTER);
-            panel.add(instrucoesPanel, BorderLayout.NORTH);
+            bodyPanel.add(instrucoesPanel, BorderLayout.NORTH);
 
+            panel.add(bodyPanel, BorderLayout.CENTER);
+
+            // ==========================================
             // BOTÕES
+            // ==========================================
             JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
             JButton btnConfirmar = new JButton("✅ CONFIRMAR PAGAMENTO");
             btnConfirmar.setBackground(new Color(0, 166, 80));
             btnConfirmar.setForeground(Color.WHITE);
-            btnConfirmar.setFont(new Font("Arial", Font.BOLD, 16));
+            btnConfirmar.setFont(new Font("Segoe UI", Font.BOLD, 16));
             btnConfirmar.setPreferredSize(new Dimension(250, 50));
             btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnConfirmar.addActionListener(e -> {
                 responderNotificacao(id, pedidoId, true);
+                // ==========================================
+                // 🔥 FECHA A JANELA
+                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
-                // ==========================================
-                // 🔥 REMOVE DO CONTROLE APÓS RESPONDER
-                // ==========================================
                 notificacoesProcessadas.remove(id);
             });
 
             JButton btnRejeitar = new JButton("❌ REJEITAR");
             btnRejeitar.setBackground(new Color(200, 50, 50));
             btnRejeitar.setForeground(Color.WHITE);
-            btnRejeitar.setFont(new Font("Arial", Font.BOLD, 14));
+            btnRejeitar.setFont(new Font("Segoe UI", Font.BOLD, 14));
             btnRejeitar.setPreferredSize(new Dimension(150, 50));
             btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnRejeitar.addActionListener(e -> {
                 responderNotificacao(id, pedidoId, false);
+                // ==========================================
+                // 🔥 FECHA A JANELA
+                // ==========================================
                 popupFrame.dispose();
                 popupFrame = null;
-                // ==========================================
-                // 🔥 REMOVE DO CONTROLE APÓS RESPONDER
-                // ==========================================
                 notificacoesProcessadas.remove(id);
             });
 
@@ -256,9 +300,6 @@ public class NotificacaoVendasService {
         });
     }
 
-    // ==========================================
-    // ADICIONAR CAMPO AO PAINEL
-    // ==========================================
     private static void addCampo(JPanel panel, String label, String valor, Font labelFont, Font valueFont) {
         JLabel lbl = new JLabel(label);
         lbl.setFont(labelFont);
@@ -278,14 +319,11 @@ public class NotificacaoVendasService {
         panel.add(lbl);
 
         JLabel val = new JLabel(valor);
-        val.setFont(new Font("Arial", Font.BOLD, 13));
+        val.setFont(new Font("Segoe UI", Font.BOLD, 13));
         val.setForeground(cor);
         panel.add(val);
     }
 
-    // ==========================================
-    // RESPONDER NOTIFICAÇÃO
-    // ==========================================
     private static void responderNotificacao(int id, String pedidoId, boolean aprovado) {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -305,7 +343,6 @@ public class NotificacaoVendasService {
                 System.out.println("✅ Notificação #" + id + " atualizada para " + status);
                 
                 if (aprovado) {
-                    // Buscar dados para registrar a venda
                     String sqlSelect = "SELECT cod_peca, cliente, valor, meio_pagamento, endereco, retirar_loja, telefone FROM notificacoes_pendentes WHERE id = ?";
                     PreparedStatement stmtSelect = con.prepareStatement(sqlSelect);
                     stmtSelect.setInt(1, id);
@@ -327,9 +364,6 @@ public class NotificacaoVendasService {
                     stmtSelect.close();
                 }
                 
-                // ==========================================
-                // 🔥 REMOVE DO CONTROLE
-                // ==========================================
                 notificacoesProcessadas.remove(id);
                 
                 JOptionPane.showMessageDialog(null, 
@@ -350,9 +384,6 @@ public class NotificacaoVendasService {
         }
     }
 
-    // ==========================================
-    // REGISTRAR VENDA
-    // ==========================================
     private static void registrarVenda(String codPeca, String cliente, double valor,
                                         String meioPagamento, String pedidoId,
                                         String endereco, boolean retirarLoja, String telefone) {
@@ -387,9 +418,6 @@ public class NotificacaoVendasService {
         }
     }
 
-    // ==========================================
-    // ATUALIZAR ESTOQUE
-    // ==========================================
     private static void atualizarEstoque(String codPeca) {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -415,9 +443,6 @@ public class NotificacaoVendasService {
         }
     }
 
-    // ==========================================
-    // PARAR O SERVIÇO
-    // ==========================================
     public static void parar() {
         executando = false;
         if (scheduler != null) {
@@ -432,6 +457,7 @@ public class NotificacaoVendasService {
         }
         if (popupFrame != null) {
             popupFrame.dispose();
+            popupFrame = null;
         }
         notificacoesProcessadas.clear();
         System.out.println("⏹️ Serviço de notificações parado.");
