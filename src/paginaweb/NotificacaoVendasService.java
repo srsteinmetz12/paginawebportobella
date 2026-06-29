@@ -571,6 +571,9 @@ public class NotificacaoVendasService {
         }
     }
 
+    // ==========================================
+    // BAIXAR ESTOQUE (COM DATAVENDA)
+    // ==========================================
     private static void baixarEstoque(String itensJson) {
         if (itensJson == null || itensJson.isEmpty()) {
             return;
@@ -581,34 +584,37 @@ public class NotificacaoVendasService {
 
         try {
             con = ConnectionDB.getConnectionCloud();
-            
+
             JsonArray itensArray = gson.fromJson(itensJson, JsonArray.class);
-            
+
             if (itensArray == null || itensArray.size() == 0) {
                 return;
             }
-            
+
             System.out.println("📦 [ESTOQUE] Baixando " + itensArray.size() + " item(ns)...");
-            
+
             for (int i = 0; i < itensArray.size(); i++) {
                 JsonObject item = itensArray.get(i).getAsJsonObject();
                 String codPeca = item.get("id").getAsString();
                 int quantidade = item.get("quantidade").getAsInt();
-                
-                String sql = "UPDATE estoque SET status = 'VENDIDO' WHERE codpeca = ? AND status = 'DISPONIVEL' LIMIT ?";
-                
+
+                // ==========================================
+                // 🔥 ATUALIZA STATUS E DATAVENDA
+                // ==========================================
+                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'DISPONIVEL' LIMIT ?";
+
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, codPeca);
                 stmt.setInt(2, quantidade);
                 stmt.setQueryTimeout(10);
                 int rows = stmt.executeUpdate();
-                
+
                 if (rows > 0) {
-                    System.out.println("   ✅ Estoque baixado: " + codPeca + " (" + rows + " unidade(s))");
+                    System.out.println("   ✅ Estoque baixado: " + codPeca + " (" + rows + " unidade(s)) - Data: " + java.time.LocalDate.now());
                 } else {
                     System.err.println("   ⚠️ Produto não encontrado: " + codPeca);
                 }
-                
+
                 stmt.close();
             }
 
