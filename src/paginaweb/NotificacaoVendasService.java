@@ -3,6 +3,7 @@ package paginaweb;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
 
 import javax.swing.*;
@@ -150,7 +151,7 @@ public class NotificacaoVendasService {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             System.err.println("❌ Erro ao consultar banco: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
@@ -486,7 +487,7 @@ public class NotificacaoVendasService {
                 }
             }
             
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
             System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
             mostrarMensagemTray("❌ Erro!", e.getMessage(), TrayIcon.MessageType.ERROR);
         } finally {
@@ -527,7 +528,7 @@ public class NotificacaoVendasService {
                         tipo == TrayIcon.MessageType.WARNING ? JOptionPane.WARNING_MESSAGE :
                         JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (Exception e) {
+            } catch (AWTException | HeadlessException e) {
                 // Fallback: usa JOptionPane
                 JOptionPane.showMessageDialog(null, mensagem, titulo, JOptionPane.INFORMATION_MESSAGE);
                 System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
@@ -542,25 +543,27 @@ public class NotificacaoVendasService {
         try {
             con = ConnectionDB.getConnectionCloud();
             
-            String sql = "INSERT INTO vendas (datavenda, codpeca, cliente, valor_total, meio_pagamento, " +
-                         "pedido_id, endereco_entrega, retirar_loja, telefone, status_pagamento) " +
-                         "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMADO')";
+            String sql = "INSERT INTO vendas (id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, " +
+                         "obsvendas, entrega, status) " +
+                         "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             stmt = con.prepareStatement(sql);
-            stmt.setString(1, notif.codPeca);
-            stmt.setString(2, notif.cliente);
-            stmt.setDouble(3, notif.valor);
+            stmt.setString(1, notif.pedidoId);
+            stmt.setString(2, notif.dataCriacao);
+            stmt.setString(3, "VENDA WEB");
             stmt.setString(4, notif.meioPagamento);
-            stmt.setString(5, notif.pedidoId);
-            stmt.setString(6, notif.endereco);
-            stmt.setBoolean(7, notif.retirarLoja);
-            stmt.setString(8, notif.telefone);
+            stmt.setDouble(5, notif.valor);
+            stmt.setString(6, notif.codPeca);
+            stmt.setString(7, notif.cliente);
+            stmt.setString(8, "VENDA_VITRINE");
+            stmt.setBoolean(9, notif.retirarLoja);           
+            stmt.setString(10, "EM_SEPARACAO");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
             
             System.out.println("   ✅ Venda registrada: " + notif.pedidoId);
 
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -609,7 +612,7 @@ public class NotificacaoVendasService {
                 stmt.close();
             }
 
-        } catch (Exception e) {
+        } catch (JsonSyntaxException | ClassNotFoundException | SQLException e) {
             System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
