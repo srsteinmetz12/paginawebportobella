@@ -205,7 +205,6 @@ public class NotificacaoVendasService {
         popupDialog.setModal(false);
         popupDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        // Listener para quando o popup for fechado
         popupDialog.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosed(java.awt.event.WindowEvent e) {
@@ -356,6 +355,8 @@ public class NotificacaoVendasService {
         btnConfirmar.setPreferredSize(new Dimension(250, 50));
         btnConfirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnConfirmar.addActionListener(e -> {
+            System.out.println("✅ [POPUP] CONFIRMAR: " + notif.pedidoId);
+            
             // Fecha o popup
             popupDialog.dispose();
             popupDialog = null;
@@ -384,6 +385,8 @@ public class NotificacaoVendasService {
         btnRejeitar.setPreferredSize(new Dimension(150, 50));
         btnRejeitar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnRejeitar.addActionListener(e -> {
+            System.out.println("❌ [POPUP] REJEITAR: " + notif.pedidoId);
+            
             // Fecha o popup
             popupDialog.dispose();
             popupDialog = null;
@@ -438,7 +441,7 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO (SEM JOPTIONPANE BLOQUEANTE)
+    // RESPONDER NOTIFICAÇÃO (SEM JOPTIONPANE - USANDO TRAY ICON)
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
@@ -475,38 +478,61 @@ public class NotificacaoVendasService {
                     baixarEstoque(notif.itens);
                     
                     // ==========================================
-                    // 🔥 MOSTRA MENSAGEM SEM BLOQUEAR (USANDO TIMER)
+                    // 🔥 NOTIFICAÇÃO SEM JOPTIONPANE - USANDO TRAY ICON
                     // ==========================================
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, 
-                            "✅ Venda confirmada!\nPedido: " + notif.pedidoId,
-                            "Sucesso", 
-                            JOptionPane.INFORMATION_MESSAGE);
-                    });
+                    mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
                 } else {
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, 
-                            "❌ Venda rejeitada!\nPedido: " + notif.pedidoId,
-                            "Rejeitado", 
-                            JOptionPane.WARNING_MESSAGE);
-                    });
+                    mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
             }
             
         } catch (Exception e) {
             System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(null, 
-                    "❌ Erro: " + e.getMessage(),
-                    "Erro", 
-                    JOptionPane.ERROR_MESSAGE);
-            });
+            mostrarMensagemTray("❌ Erro!", e.getMessage(), TrayIcon.MessageType.ERROR);
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
             try { if (con != null) con.close(); } catch (SQLException e) {}
         }
         
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
+    }
+
+    // ==========================================
+    // 🔥 MOSTRAR MENSAGEM NA BANDEJA DO SISTEMA (NÃO BLOQUEIA)
+    // ==========================================
+    private static void mostrarMensagemTray(String titulo, String mensagem, TrayIcon.MessageType tipo) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                if (SystemTray.isSupported()) {
+                    SystemTray tray = SystemTray.getSystemTray();
+                    // Cria um ícone temporário
+                    Image image = Toolkit.getDefaultToolkit().createImage("");
+                    TrayIcon trayIcon = new TrayIcon(image, "PORTOBELLA");
+                    trayIcon.setImageAutoSize(true);
+                    
+                    // Adiciona à bandeja
+                    tray.add(trayIcon);
+                    
+                    // Exibe a mensagem
+                    trayIcon.displayMessage(titulo, mensagem, tipo);
+                    
+                    // Remove o ícone após 3 segundos
+                    new Timer(3000, e -> {
+                        tray.remove(trayIcon);
+                    }).start();
+                } else {
+                    // Fallback: usa JOptionPane apenas se não houver bandeja
+                    JOptionPane.showMessageDialog(null, mensagem, titulo, 
+                        tipo == TrayIcon.MessageType.INFO ? JOptionPane.INFORMATION_MESSAGE :
+                        tipo == TrayIcon.MessageType.WARNING ? JOptionPane.WARNING_MESSAGE :
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                // Fallback: usa JOptionPane
+                JOptionPane.showMessageDialog(null, mensagem, titulo, JOptionPane.INFORMATION_MESSAGE);
+                System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
+            }
+        });
     }
 
     private static void registrarVenda(Notificacao notif) {
