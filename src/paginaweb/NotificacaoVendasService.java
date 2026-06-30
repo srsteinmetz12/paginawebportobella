@@ -758,7 +758,7 @@ public class NotificacaoVendasService {
             // ==========================================
             // 🔥 NÃO BUSCA ID, USA O ID_VENDA
             // ==========================================
-            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) " +
+            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
