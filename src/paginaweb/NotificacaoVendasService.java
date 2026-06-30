@@ -651,12 +651,12 @@ public class NotificacaoVendasService {
             
             stmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             stmt.setDate(1, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(2, "SITE");
+            stmt.setString(2, "WEB");
             stmt.setString(3, notif.meioPagamento);
             stmt.setDouble(4, notif.valor);
             stmt.setString(5, notif.codPeca);
             stmt.setString(6, notif.cliente);
-            stmt.setString(7, "Pedido: " + notif.pedidoId + " | " + notif.endereco);
+            stmt.setString(7, "Pedido Vitrine: " + notif.pedidoId);
             stmt.setString(8, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
             stmt.setString(9, "EM_SEPARACAO");
             stmt.setString(10, notif.pedidoId);
