@@ -31,6 +31,7 @@ import static views.TelaFornecedor.s;
 import util.GeradorQRCode;
 import util.ManipularImagem;
 import util.MensagemSistema;
+import util.ValorMonetarioUtil;
 
 public class TelaEstoque extends javax.swing.JFrame { 
     
@@ -59,6 +60,12 @@ public class TelaEstoque extends javax.swing.JFrame {
     public TelaEstoque() {
         this.setUndecorated(true);
         initComponents();
+        ValorMonetarioUtil.aplicarMascaraEmCampos(
+            campoValorPago,
+            campoPrecoSugerido,
+            campoLucroEstimado
+        );
+        configurarListenersCalculo();
         util.GerenciadorLogoFavicon.aplicarFaviconGlobal(this);
                 // --- 1. PALETA LUXO/MODA PREMIUM (java.awt.Color) ---
         java.awt.Color grafiteProfundo = new java.awt.Color(28, 28, 28);    // #1C1C1C
@@ -1194,53 +1201,26 @@ public class TelaEstoque extends javax.swing.JFrame {
     }//GEN-LAST:event_campoCodigoItemMouseClicked
 ////// Campo Lucro estimado //////
     private void campoLucroEstimadoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_campoLucroEstimadoMouseClicked
-        if (!campoValorPago.getText().trim().isEmpty() || !campoPrecoSugerido.getText().trim().isEmpty()) {          
-            try {
-                String ps = campoPrecoSugerido.getText().trim().replace(",", ".");
-                double precoSug = ps.isEmpty() ? 0.0 : Double.parseDouble(ps);
-                
-                String vp = campoValorPago.getText().trim().replace(",", ".");
-                double valorPago = 0.0;              
-                if (!vp.isEmpty()) {
-                    valorPago = Double.parseDouble(vp);
-                } else {
-                    campoValorPago.setText("0.0");
-                }
-                double subtracaoBruta = precoSug - valorPago;
-                java.math.BigDecimal lucroArredondado = new java.math.BigDecimal(subtracaoBruta)
-                        .setScale(2, java.math.RoundingMode.HALF_UP);
-        
-                String ls = lucroArredondado.toString();          
-                
-                System.out.println("Lucro estimado (Arredondado): " + ls);
-                campoLucroEstimado.setText(ls);
-                
-            } catch (NumberFormatException ex) {
-                System.err.println("Erro de digitação nos valores: " + ex.getMessage());
-                MensagemSistema.mostrarAvisoDark(this, "Por favor, digite apenas números válidos nos campos de preço!");
-            }
-        } else {
-            System.err.println("Campos Valor Pago e Preço Sugerido não foram preenchidos!");
-            MensagemSistema.mostrarAvisoDark(this, "Campos Valor Pago e Preço Sugerido devem ser preenchidos!");
-        }
+        calcularLucroEstimado();
     }//GEN-LAST:event_campoLucroEstimadoMouseClicked
 ////// Campo Percentual Lucro //////
     private void campoPercentualLucroMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_campoPercentualLucroMouseClicked
-        if(!(campoValorPago.getText().isEmpty() && campoLucroEstimado.getText().isEmpty())){
-            String vp = campoValorPago.getText();
-            double valorPago = Double.parseDouble(vp);
-            String le = campoLucroEstimado.getText();
-            double lucroEst = Double.parseDouble(le);
-            double calc = (lucroEst*100);
-            double perc = calc/valorPago;
-            System.out.println("Percentual: "+perc);
-            int percentual = (int)perc;
-            System.out.println(percentual);
-            campoPercentualLucro.setText(Integer.toString(percentual));
-        }else{
-            System.err.println("Campos Valor Pago e Lucro Estimado não foram preenchidos!");
-            MensagemSistema.mostrarAvisoDark(this, "Campos Valor Pago e Lucro Estimado devem estar preenchidos!");
-        }
+//        if(!(campoValorPago.getText().isEmpty() && campoLucroEstimado.getText().isEmpty())){
+//            String vp = campoValorPago.getText();
+//            double valorPago = Double.parseDouble(vp);
+//            String le = campoLucroEstimado.getText();
+//            double lucroEst = Double.parseDouble(le);
+//            double calc = (lucroEst*100);
+//            double perc = calc/valorPago;
+//            System.out.println("Percentual: "+perc);
+//            int percentual = (int)perc;
+//            System.out.println(percentual);
+//            campoPercentualLucro.setText(Integer.toString(percentual));lll
+//        }else{
+//            System.err.println("Campos Valor Pago e Lucro Estimado não foram preenchidos!");
+//            MensagemSistema.mostrarAvisoDark(this, "Campos Valor Pago e Lucro Estimado devem estar preenchidos!");
+//        }
+        calcularPercentualLucro();
     }//GEN-LAST:event_campoPercentualLucroMouseClicked
 
     private void campoDataCadastroItemMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_campoDataCadastroItemMouseClicked
@@ -1301,6 +1281,134 @@ public class TelaEstoque extends javax.swing.JFrame {
     }//GEN-LAST:event_campoCodigoItemActionPerformed
 
     ////////////////// METODOS DA CLASSE ///////////////////////
+    // ==========================================
+    // CONFIGURAR LISTENERS
+    // ==========================================
+    private void configurarListenersCalculo() {
+        // KeyReleased - calcula ao digitar
+        campoValorPago.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calcularLucroEstimado();
+            }
+        });
+
+        campoPrecoSugerido.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calcularLucroEstimado();
+            }
+        });
+
+        // FocusLost - calcula ao sair do campo
+        campoValorPago.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                calcularLucroEstimado();
+            }
+        });
+
+        campoPrecoSugerido.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                calcularLucroEstimado();
+            }
+        });
+
+        campoLucroEstimado.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                calcularPercentualLucro();
+            }
+        });
+    }
+
+    // ==========================================
+    // CALCULAR LUCRO ESTIMADO
+    // ==========================================
+    private void calcularLucroEstimado() {
+        try {
+            // ==========================================
+            // 🔥 TRATAR VALORES DIGITADOS
+            // ==========================================
+            double precoSug = ValorMonetarioUtil.getValorDoCampo(campoPrecoSugerido);
+            double valorPago = ValorMonetarioUtil.getValorDoCampo(campoValorPago);
+
+            // Verifica se os campos estão preenchidos
+            if (precoSug == 0 && valorPago == 0) {
+                return;
+            }
+
+            double lucro = precoSug - valorPago;
+
+            // ==========================================
+            // 🔥 ARREDONDA E EXIBE
+            // ==========================================
+            java.math.BigDecimal lucroArredondado = new java.math.BigDecimal(lucro)
+                    .setScale(2, java.math.RoundingMode.HALF_UP);
+
+            ValorMonetarioUtil.setValorNoCampo(campoLucroEstimado, lucroArredondado.doubleValue());
+
+            // Atualiza percentual
+            calcularPercentualLucro();
+
+            System.out.println("💰 Preço Sugerido: " + precoSug);
+            System.out.println("💰 Valor Pago: " + valorPago);
+            System.out.println("💰 Lucro: " + lucroArredondado.doubleValue());
+
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao calcular lucro: " + e.getMessage());
+        }
+    }
+    
+    // ==========================================
+    // CALCULAR PERCENTUAL DE LUCRO
+    // ==========================================
+    private void calcularPercentualLucro() {
+        try {
+            String vp = campoValorPago.getText().trim().replace(",", ".");
+            String le = campoLucroEstimado.getText().trim().replace(",", ".");
+
+            // Verifica se os campos estão preenchidos
+            if (vp.isEmpty() || le.isEmpty()) {
+                System.out.println("⚠️ Campos Valor Pago ou Lucro Estimado vazios");
+                return;
+            }
+
+            double valorPago = Double.parseDouble(vp);
+            double lucroEst = Double.parseDouble(le);
+
+            // ==========================================
+            // 🔥 VERIFICA SE VALOR PAGO É ZERO
+            // ==========================================
+            if (valorPago == 0) {
+                System.out.println("⚠️ Valor Pago é zero, não é possível calcular percentual");
+                campoPercentualLucro.setText("0");
+                return;
+            }
+
+            // ==========================================
+            // 🔥 CALCULA PERCENTUAL CORRETAMENTE
+            // ==========================================
+            double percentual = (lucroEst / valorPago) * 100;
+
+            // ==========================================
+            // 🔥 ARREDONDA PARA INTEIRO
+            // ==========================================
+            int percentualInt = (int) Math.round(percentual);
+
+            System.out.println("📊 Percentual de lucro:");
+            System.out.println("   Lucro: R$ " + lucroEst);
+            System.out.println("   Valor Pago: R$ " + valorPago);
+            System.out.println("   Percentual: " + percentualInt + "%");
+
+            campoPercentualLucro.setText(Integer.toString(percentualInt));
+
+        } catch (NumberFormatException ex) {
+            System.err.println("❌ Erro ao calcular percentual: " + ex.getMessage());
+            campoPercentualLucro.setText("0");
+        }
+    }
     
     public void gerarQRCodeItemEstoque(){
          // 1. Captura com segurança o que está digitado nos inputs

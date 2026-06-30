@@ -2664,76 +2664,229 @@ public class EntregasDAO {
     
     public void inserirDadosComFrete(Entregas e) throws ClassNotFoundException, SQLException {
         con = ConnectionDB.getConnection();
-        sql = "INSERT INTO entregas(idvenda, datavenda, nomecli, codpeca, fretepago, entregue, status, tipoentrega, canal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";      
-        
-        try (PreparedStatement localStmt = con.prepareStatement(sql)) {
-            this.stmt = localStmt; // Sincroniza com o atributo global da classe
-            
-            stmt.setInt(1, e.getId());
-            stmt.setDate(2, new java.sql.Date(e.getDatavenda().getTime()));
-            stmt.setString(3, e.getNomecli());
-            stmt.setString(4, e.getCodpeca());
-            // stmt.setDouble(5, e.getValorfrete()); // Mantido comentado conforme o seu original
-            stmt.setBoolean(5, e.getFretepago());
-            stmt.setBoolean(6, e.getEntregue());
-            stmt.setString(7, e.getStatus());
-            stmt.setString(8, e.getTipoentrega());
-            stmt.setString(9, e.getCanal());                
-            
-            stmt.execute();
-            System.out.println("----------------------------------");
-            System.out.println("Frete Salvo com sucesso!");
-            System.out.println("----------------------------------");
-        } catch (SQLException ex) {
-            MensagemSistema.mostrarAvisoDark(null, "Erro ao salvar o Frete: " + ex);
-            System.out.println("Erro ao inserir dados: " + ex.toString());
-            System.out.println("----------------------------------");
-            System.out.println("Erro ao salvar o Frete!");
-            System.out.println("----------------------------------");
-            throw ex; // Repassa a exceção conforme exigido na assinatura pública (throws SQLException)
-        } finally {
-            if (con != null) {
-                con.close();
+        // ==========================================
+        // 🔥 SQL COM PEDIDO_ID
+        // ==========================================
+        sql = "INSERT INTO entregas(idvenda, pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, status, tipoentrega, canal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        System.out.println(sql);
+
+        // ==========================================
+        // 🔥 TRATAR PEDIDO_ID (PODE SER NULO OU VAZIO)
+        // ==========================================
+        String pedidoId = e.getPedidoId();
+        String pedidoIdTratado = null;
+
+        if (pedidoId != null && !pedidoId.trim().isEmpty() && !pedidoId.trim().equals("null")) {
+            pedidoIdTratado = pedidoId.trim();
+            System.out.println("📋 Pedido ID: " + pedidoIdTratado);
+        } else {
+            pedidoIdTratado = null;
+            System.out.println("📋 Pedido ID: NULL (sem pedido do site)");
+        }
+
+        System.out.println("📦 [FRETE] Inserindo frete na Cloud...");
+        System.out.println("   ID Venda: " + e.getId());
+        System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+        System.out.println("   Cliente: " + e.getNomecli());
+
+        // ==========================================
+        // TRATAR VALOR DO FRETE (CORRIGIDO)
+        // ==========================================
+        double valorFrete = 0.0;
+        String valorFreteStr = "0.00";
+
+        try {
+            Object valorFreteObj = e.getValorfrete();
+
+            if (valorFreteObj != null) {
+                // ==========================================
+                // SE FOR STRING
+                // ==========================================
+                if (valorFreteObj instanceof String) {
+                    String valorOriginal = (String) valorFreteObj;
+                    if (!valorOriginal.trim().isEmpty()) {
+                        valorFrete = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                        valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                    }
+                } 
+                // ==========================================
+                // SE FOR DOUBLE
+                // ==========================================
+                else if (valorFreteObj instanceof Double) {
+                    valorFrete = (Double) valorFreteObj;
+                    valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                }
+                // ==========================================
+                // SE FOR OUTRO TIPO (NUMBER, INTEGER, ETC)
+                // ==========================================
+                else if (valorFreteObj instanceof Number) {
+                    valorFrete = ((Number) valorFreteObj).doubleValue();
+                    valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                }
             }
-            System.out.println("Conexão de banco encerrada!");
+
+        } catch (Exception ex) {
+            System.err.println("⚠️ Erro ao converter valor do frete: " + ex.getMessage());
+            valorFrete = 0.0;
+            valorFreteStr = "0.00";
+        }
+
+        System.out.println("   💰 Valor Frete: R$ " + valorFreteStr);
+
+        try {
+            stmt2 = con2.prepareStatement(sql);
+            stmt2.setInt(1, e.getId());                                         // idvenda
+            // ==========================================
+            // 🔥 TRATA PEDIDO_ID (NULL OU VALOR)
+            // ==========================================
+            if (pedidoIdTratado != null) {
+                stmt2.setString(2, pedidoIdTratado);
+            } else {
+                stmt2.setNull(2, java.sql.Types.VARCHAR);
+            }
+            stmt2.setDate(3, new java.sql.Date(e.getDatavenda().getTime()));    // datavenda
+            stmt2.setString(4, e.getNomecli());                                 // nomecli
+            stmt2.setString(5, e.getCodpeca());                                 // codpeca
+            stmt2.setDouble(6, valorFrete);                                     // valorfrete
+            stmt2.setBoolean(7, e.getFretepago());                              // fretepago
+            stmt2.setBoolean(8, e.getEntregue());                               // entregue
+            stmt2.setString(9, e.getStatus());                                  // status
+            stmt2.setString(10, e.getTipoentrega());                            // tipoentrega
+            stmt2.setString(11, e.getCanal());                                  // canal
+
+            stmt2.execute();
+            System.out.println("✅ Frete salvo com sucesso!");
+            System.out.println("   ID Venda: " + e.getId());
+            System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+            System.out.println("   Frete: R$ " + valorFreteStr);
+            System.out.println("----------------------------------");
+
+        } catch (SQLException ex) {
+            System.err.println("❌ Erro ao salvar frete: " + ex.getMessage());
+            throw ex;
+        } finally {
+            if (stmt2 != null) {
+                try { stmt2.close(); } catch (SQLException ex) {}
+            }
+            if (con2 != null) {
+                try { con2.close(); } catch (SQLException ex) {}
+            }
+            System.out.println("Conexão Cloud encerrada!");
             System.out.println("----------------------------------");
         }
     }
 
     public void inserirDadosComFreteCloud(Entregas e) throws ClassNotFoundException, SQLException {
         con2 = ConnectionDB.getConnectionCloud();
-        sql = "INSERT INTO entregas(idvenda, datavenda, nomecli, codpeca, fretepago, entregue, status, tipoentrega, canal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";      
-        
-        try (PreparedStatement localStmt2 = con2.prepareStatement(sql)) {
-            this.stmt2 = localStmt2; // Sincroniza com o atributo global da nuvem
-            
-            stmt2.setInt(1, e.getId());
-            stmt2.setDate(2, new java.sql.Date(e.getDatavenda().getTime()));
-            stmt2.setString(3, e.getNomecli());
-            stmt2.setString(4, e.getCodpeca());
-            // stmt2.setDouble(5, e.getValorfrete());
-            stmt2.setBoolean(5, e.getFretepago());
-            stmt2.setBoolean(6, e.getEntregue());
-            stmt2.setString(7, e.getStatus());
-            stmt2.setString(8, e.getTipoentrega());
-            stmt2.setString(9, e.getCanal());                
-            
+
+        // ==========================================
+        // 🔥 SQL COM PEDIDO_ID
+        // ==========================================
+        sql = "INSERT INTO entregas(idvenda, pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, status, tipoentrega, canal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        System.out.println(sql);
+
+        // ==========================================
+        // 🔥 TRATAR PEDIDO_ID (PODE SER NULO OU VAZIO)
+        // ==========================================
+        String pedidoId = e.getPedidoId();
+        String pedidoIdTratado = null;
+
+        if (pedidoId != null && !pedidoId.trim().isEmpty() && !pedidoId.trim().equals("null")) {
+            pedidoIdTratado = pedidoId.trim();
+            System.out.println("📋 Pedido ID: " + pedidoIdTratado);
+        } else {
+            pedidoIdTratado = null;
+            System.out.println("📋 Pedido ID: NULL (sem pedido do site)");
+        }
+
+        System.out.println("📦 [FRETE] Inserindo frete na Cloud...");
+        System.out.println("   ID Venda: " + e.getId());
+        System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+        System.out.println("   Cliente: " + e.getNomecli());
+
+        // ==========================================
+        // TRATAR VALOR DO FRETE (CORRIGIDO)
+        // ==========================================
+        double valorFrete = 0.0;
+        String valorFreteStr = "0.00";
+
+        try {
+            Object valorFreteObj = e.getValorfrete();
+
+            if (valorFreteObj != null) {
+                // ==========================================
+                // SE FOR STRING
+                // ==========================================
+                if (valorFreteObj instanceof String) {
+                    String valorOriginal = (String) valorFreteObj;
+                    if (!valorOriginal.trim().isEmpty()) {
+                        valorFrete = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                        valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                    }
+                } 
+                // ==========================================
+                // SE FOR DOUBLE
+                // ==========================================
+                else if (valorFreteObj instanceof Double) {
+                    valorFrete = (Double) valorFreteObj;
+                    valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                }
+                // ==========================================
+                // SE FOR OUTRO TIPO (NUMBER, INTEGER, ETC)
+                // ==========================================
+                else if (valorFreteObj instanceof Number) {
+                    valorFrete = ((Number) valorFreteObj).doubleValue();
+                    valorFreteStr = util.ValorMonetarioUtil.formatarParaBanco(valorFrete);
+                }
+            }
+
+        } catch (Exception ex) {
+            System.err.println("⚠️ Erro ao converter valor do frete: " + ex.getMessage());
+            valorFrete = 0.0;
+            valorFreteStr = "0.00";
+        }
+
+        System.out.println("   💰 Valor Frete: R$ " + valorFreteStr);
+
+        try {
+            stmt2 = con2.prepareStatement(sql);
+            stmt2.setInt(1, e.getId());                                         // idvenda
+            // ==========================================
+            // 🔥 TRATA PEDIDO_ID (NULL OU VALOR)
+            // ==========================================
+            if (pedidoIdTratado != null) {
+                stmt2.setString(2, pedidoIdTratado);
+            } else {
+                stmt2.setNull(2, java.sql.Types.VARCHAR);
+            }
+            stmt2.setDate(3, new java.sql.Date(e.getDatavenda().getTime()));    // datavenda
+            stmt2.setString(4, e.getNomecli());                                 // nomecli
+            stmt2.setString(5, e.getCodpeca());                                 // codpeca
+            stmt2.setDouble(6, valorFrete);                                     // valorfrete
+            stmt2.setBoolean(7, e.getFretepago());                              // fretepago
+            stmt2.setBoolean(8, e.getEntregue());                               // entregue
+            stmt2.setString(9, e.getStatus());                                  // status
+            stmt2.setString(10, e.getTipoentrega());                            // tipoentrega
+            stmt2.setString(11, e.getCanal());                                  // canal
+
             stmt2.execute();
+            System.out.println("✅ Frete salvo com sucesso!");
+            System.out.println("   ID Venda: " + e.getId());
+            System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+            System.out.println("   Frete: R$ " + valorFreteStr);
             System.out.println("----------------------------------");
-            System.out.println("Frete Salvo com sucesso na Cloud!");
-            System.out.println("----------------------------------");
+
         } catch (SQLException ex) {
-            MensagemSistema.mostrarAvisoDark(null, "Erro ao salvar o Frete na Cloud: " + ex);
-            System.out.println("Erro ao inserir dados na Cloud: " + ex.toString());
-            System.out.println("----------------------------------");
-            System.out.println("Erro ao salvar o Frete na Cloud!");
-            System.out.println("----------------------------------");
+            System.err.println("❌ Erro ao salvar frete: " + ex.getMessage());
             throw ex;
         } finally {
-            if (con2 != null) {
-                con2.close();
+            if (stmt2 != null) {
+                try { stmt2.close(); } catch (SQLException ex) {}
             }
-            System.out.println("Conexão de banco Cloud encerrada!");
+            if (con2 != null) {
+                try { con2.close(); } catch (SQLException ex) {}
+            }
+            System.out.println("Conexão Cloud encerrada!");
             System.out.println("----------------------------------");
         }
     }

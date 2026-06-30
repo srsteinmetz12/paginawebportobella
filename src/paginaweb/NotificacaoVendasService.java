@@ -165,29 +165,78 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // PROCESSAR FILA (FIFO)
+    // PROCESSAR FILA (FIFO) - COM VERIFICAÇÃO DUPLA
     // ==========================================
     private static void processarFila() {
         synchronized (lockFila) {
             if (processando || filaNotificacoes.isEmpty()) {
                 return;
             }
-            
-            notificacaoAtual = filaNotificacoes.poll();
-            if (notificacaoAtual == null) {
+
+            // ==========================================
+            // 🔥 VERIFICA SE A NOTIFICAÇÃO AINDA É VÁLIDA
+            // ==========================================
+            Notificacao notif = filaNotificacoes.peek(); // Olha sem remover
+
+            if (notif == null) {
                 return;
             }
-            
+
+            // Verifica se a notificação ainda está pendente no banco
+            if (!isNotificacaoPendente(notif.id)) {
+                System.out.println("⏩ [PROCESSAR] Notificação " + notif.pedidoId + " já foi processada. Removendo da fila.");
+                filaNotificacoes.poll(); // Remove da fila
+                return;
+            }
+
+            // Remove da fila e processa
+            notificacaoAtual = filaNotificacoes.poll();
+
             processando = true;
             notificacoesEmProcessamento.add(notificacaoAtual.id);
-            
+
             System.out.println("🔄 [PROCESSAR] Iniciando: " + notificacaoAtual.pedidoId + 
                               " (Restam: " + filaNotificacoes.size() + ")");
         }
-        
+
         SwingUtilities.invokeLater(() -> {
             exibirPopup(notificacaoAtual);
         });
+    }
+
+    // ==========================================
+    // 🔥 VERIFICAR SE A NOTIFICAÇÃO AINDA ESTÁ PENDENTE
+    // ==========================================
+    private static boolean isNotificacaoPendente(int id) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            con = ConnectionDB.getConnectionCloud();
+            String sql = "SELECT status, lida FROM notificacoes_pendentes WHERE id = ?";
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, id);
+            stmt.setQueryTimeout(10);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String status = rs.getString("status");
+                int lida = rs.getInt("lida");
+
+                // Só é pendente se status = 'PENDENTE' E lida = 0
+                return "PENDENTE".equals(status) && lida == 0;
+            }
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("⚠️ Erro ao verificar notificação: " + e.getMessage());
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
+        }
+
+        return false;
     }
 
     // ==========================================
@@ -446,7 +495,7 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO
+    // RESPONDER NOTIFICAÇÃO (COM CONFIRMAÇÃO DE ATUALIZAÇÃO)
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
@@ -477,8 +526,11 @@ public class NotificacaoVendasService {
             stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
 
+            // ==========================================
+            // 🔥 VERIFICA SE ATUALIZOU CORRETAMENTE
+            // ==========================================
             if (rows > 0) {
-                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
+                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status + " (lida = 1)");
 
                 if (aprovado) {
                     // ==========================================
@@ -487,13 +539,13 @@ public class NotificacaoVendasService {
                     moverParaHistorico(con, notif);
 
                     // ==========================================
-                    // 3. REGISTRAR VENDA (RETORNA O ID)
+                    // 3. REGISTRAR VENDA
                     // ==========================================
                     System.out.println("📦 [RESPONDER] Registrando venda...");
                     int idVenda = registrarVenda(con, notif);
 
                     // ==========================================
-                    // 4. REGISTRAR SACOLA E ENTREGA (COM O ID_VENDA)
+                    // 4. REGISTRAR SACOLA E ENTREGA
                     // ==========================================
                     if (idVenda > 0) {
                         registrarSacola(con, notif, idVenda);
@@ -514,6 +566,11 @@ public class NotificacaoVendasService {
                     moverParaHistoricoRejeitado(con, notif);
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
+            } else {
+                // ==========================================
+                // 🔥 SE NÃO ATUALIZOU, A NOTIFICAÇÃO JÁ FOI PROCESSADA
+                // ==========================================
+                System.err.println("⚠️ [RESPONDER] Notificação #" + notif.id + " já foi processada ou não existe!");
             }
 
         } catch (ClassNotFoundException | InterruptedException | SQLException e) {
@@ -653,7 +710,7 @@ public class NotificacaoVendasService {
             // ==========================================
             // 🔥 LIMITAR OBSVENDAS (MÁXIMO 50 CARACTERES)
             // ==========================================
-            String obsVendas = "Pedido: " + notif.pedidoId;
+            String obsVendas = "Pedido VITRINE: " + notif.pedidoId;
             if (notif.endereco != null && !notif.endereco.isEmpty()) {
                 String enderecoResumido = notif.endereco;
                 // Limita o endereço para caber em 50 caracteres
@@ -690,13 +747,13 @@ public class NotificacaoVendasService {
             stmt.setInt(1, proximoId);
             stmt.setString(2, notif.pedidoId);
             stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(4, "SITE");
+            stmt.setString(4, "VENDA WEB");
             stmt.setString(5, notif.meioPagamento);
             stmt.setString(6, valorFormatado); // 🔥 VARCHAR
             stmt.setString(7, notif.codPeca);
             stmt.setString(8, notif.cliente); // 🔥 nomedi = nome do cliente
-            stmt.setString(9, obsVendas);
-            stmt.setString(10, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
+            stmt.setString(9, "VITRINE");
+            stmt.setString(10, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
             stmt.setString(11, "EM_SEPARACAO");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
@@ -809,7 +866,7 @@ public class NotificacaoVendasService {
             stmt.setNull(9, java.sql.Types.DATE);
             stmt.setString(10, "EM_SEPARACAO");
             stmt.setString(11, tipoEntrega);
-            stmt.setString(12, "SITE");
+            stmt.setString(12, "WEB");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
 

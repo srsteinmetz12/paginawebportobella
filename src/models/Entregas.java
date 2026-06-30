@@ -16,6 +16,23 @@ public class Entregas {
     private String status;
     private String tipoentrega;
     private static String canal;
+    private String pedidoId;
+
+    public int getIdvenda() {
+        return idvenda;
+    }
+
+    public void setIdvenda(int idvenda) {
+        this.idvenda = idvenda;
+    }
+
+    public String getPedidoId() {
+        return pedidoId;
+    }
+
+    public void setPedidoId(String pedidoId) {
+        this.pedidoId = pedidoId;
+    }
 
     public String getTipoentrega() {
         return tipoentrega;

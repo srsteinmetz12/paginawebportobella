@@ -48,6 +48,7 @@ import models.Trocas;
 import models.Vendas;
 import util.ConfigLoader;
 import util.MensagemSistema;
+import util.ValorMonetarioUtil;
 
 public class TelaFinanceiro extends javax.swing.JFrame {
     
@@ -125,6 +126,9 @@ public class TelaFinanceiro extends javax.swing.JFrame {
         javax.swing.UIManager.put("ScrollBar.track", grafiteProfundoPop);
         
         initComponents();
+        ValorMonetarioUtil.aplicarMascaraEmCampos(
+            campoValorVenda
+        );
         util.GerenciadorLogoFavicon.aplicarFaviconGlobal(this);
         
         java.awt.Color grafiteProfundo = new java.awt.Color(28, 28, 28);    // #1C1C1C
@@ -1331,6 +1335,27 @@ public class TelaFinanceiro extends javax.swing.JFrame {
     }//GEN-LAST:event_buttonInserirVendasDiariaActionPerformed
 
     private void buttonSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonSalvarActionPerformed
+        // ==========================================
+        // 🔥 TRATAR VALOR DA VENDA
+        // ==========================================
+        String valorDigitado = campoValorVenda.getText().trim();
+        double valorDouble = ValorMonetarioUtil.converterParaDouble(valorDigitado);
+        String valorParaBanco = ValorMonetarioUtil.formatarParaBanco(valorDouble);
+
+        // ==========================================
+        // 🔥 EXIBIR FORMATADO PARA O USUÁRIO
+        // ==========================================
+        campoValorVenda.setText(ValorMonetarioUtil.formatarParaExibicao(valorDouble));
+
+        // ==========================================
+        // USAR O VALOR FORMATADO
+        // ==========================================
+        v.setValorVenda(valorParaBanco);
+        s.setValorCompra(valorParaBanco);
+
+        System.out.println("💰 Valor digitado: " + valorDigitado);
+        System.out.println("💰 Valor convertido: " + valorDouble);
+        System.out.println("💰 Valor para banco: " + valorParaBanco);
         String campoId = null;
         idVenda = campoIdVenda.getText();
         origemVenda = String.valueOf(comboOrigemVenda.getSelectedItem());
@@ -1969,7 +1994,10 @@ public class TelaFinanceiro extends javax.swing.JFrame {
      * Executa a lógica de persistência e logs de uma DESPESA.
      */
     private void processarDespesa(String campoId, String origemVenda, String tipoPago) {
-        System.out.println("Iniciando registro de DESPESA na base...");
+        System.out.println("Iniciando registro de DESPESA na base...");       
+        String valorDigitado = campoValorVenda.getText().trim();
+        double valorDouble = ValorMonetarioUtil.converterParaDouble(valorDigitado);
+        String valorParaBanco = ValorMonetarioUtil.formatarParaBanco(valorDouble);
         v.setIdVenda(Integer.valueOf(campoIdVenda.getText()));
 
         try {
@@ -1981,7 +2009,7 @@ public class TelaFinanceiro extends javax.swing.JFrame {
 
         v.setOrigemVenda(origemVenda);
         v.setTipoPag(tipoPago);
-        v.setValorVenda(campoValorVenda.getText());
+        v.setValorVenda(valorParaBanco);
         v.setCodPecas(String.valueOf(sem_codigo));
         v.setNomeCliente(campoNomeCliente.getText());
         v.setObservacao(campoObsVendas.getText());

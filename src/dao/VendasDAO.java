@@ -46,66 +46,169 @@ public class VendasDAO {
     JFrame frame;
     JTable table;
     
-    public void saveVendas(Vendas v) throws ClassNotFoundException, SQLException{
-        con = ConnectionDB.getConnection();      
+    public void saveVendas(Vendas v) throws ClassNotFoundException, SQLException {
+        con = ConnectionDB.getConnection();
         sql = "INSERT INTO vendas(id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         System.out.println(sql);
-        System.out.println("IDVenda: "+idVenda+" Data Venda: "+dataCompra+" Origem Venda: "+TelaFinanceiro.origemVenda+" Tipo Pago: "+TelaFinanceiro.tipoPago+" Valor Venda: "+valorPago+" "
-                + " Codigo Peça: "+codPeca+" Nome Cliente: "+nomeCliente+" OBS: "+TelaFinanceiro.obs +" Status: "+TelaFinanceiro.status+"");
+
+        // ==========================================
+        // 🔥 TRATAR VALOR DA VENDA
+        // ==========================================
+        String valorOriginal = v.getValorVenda();
+        double valorDouble = 0.0;
+        String valorTratado = "0.00";
+
+        if (valorOriginal != null && !valorOriginal.trim().isEmpty()) {
+            try {
+                // Converte usando a classe utilitária
+                valorDouble = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                // Formata para o banco (com ponto)
+                valorTratado = util.ValorMonetarioUtil.formatarParaBanco(valorDouble);
+                System.out.println("💰 Valor original: " + valorOriginal);
+                System.out.println("💰 Valor tratado: " + valorTratado);
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao converter valor: " + e.getMessage());
+                valorTratado = "0.00";
+            }
+        }
+
+        System.out.println("IDVenda: " + v.getIdVenda() + 
+                           " | Data Venda: " + v.getDataVenda() + 
+                           " | Origem Venda: " + v.getOrigemVenda() + 
+                           " | Tipo Pago: " + v.getTipoPag() + 
+                           " | Valor Venda: " + valorTratado +
+                           " | Codigo Peça: " + v.getCodPecas() + 
+                           " | Nome Cliente: " + v.getNomeCliente() + 
+                           " | OBS: " + v.getObservacao() + 
+                           " | Status: " + v.getStatus());
+
         try {
-            stmt = con.prepareStatement(sql);//tabela
+            stmt = con.prepareStatement(sql);
             stmt.setInt(1, v.getIdVenda());
             stmt.setDate(2, new java.sql.Date(v.getDataVenda().getTime()));
             stmt.setString(3, v.getOrigemVenda());
             stmt.setString(4, v.getTipoPag());
-            stmt.setString(5, v.getValorVenda());
+            stmt.setString(5, valorTratado); // 🔥 VALOR TRATADO
             stmt.setString(6, v.getCodPecas());
-            stmt.setString(7, v.getNomeCliente());           
+            stmt.setString(7, v.getNomeCliente());
             stmt.setString(8, v.getObservacao());
             stmt.setString(9, v.getEntrega());
-            stmt.setString(10, v.getStatus());            
+            stmt.setString(10, v.getStatus());
             stmt.execute();
-            System.out.println("Acessou o banco de dados!");
+
+            System.out.println("✅ Venda salva com sucesso na base!");
+            System.out.println("   ID: " + v.getIdVenda());
+            System.out.println("   Valor: R$ " + valorTratado);
             System.out.println("----------------------------------");
-        }catch(SQLException ex){
-            System.out.println("Erro ao inserir dados: " +ex.toString()); 
-            System.out.println("Erro ao cadastrar venda!");
-            System.out.println("----------------------------------");           
-        }finally{
-            con.close();
+
+        } catch (SQLException ex) {
+            System.err.println("❌ Erro ao inserir dados: " + ex.toString());
+            System.err.println("❌ Erro ao cadastrar venda na base!");
+            System.err.println("----------------------------------");
+            throw ex;
+        } finally {
+            if (stmt != null) {
+                try { stmt.close(); } catch (SQLException e) {}
+            }
+            if (con != null) {
+                try { con.close(); } catch (SQLException e) {}
+            }
             System.out.println("Conexão encerrada!");
             System.out.println("Fim da inclusão!");
             System.out.println("----------------------------------");
         }
     }
     
-    public  void saveVendasCloud(Vendas v) throws ClassNotFoundException, SQLException{
+    public void saveVendasCloud(Vendas v) throws ClassNotFoundException, SQLException {
         con2 = ConnectionDB.getConnectionCloud();
-        sql = "INSERT INTO vendas(id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        // ==========================================
+        // 🔥 SQL COM PEDIDO_ID
+        // ==========================================
+        sql = "INSERT INTO vendas(id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         System.out.println(sql);
-        System.out.println("IDVenda: "+idVenda+" Data Venda: "+dataCompra+" Origem Venda: "+TelaFinanceiro.origemVenda+" Tipo Pago: "+TelaFinanceiro.tipoPago+" Valor Venda: "+valorPago+" "
-                + " Codigo Peça: "+codPeca+" Nome Cliente: "+nomeCliente+" OBS: "+TelaFinanceiro.obs +" Status: "+TelaFinanceiro.status+"" );
+
+        // ==========================================
+        // 🔥 TRATAR PEDIDO_ID (PODE SER NULO OU VAZIO)
+        // ==========================================
+        String pedidoId = v.getPedidoId();
+        String pedidoIdTratado = null;
+
+        if (pedidoId != null && !pedidoId.trim().isEmpty() && !pedidoId.trim().equals("null")) {
+            pedidoIdTratado = pedidoId.trim();
+            System.out.println("📋 Pedido ID: " + pedidoIdTratado);
+        } else {
+            pedidoIdTratado = null;
+            System.out.println("📋 Pedido ID: NULL (sem pedido do site)");
+        }
+
+        // ==========================================
+        // 🔥 TRATAR VALOR DA VENDA
+        // ==========================================
+        String valorOriginal = v.getValorVenda();
+        double valorDouble = 0.0;
+        String valorTratado = "0.00";
+
+        if (valorOriginal != null && !valorOriginal.trim().isEmpty()) {
+            try {
+                valorDouble = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                valorTratado = util.ValorMonetarioUtil.formatarParaBanco(valorDouble);
+                System.out.println("💰 Valor tratado: " + valorTratado);
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao converter valor: " + e.getMessage());
+                valorTratado = "0.00";
+            }
+        }
+
+        System.out.println("IDVenda: " + v.getIdVenda() + 
+                           " | Pedido: " + pedidoIdTratado +
+                           " | Data: " + v.getDataVenda() + 
+                           " | Origem: " + v.getOrigemVenda() + 
+                           " | Tipo: " + v.getTipoPag() + 
+                           " | Valor: " + valorTratado +
+                           " | Cliente: " + v.getNomeCliente());
+
         try {
-            stmt2 = con2.prepareStatement(sql);//tabela
+            stmt2 = con2.prepareStatement(sql);
             stmt2.setInt(1, v.getIdVenda());
-            stmt2.setDate(2, new java.sql.Date(v.getDataVenda().getTime()));
-            stmt2.setString(3, v.getOrigemVenda());
-            stmt2.setString(4, v.getTipoPag());
-            stmt2.setString(5, v.getValorVenda());
-            stmt2.setString(6, v.getCodPecas());
-            stmt2.setString(7, v.getNomeCliente());           
-            stmt2.setString(8, v.getObservacao());
-            stmt2.setString(9, v.getEntrega());
-            stmt2.setString(10, v.getStatus());            
+
+            // ==========================================
+            // 🔥 TRATA PEDIDO_ID (NULL OU VALOR)
+            // ==========================================
+            if (pedidoIdTratado != null) {
+                stmt2.setString(2, pedidoIdTratado);
+            } else {
+                stmt2.setNull(2, java.sql.Types.VARCHAR);
+            }
+
+            stmt2.setDate(3, new java.sql.Date(v.getDataVenda().getTime()));
+            stmt2.setString(4, v.getOrigemVenda());
+            stmt2.setString(5, v.getTipoPag());
+            stmt2.setString(6, valorTratado);
+            stmt2.setString(7, v.getCodPecas());
+            stmt2.setString(8, v.getNomeCliente());
+            stmt2.setString(9, v.getObservacao());
+            stmt2.setString(10, v.getEntrega());
+            stmt2.setString(11, v.getStatus());
             stmt2.execute();
-            System.out.println("Acessou o banco de dados da Cloud!");
+
+            System.out.println("✅ Venda salva com sucesso na Cloud!");
+            System.out.println("   ID: " + v.getIdVenda());
+            System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+            System.out.println("   Valor: R$ " + valorTratado);
             System.out.println("----------------------------------");
-        }catch(SQLException ex){
-            System.out.println("Erro ao inserir dados: " +ex.toString()); 
-            System.out.println("Erro ao cadastrar venda na Cloud!");
-            System.out.println("----------------------------------");           
-        }finally{
-            con2.close();
+
+        } catch (SQLException ex) {
+            System.err.println("❌ Erro ao inserir dados: " + ex.toString());
+            System.err.println("----------------------------------");
+            throw ex;
+        } finally {
+            if (stmt2 != null) {
+                try { stmt2.close(); } catch (SQLException e) {}
+            }
+            if (con2 != null) {
+                try { con2.close(); } catch (SQLException e) {}
+            }
             System.out.println("Conexão Cloud encerrada!");
             System.out.println("Fim da inclusão!");
             System.out.println("----------------------------------");

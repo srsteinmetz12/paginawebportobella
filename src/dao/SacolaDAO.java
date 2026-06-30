@@ -34,69 +34,152 @@ public class SacolaDAO {
     ResultSetMetaData metaData;
     StringBuilder todosNomes;
     
-    public void saveSacola(Sacola s) throws ClassNotFoundException, SQLException{
-        con = ConnectionDB.getConnection();       
-        sql = "INSERT INTO sacola (id, datavenda, valorvenda, codpecas, nomecli, status) VALUES (?, ?, ?, ?, ?, ?)";
-        System.out.println("Pesquisa: " + sql);        
+    public void saveSacola(Sacola s) throws ClassNotFoundException, SQLException {
+        con = ConnectionDB.getConnection();
+        sql = "INSERT INTO sacola(id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        System.out.println(sql);
+
+        // ==========================================
+        // 🔥 TRATAR VALOR DA VENDA NA SACOLA
+        // ==========================================
+        String valorOriginal = s.getValorCompra();
+        double valorDouble = 0.0;
+        String valorTratado = "0.00";
+
+        if (valorOriginal != null && !valorOriginal.trim().isEmpty()) {
+            try {
+                valorDouble = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                valorTratado = util.ValorMonetarioUtil.formatarParaBanco(valorDouble);
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao converter valor da sacola: " + e.getMessage());
+                valorTratado = "0.00";
+            }
+        }
+
+        System.out.println("ID: " + s.getVendaId() + 
+                           " | Pedido: " + s.getPedidoId() + 
+                           " | Valor: " + valorTratado +
+                           " | Status: " + s.getStatus() +
+                           " | Tipo Entrega: " + s.getTipoentrega());
+
         try {
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, s.getVendaId());
-            stmt.setDate(2, new java.sql.Date(s.getDataCompra().getTime()));
-            stmt.setString(3, s.getValorCompra());
-            stmt.setString(4, s.getCodigoPeca());
-            stmt.setString(5, s.getNomeCliente());           
-            stmt.setString(6, s.getStatus());
-            int linhasInseridas = stmt.executeUpdate();           
-            System.out.println("Acessou o banco de dados! Registros: " + linhasInseridas);
+            stmt.setString(2, s.getPedidoId());
+            stmt.setDate(3, new java.sql.Date(s.getDataCompra().getTime()));
+            stmt.setString(4, valorTratado); // 🔥 VALOR TRATADO
+            stmt.setString(5, s.getStatus());
+            stmt.setString(6, s.getCodigoPeca());
+            stmt.setString(7, s.getNomeCliente());
+            stmt.setString(8, s.getTipoentrega());
+            stmt.execute();
+
+            System.out.println("✅ Sacola salva com sucesso na Cloud!");
+            System.out.println("   ID: " + s.getVendaId());
+            System.out.println("   Valor: R$ " + valorTratado);
             System.out.println("----------------------------------");
-        } catch(SQLException ex) {
-            System.err.println("Erro ao inserir dados: " + ex.toString()); 
-            System.err.println("Erro ao cadastrar sacola na Cloud!");
-            System.out.println("----------------------------------");          
+
+        } catch (SQLException ex) {
+            System.err.println("❌ Erro ao inserir dados na sacola: " + ex.toString());
+            System.err.println("----------------------------------");
+            throw ex;
         } finally {
-            try {
-                if (stmt != null) stmt.close();
-                if (con != null) con.close();
-                System.out.println("Conexão encerrada na Cloud!");
-                System.out.println("Fim da inclusão na Cloud!");
-                System.out.println("----------------------------------");
-            } catch (SQLException ex) {
-                System.err.println("Erro ao encerrar canais da Cloud: " + ex.getMessage());
-                System.out.println("----------------------------------");
+            if (stmt != null) {
+                try { stmt.close(); } catch (SQLException e) {}
             }
+            if (con != null) {
+                try { con.close(); } catch (SQLException e) {}
+            }
+            System.out.println("Conexão Cloud encerrada!");
+            System.out.println("Fim da inclusão!");
+            System.out.println("----------------------------------");
         }
     }
     
     public void saveSacolaCloud(Sacola s) throws ClassNotFoundException, SQLException {
-        con2 = ConnectionDB.getConnectionCloud();       
-        sql = "INSERT INTO sacola (id, datavenda, valorvenda, codpecas, nomecli, status) VALUES (?, ?, ?, ?, ?, ?)";
-        System.out.println("Pesquisa: " + sql);       
+        con2 = ConnectionDB.getConnectionCloud();
+
+        // ==========================================
+        // 🔥 SQL COM PEDIDO_ID
+        // ==========================================
+        sql = "INSERT INTO sacola(id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        System.out.println(sql);
+
+        // ==========================================
+        // 🔥 TRATAR PEDIDO_ID (PODE SER NULO OU VAZIO)
+        // ==========================================
+        String pedidoId = s.getPedidoId();
+        String pedidoIdTratado = null;
+
+        if (pedidoId != null && !pedidoId.trim().isEmpty() && !pedidoId.trim().equals("null")) {
+            pedidoIdTratado = pedidoId.trim();
+            System.out.println("📋 Pedido ID: " + pedidoIdTratado);
+        } else {
+            pedidoIdTratado = null;
+            System.out.println("📋 Pedido ID: NULL (sem pedido do site)");
+        }
+
+        // ==========================================
+        // 🔥 TRATAR VALOR DA VENDA
+        // ==========================================
+        String valorOriginal = s.getValorCompra();
+        double valorDouble = 0.0;
+        String valorTratado = "0.00";
+
+        if (valorOriginal != null && !valorOriginal.trim().isEmpty()) {
+            try {
+                valorDouble = util.ValorMonetarioUtil.converterParaDouble(valorOriginal);
+                valorTratado = util.ValorMonetarioUtil.formatarParaBanco(valorDouble);
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao converter valor: " + e.getMessage());
+                valorTratado = "0.00";
+            }
+        }
+
+        System.out.println("ID: " + s.getVendaId() + 
+                           " | Pedido: " + pedidoIdTratado +
+                           " | Valor: " + valorTratado +
+                           " | Status: " + s.getStatus() +
+                           " | Tipo Entrega: " + s.getTipoentrega());
+
         try {
             stmt2 = con2.prepareStatement(sql);
             stmt2.setInt(1, s.getVendaId());
-            stmt2.setDate(2, new java.sql.Date(s.getDataCompra().getTime()));
-            stmt2.setString(3, s.getValorCompra());
-            stmt2.setString(4, s.getCodigoPeca());
-            stmt2.setString(5, s.getNomeCliente());           
-            stmt2.setString(6, s.getStatus());
-            int linhasInseridas = stmt2.executeUpdate();           
-            System.out.println("Acessou o banco de dados na Cloud! Registros: " + linhasInseridas);
-            System.out.println("----------------------------------");
-        } catch(SQLException ex) {
-            System.err.println("Erro ao inserir dados na Cloud: " + ex.toString()); 
-            System.err.println("Erro ao cadastrar sacola na Cloud!");
-            System.out.println("----------------------------------");          
-        } finally {
-            try {
-                if (stmt2 != null) stmt2.close();
-                if (con2 != null) con2.close();
-                System.out.println("Conexão encerrada na Cloud!");
-                System.out.println("Fim da inclusão na Cloud!");
-                System.out.println("----------------------------------");
-            } catch (SQLException ex) {
-                System.err.println("Erro ao encerrar canais da Cloud: " + ex.getMessage());
-                System.out.println("----------------------------------");
+
+            // ==========================================
+            // 🔥 TRATA PEDIDO_ID (NULL OU VALOR)
+            // ==========================================
+            if (pedidoIdTratado != null) {
+                stmt2.setString(2, pedidoIdTratado);
+            } else {
+                stmt2.setNull(2, java.sql.Types.VARCHAR);
             }
+
+            stmt2.setDate(3, new java.sql.Date(s.getDataCompra().getTime()));
+            stmt2.setString(4, valorTratado);
+            stmt2.setString(5, s.getStatus());
+            stmt2.setString(6, s.getCodigoPeca());
+            stmt2.setString(7, s.getNomeCliente());
+            stmt2.setString(8, s.getTipoentrega());
+            stmt2.execute();
+
+            System.out.println("✅ Sacola salva com sucesso!");
+            System.out.println("   ID: " + s.getVendaId());
+            System.out.println("   Pedido: " + (pedidoIdTratado != null ? pedidoIdTratado : "N/A"));
+            System.out.println("----------------------------------");
+
+        } catch (SQLException ex) {
+            System.err.println("❌ Erro ao salvar sacola: " + ex.toString());
+            throw ex;
+        } finally {
+            if (stmt2 != null) {
+                try { stmt2.close(); } catch (SQLException e) {}
+            }
+            if (con2 != null) {
+                try { con2.close(); } catch (SQLException e) {}
+            }
+            System.out.println("Conexão Cloud encerrada!");
+            System.out.println("----------------------------------");
         }
     }
     

@@ -15,6 +15,15 @@ public class Vendas {
     private String observacao;
     private String entrega;
     private String status;
+    private String pedidoId;
+
+    public String getPedidoId() {
+        return pedidoId;
+    }
+
+    public void setPedidoId(String pedidoId) {
+        this.pedidoId = pedidoId;
+    }
 
     public String getStatus() {
         return status;

@@ -10,6 +10,15 @@ public class Sacola {
     public String codigoPeca;
     public int vendaId;
     public String status;
+    public String pedidoId;
+
+    public String getPedidoId() {
+        return pedidoId;
+    }
+
+    public void setPedidoId(String pedidoId) {
+        this.pedidoId = pedidoId;
+    }
 
     public String getTipoentrega() {
         return tipoentrega;
