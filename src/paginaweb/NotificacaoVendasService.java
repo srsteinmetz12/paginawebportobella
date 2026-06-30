@@ -3,6 +3,7 @@ package paginaweb;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
 
 import javax.swing.*;
@@ -154,7 +155,7 @@ public class NotificacaoVendasService {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             System.err.println("❌ Erro ao consultar banco: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
@@ -445,17 +446,17 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO (COM HISTÓRICO)
+    // RESPONDER NOTIFICAÇÃO
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
-        
+
         Connection con = null;
         PreparedStatement stmt = null;
 
         try {
             con = ConnectionDB.getConnectionCloud();
-            
+
             if (con == null || con.isClosed()) {
                 Thread.sleep(2000);
                 con = ConnectionDB.getConnectionCloud();
@@ -463,9 +464,9 @@ public class NotificacaoVendasService {
                     throw new SQLException("Não foi possível reconectar ao banco");
                 }
             }
-            
+
             String status = aprovado ? "CONFIRMADO" : "REJEITADO";
-            
+
             // ==========================================
             // 1. ATUALIZAR NOTIFICACOES_PENDENTES
             // ==========================================
@@ -475,32 +476,36 @@ public class NotificacaoVendasService {
             stmt.setInt(2, notif.id);
             stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
-            
+
             if (rows > 0) {
                 System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
-                
+
                 if (aprovado) {
                     // ==========================================
-                    // 2. MOVER PARA HISTÓRICO (CONFIRMADO)
+                    // 2. MOVER PARA HISTÓRICO
                     // ==========================================
                     moverParaHistorico(con, notif);
-                    
+
                     // ==========================================
-                    // 3. REGISTRAR VENDA - RETORNA O ID
+                    // 3. REGISTRAR VENDA (RETORNA O ID)
                     // ==========================================
-                    System.out.println("📦 [RESPONDER] Registrando venda e baixando estoque...");
+                    System.out.println("📦 [RESPONDER] Registrando venda...");
                     int idVenda = registrarVenda(con, notif);
-                    
+
                     // ==========================================
-                    // 4. REGISTRAR SACOLA E ENTREGA COM O ID_VENDA
+                    // 4. REGISTRAR SACOLA E ENTREGA (COM O ID_VENDA)
                     // ==========================================
                     if (idVenda > 0) {
-                        registrarSacola(con, notif);
-                        registrarEntrega(con, notif);
+                        registrarSacola(con, notif, idVenda);
+                        registrarEntrega(con, notif, idVenda);
+                        System.out.println("   ✅ Todas as tabelas atualizadas com ID_Venda: " + idVenda);
                     }
-                    
+
+                    // ==========================================
+                    // 5. BAIXAR ESTOQUE
+                    // ==========================================
                     baixarEstoque(con, notif.itens);
-                    
+
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
                 } else {
                     // ==========================================
@@ -510,16 +515,15 @@ public class NotificacaoVendasService {
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
             }
-            
-        } catch (Exception e) {
+
+        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
             System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
-            e.printStackTrace();
             mostrarMensagemTray("❌ Erro!", e.getMessage(), TrayIcon.MessageType.ERROR);
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
             try { if (con != null) con.close(); } catch (SQLException e) {}
         }
-        
+
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
     }
 
@@ -555,7 +559,7 @@ public class NotificacaoVendasService {
             
             System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -594,7 +598,7 @@ public class NotificacaoVendasService {
             
             System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -621,7 +625,7 @@ public class NotificacaoVendasService {
                 return rs.getTimestamp("data_criacao");
             }
             
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             System.err.println("⚠️ Erro ao buscar data_criacao: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
@@ -633,85 +637,145 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // 3. REGISTRAR VENDA (RETORNA O ID_GERADO)
+    // 3. REGISTRAR VENDA (COM ID MANUAL)
     // ==========================================
     private static int registrarVenda(Connection con, Notificacao notif) {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         int idVenda = 0;
-        
+
         try {
             // ==========================================
-            // ESTRUTURA DA TABELA VENDAS:
-            // datavenda, origemvenda, tipopag, valorvenda, 
-            // codpecas, nomecli, obsvendas, entrega, status, pedido_id
+            // 🔥 BUSCAR O PRÓXIMO ID
             // ==========================================
-            String sql = "INSERT INTO vendas (datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status, pedido_id) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            stmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-            stmt.setDate(1, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(2, "WEB");
-            stmt.setString(3, notif.meioPagamento);
-            stmt.setDouble(4, notif.valor);
-            stmt.setString(5, notif.codPeca);
-            stmt.setString(6, notif.cliente);
-            stmt.setString(7, "Pedido Vitrine: " + notif.pedidoId);
-            stmt.setString(8, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
-            stmt.setString(9, "EM_SEPARACAO");
-            stmt.setString(10, notif.pedidoId);
+            int proximoId = getProximoIdVenda(con);
+
+            // ==========================================
+            // 🔥 LIMITAR OBSVENDAS (MÁXIMO 50 CARACTERES)
+            // ==========================================
+            String obsVendas = "Pedido: " + notif.pedidoId;
+            if (notif.endereco != null && !notif.endereco.isEmpty()) {
+                String enderecoResumido = notif.endereco;
+                // Limita o endereço para caber em 50 caracteres
+                int espacoRestante = 50 - obsVendas.length() - 3; // -3 para " | "
+                if (espacoRestante > 0 && enderecoResumido.length() > espacoRestante) {
+                    enderecoResumido = enderecoResumido.substring(0, espacoRestante) + "...";
+                } else if (espacoRestante > 0) {
+                    // Mantém o endereço completo se couber
+                } else {
+                    enderecoResumido = "";
+                }
+                if (!enderecoResumido.isEmpty()) {
+                    obsVendas += " | " + enderecoResumido;
+                }
+            }
+
+            // 🔥 GARANTE QUE NÃO ULTRAPASSE 50 CARACTERES
+            if (obsVendas.length() > 50) {
+                obsVendas = obsVendas.substring(0, 47) + "...";
+            }
+
+            // ==========================================
+            // 🔥 FORMATAR O VALOR (VARCHAR)
+            // ==========================================
+            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
+
+            // ==========================================
+            // 🔥 INSERIR COM ID MANUAL
+            // ==========================================
+            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomedi, obsvendas, entrega, status) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, proximoId);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(4, "SITE");
+            stmt.setString(5, notif.meioPagamento);
+            stmt.setString(6, valorFormatado); // 🔥 VARCHAR
+            stmt.setString(7, notif.codPeca);
+            stmt.setString(8, notif.cliente); // 🔥 nomedi = nome do cliente
+            stmt.setString(9, obsVendas);
+            stmt.setString(10, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
+            stmt.setString(11, "EM_SEPARACAO");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
-            
-            // ==========================================
-            // 🔥 RECUPERA O ID GERADO
-            // ==========================================
-            rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                idVenda = rs.getInt(1);
-            }
-            
+
+            idVenda = proximoId;
+
             System.out.println("   ✅ Venda registrada (ID: " + idVenda + ", Pedido: " + notif.pedidoId + ")");
-            
-        } catch (Exception e) {
+
+        } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
         }
-        
+
         return idVenda;
     }
 
     // ==========================================
-    // 4. REGISTRAR SACOLA
+    // 🔥 BUSCAR O PRÓXIMO ID DA TABELA VENDAS
     // ==========================================
-    private static void registrarSacola(Connection con, Notificacao notif) {
+    private static int getProximoIdVenda(Connection con) {
         PreparedStatement stmt = null;
-        
+        ResultSet rs = null;
+        int proximoId = 1;
+
+        try {
+            String sql = "SELECT MAX(id) FROM vendas";
+            stmt = con.prepareStatement(sql);
+            stmt.setQueryTimeout(10);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int maxId = rs.getInt(1);
+                proximoId = maxId + 1;
+            }
+
+            System.out.println("   📋 Próximo ID da venda: " + proximoId);
+
+        } catch (SQLException e) {
+            System.err.println("   ⚠️ Erro ao buscar próximo ID: " + e.getMessage());
+            // Fallback: usar timestamp
+            proximoId = (int) (System.currentTimeMillis() / 1000);
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+
+        return proximoId;
+    }
+
+    // ==========================================
+    // 4. REGISTRAR SACOLA (USA O ID_VENDA)
+    // ==========================================
+    private static void registrarSacola(Connection con, Notificacao notif, int idVenda) {
+        PreparedStatement stmt = null;
+
         try {
             // ==========================================
-            // ESTRUTURA DA TABELA SACOLA:
-            // pedido_id, datavenda, valorvenda, status, 
-            // codpecas, nomecli, tipoentrega
+            // 🔥 NÃO BUSCA ID, USA O ID_VENDA
             // ==========================================
-            String sql = "INSERT INTO sacola (pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
+            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
             stmt = con.prepareStatement(sql);
-            stmt.setString(1, notif.pedidoId);
-            stmt.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setDouble(3, notif.valor);
-            stmt.setString(4, "EM_SEPARACAO");
-            stmt.setString(5, notif.codPeca);
-            stmt.setString(6, notif.cliente);
-            stmt.setString(7, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+            stmt.setInt(1, idVenda);                                     // 🔥 USA O ID DA VENDA
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setDouble(4, notif.valor);
+            stmt.setString(5, "EM_SEPARACAO");
+            stmt.setString(6, notif.codPeca);                            // codepcas = código da peça
+            stmt.setString(7, notif.cliente);
+            stmt.setString(8, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
-            
-            System.out.println("   ✅ Sacola registrada (Pedido: " + notif.pedidoId + ")");
-            
-        } catch (Exception e) {
+
+            System.out.println("   ✅ Sacola registrada (ID_Venda: " + idVenda + ", Pedido: " + notif.pedidoId + ")");
+
+        } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -719,39 +783,39 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // 5. REGISTRAR ENTREGA
+    // 5. REGISTRAR ENTREGA (USA O ID_VENDA)
     // ==========================================
-    private static void registrarEntrega(Connection con, Notificacao notif) {
+    private static void registrarEntrega(Connection con, Notificacao notif, int idVenda) {
         PreparedStatement stmt = null;
-        
+
         try {
-            // ==========================================
-            // ESTRUTURA DA TABELA ENTREGAS:
-            // pedido_id, datavenda, nomecli, codpeca, valorfrete, 
-            // fretepago, entregue, status, tipoentrega, canal
-            // ==========================================
             String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA";
-            
-            String sql = "INSERT INTO entregas (pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, status, tipoentrega, canal) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
+
+            // ==========================================
+            // 🔥 USA O ID_VENDA DIRETAMENTE
+            // ==========================================
+            String sql = "INSERT INTO entregas (idvenda, pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, dataentrega, status, tipoentrega, canal) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             stmt = con.prepareStatement(sql);
-            stmt.setString(1, notif.pedidoId);
-            stmt.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(3, notif.cliente);
-            stmt.setString(4, notif.codPeca);
-            stmt.setDouble(5, 0.0);
-            stmt.setBoolean(6, false);
+            stmt.setInt(1, idVenda);                                     // 🔥 USA O ID DA VENDA
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.codPeca);
+            stmt.setDouble(6, 0.0);
             stmt.setBoolean(7, false);
-            stmt.setString(8, "EM_SEPARACAO");
-            stmt.setString(9, tipoEntrega);
-            stmt.setString(10, "SITE");
+            stmt.setBoolean(8, false);
+            stmt.setNull(9, java.sql.Types.DATE);
+            stmt.setString(10, "EM_SEPARACAO");
+            stmt.setString(11, tipoEntrega);
+            stmt.setString(12, "SITE");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
-            
-            System.out.println("   ✅ Entrega registrada (Pedido: " + notif.pedidoId + ", " + tipoEntrega + ")");
-            
-        } catch (Exception e) {
+
+            System.out.println("   ✅ Entrega registrada (ID_Venda: " + idVenda + ", " + tipoEntrega + ")");
+
+        } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -799,7 +863,7 @@ public class NotificacaoVendasService {
                 stmt.close();
             }
 
-        } catch (Exception e) {
+        } catch (JsonSyntaxException | SQLException e) {
             System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -830,7 +894,7 @@ public class NotificacaoVendasService {
                         tipo == TrayIcon.MessageType.WARNING ? JOptionPane.WARNING_MESSAGE :
                         JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (Exception e) {
+            } catch (AWTException | HeadlessException e) {
                 JOptionPane.showMessageDialog(null, mensagem, titulo, JOptionPane.INFORMATION_MESSAGE);
                 System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
             }
