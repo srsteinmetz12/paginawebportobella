@@ -683,7 +683,7 @@ public class NotificacaoVendasService {
             // ==========================================
             // 🔥 INSERIR COM ID MANUAL
             // ==========================================
-            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomedi, obsvendas, entrega, status) " +
+            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
