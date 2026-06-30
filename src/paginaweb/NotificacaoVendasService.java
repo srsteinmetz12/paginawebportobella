@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -107,6 +108,9 @@ public class NotificacaoVendasService {
         }, 1, 2, TimeUnit.SECONDS);
     }
 
+    // ==========================================
+    // BUSCAR NOTIFICAÇÕES NO BANCO
+    // ==========================================
     private static void buscarNotificacoes() {
         Connection con = null;
         PreparedStatement stmt = null;
@@ -160,6 +164,9 @@ public class NotificacaoVendasService {
         }
     }
 
+    // ==========================================
+    // PROCESSAR FILA (FIFO)
+    // ==========================================
     private static void processarFila() {
         synchronized (lockFila) {
             if (processando || filaNotificacoes.isEmpty()) {
@@ -183,6 +190,9 @@ public class NotificacaoVendasService {
         });
     }
 
+    // ==========================================
+    // EXIBIR POPUP
+    // ==========================================
     private static void exibirPopup(Notificacao notif) {
         // Fecha popup anterior
         if (popupDialog != null && popupDialog.isVisible()) {
@@ -358,18 +368,15 @@ public class NotificacaoVendasService {
         btnConfirmar.addActionListener(e -> {
             System.out.println("✅ [POPUP] CONFIRMAR: " + notif.pedidoId);
             
-            // Fecha o popup
             popupDialog.dispose();
             popupDialog = null;
             
-            // Libera a fila
             synchronized (lockFila) {
                 processando = false;
                 notificacoesEmProcessamento.remove(notif.id);
                 notificacaoAtual = null;
             }
             
-            // Processa em thread separada
             new Thread(() -> {
                 try {
                     responderNotificacao(notif, true);
@@ -388,18 +395,15 @@ public class NotificacaoVendasService {
         btnRejeitar.addActionListener(e -> {
             System.out.println("❌ [POPUP] REJEITAR: " + notif.pedidoId);
             
-            // Fecha o popup
             popupDialog.dispose();
             popupDialog = null;
             
-            // Libera a fila
             synchronized (lockFila) {
                 processando = false;
                 notificacoesEmProcessamento.remove(notif.id);
                 notificacaoAtual = null;
             }
             
-            // Processa em thread separada
             new Thread(() -> {
                 try {
                     responderNotificacao(notif, false);
@@ -442,7 +446,7 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO (SEM JOPTIONPANE - USANDO TRAY ICON)
+    // RESPONDER NOTIFICAÇÃO (COM HISTÓRICO)
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
@@ -462,8 +466,11 @@ public class NotificacaoVendasService {
             }
             
             String status = aprovado ? "CONFIRMADO" : "REJEITADO";
-            String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
             
+            // ==========================================
+            // 1. ATUALIZAR NOTIFICACOES_PENDENTES
+            // ==========================================
+            String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
             stmt = con.prepareStatement(sql);
             stmt.setString(1, status);
             stmt.setInt(2, notif.id);
@@ -474,15 +481,26 @@ public class NotificacaoVendasService {
                 System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
                 
                 if (aprovado) {
-                    System.out.println("📦 [RESPONDER] Registrando venda e baixando estoque...");
-                    registrarVenda(notif);
-                    baixarEstoque(notif.itens);
+                    // ==========================================
+                    // 2. MOVER PARA HISTÓRICO (CONFIRMADO)
+                    // ==========================================
+                    moverParaHistorico(con, notif);
                     
                     // ==========================================
-                    // 🔥 NOTIFICAÇÃO SEM JOPTIONPANE - USANDO TRAY ICON
+                    // 3. REGISTRAR NAS TABELAS
                     // ==========================================
+                    System.out.println("📦 [RESPONDER] Registrando venda e baixando estoque...");
+                    registrarVenda(con, notif);
+                    registrarSacola(con, notif);
+                    registrarEntrega(con, notif);
+                    baixarEstoque(con, notif.itens);
+                    
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
                 } else {
+                    // ==========================================
+                    // REJEITADO - REGISTRA NO HISTÓRICO
+                    // ==========================================
+                    moverParaHistoricoRejeitado(con, notif);
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
             }
@@ -499,133 +517,292 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // 🔥 MOSTRAR MENSAGEM NA BANDEJA DO SISTEMA (NÃO BLOQUEIA)
+    // 2A. MOVER PARA HISTÓRICO (CONFIRMADO)
+    // ==========================================
+    private static void moverParaHistorico(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        
+        try {
+            String sql = "INSERT INTO notificacoes_historico " +
+                         "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                         "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, notif.id);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setString(3, notif.codPeca);
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.telefone);
+            stmt.setDouble(6, notif.valor);
+            stmt.setString(7, notif.meioPagamento);
+            stmt.setString(8, notif.endereco);
+            stmt.setBoolean(9, notif.retirarLoja);
+            stmt.setString(10, notif.itens);
+            stmt.setString(11, "CONFIRMADO");
+            stmt.setTimestamp(12, getDataCriacao(notif.pedidoId));
+            stmt.setTimestamp(13, new Timestamp(System.currentTimeMillis()));
+            
+            stmt.setQueryTimeout(10);
+            int rows = stmt.executeUpdate();
+            
+            if (rows > 0) {
+                System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // 2B. MOVER PARA HISTÓRICO (REJEITADO)
+    // ==========================================
+    private static void moverParaHistoricoRejeitado(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        
+        try {
+            String sql = "INSERT INTO notificacoes_historico " +
+                         "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                         "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, notif.id);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setString(3, notif.codPeca);
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.telefone);
+            stmt.setDouble(6, notif.valor);
+            stmt.setString(7, notif.meioPagamento);
+            stmt.setString(8, notif.endereco);
+            stmt.setBoolean(9, notif.retirarLoja);
+            stmt.setString(10, notif.itens);
+            stmt.setString(11, "REJEITADO");
+            stmt.setTimestamp(12, getDataCriacao(notif.pedidoId));
+            stmt.setTimestamp(13, new Timestamp(System.currentTimeMillis()));
+            
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+            
+            System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
+            
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // BUSCAR DATA_CRIACAO DA NOTIFICACAO
+    // ==========================================
+    private static Timestamp getDataCriacao(String pedidoId) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            con = ConnectionDB.getConnectionCloud();
+            String sql = "SELECT data_criacao FROM notificacoes_pendentes WHERE pedido_id = ?";
+            stmt = con.prepareStatement(sql);
+            stmt.setString(1, pedidoId);
+            stmt.setQueryTimeout(10);
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getTimestamp("data_criacao");
+            }
+            
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("⚠️ Erro ao buscar data_criacao: " + e.getMessage());
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
+        }
+        
+        return new Timestamp(System.currentTimeMillis());
+    }
+
+    // ==========================================
+    // 3. REGISTRAR VENDA (status = EM_SEPARACAO)
+    // ==========================================
+    private static void registrarVenda(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        
+        try {
+            String sql = "INSERT INTO vendas (datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            stmt = con.prepareStatement(sql);
+            stmt.setDate(1, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(2, "SITE");
+            stmt.setString(3, notif.meioPagamento);
+            stmt.setDouble(4, notif.valor);
+            stmt.setString(5, notif.codPeca);
+            stmt.setString(6, notif.cliente);
+            stmt.setString(7, "Pedido: " + notif.pedidoId + " | " + notif.endereco);
+            stmt.setString(8, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
+            stmt.setString(9, "EM_SEPARACAO");
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+            
+            System.out.println("   ✅ Venda registrada (EM_SEPARACAO): " + notif.pedidoId);
+            
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // 4. REGISTRAR SACOLA (status = EM_SEPARACAO)
+    // ==========================================
+    private static void registrarSacola(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        
+        try {
+            String sql = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            stmt = con.prepareStatement(sql);
+            stmt.setString(1, notif.codPeca);
+            stmt.setString(2, notif.cliente);
+            stmt.setDouble(3, notif.valor);
+            stmt.setString(4, notif.meioPagamento);
+            stmt.setString(5, notif.pedidoId);
+            stmt.setString(6, notif.telefone);
+            stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+            stmt.setString(8, "EM_SEPARACAO");
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+            
+            System.out.println("   ✅ Sacola registrada (EM_SEPARACAO): " + notif.pedidoId);
+            
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // 5. REGISTRAR ENTREGA (status = EM_SEPARACAO)
+    // ==========================================
+    private static void registrarEntrega(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        
+        try {
+            String tipoEntrega = notif.retirarLoja ? "RETIRADA" : "ENTREGA";
+            
+            String sql = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
+                         "VALUES (?, ?, ?, ?, ?, ?)";
+            
+            stmt = con.prepareStatement(sql);
+            stmt.setString(1, notif.pedidoId);
+            stmt.setString(2, notif.cliente);
+            stmt.setString(3, notif.endereco);
+            stmt.setString(4, tipoEntrega);
+            stmt.setString(5, "EM_SEPARACAO");
+            stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+            
+            System.out.println("   ✅ Entrega registrada (EM_SEPARACAO): " + notif.pedidoId + " (" + tipoEntrega + ")");
+            
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // 6. BAIXAR ESTOQUE (COM DATAVENDA)
+    // ==========================================
+    private static void baixarEstoque(Connection con, String itensJson) {
+        if (itensJson == null || itensJson.isEmpty()) {
+            return;
+        }
+
+        PreparedStatement stmt = null;
+        
+        try {
+            JsonArray itensArray = gson.fromJson(itensJson, JsonArray.class);
+            
+            if (itensArray == null || itensArray.size() == 0) {
+                return;
+            }
+            
+            System.out.println("📦 [ESTOQUE] Baixando " + itensArray.size() + " item(ns)...");
+            
+            for (int i = 0; i < itensArray.size(); i++) {
+                JsonObject item = itensArray.get(i).getAsJsonObject();
+                String codPeca = item.get("id").getAsString();
+                int quantidade = item.get("quantidade").getAsInt();
+                
+                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'DISPONIVEL' LIMIT ?";
+                
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, codPeca);
+                stmt.setInt(2, quantidade);
+                stmt.setQueryTimeout(10);
+                int rows = stmt.executeUpdate();
+                
+                if (rows > 0) {
+                    System.out.println("   ✅ Estoque baixado: " + codPeca + " (" + rows + " unidade(s))");
+                } else {
+                    System.err.println("   ⚠️ Produto não encontrado: " + codPeca);
+                }
+                
+                stmt.close();
+            }
+
+        } catch (JsonSyntaxException | SQLException e) {
+            System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // MOSTRAR MENSAGEM NA BANDEJA
     // ==========================================
     private static void mostrarMensagemTray(String titulo, String mensagem, TrayIcon.MessageType tipo) {
         SwingUtilities.invokeLater(() -> {
             try {
                 if (SystemTray.isSupported()) {
                     SystemTray tray = SystemTray.getSystemTray();
-                    // Cria um ícone temporário
                     Image image = Toolkit.getDefaultToolkit().createImage("");
                     TrayIcon trayIcon = new TrayIcon(image, "PORTOBELLA");
                     trayIcon.setImageAutoSize(true);
                     
-                    // Adiciona à bandeja
                     tray.add(trayIcon);
-                    
-                    // Exibe a mensagem
                     trayIcon.displayMessage(titulo, mensagem, tipo);
                     
-                    // Remove o ícone após 3 segundos
                     new Timer(3000, e -> {
                         tray.remove(trayIcon);
                     }).start();
                 } else {
-                    // Fallback: usa JOptionPane apenas se não houver bandeja
                     JOptionPane.showMessageDialog(null, mensagem, titulo, 
                         tipo == TrayIcon.MessageType.INFO ? JOptionPane.INFORMATION_MESSAGE :
                         tipo == TrayIcon.MessageType.WARNING ? JOptionPane.WARNING_MESSAGE :
                         JOptionPane.ERROR_MESSAGE);
                 }
             } catch (AWTException | HeadlessException e) {
-                // Fallback: usa JOptionPane
                 JOptionPane.showMessageDialog(null, mensagem, titulo, JOptionPane.INFORMATION_MESSAGE);
                 System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
             }
         });
     }
 
-    private static void registrarVenda(Notificacao notif) {
-        Connection con = null;
-        PreparedStatement stmt = null;
-
-        try {
-            con = ConnectionDB.getConnectionCloud();
-            
-            String sql = "INSERT INTO vendas (id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, " +
-                         "obsvendas, entrega, status) " +
-                         "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            stmt = con.prepareStatement(sql);
-            stmt.setString(1, notif.pedidoId);
-            stmt.setString(2, notif.dataCriacao);
-            stmt.setString(3, "VENDA WEB");
-            stmt.setString(4, notif.meioPagamento);
-            stmt.setDouble(5, notif.valor);
-            stmt.setString(6, notif.codPeca);
-            stmt.setString(7, notif.cliente);
-            stmt.setString(8, "VENDA_VITRINE");
-            stmt.setBoolean(9, notif.retirarLoja);           
-            stmt.setString(10, "EM_SEPARACAO");
-            stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-            
-            System.out.println("   ✅ Venda registrada: " + notif.pedidoId);
-
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) con.close(); } catch (SQLException e) {}
-        }
-    }
-
     // ==========================================
-    // BAIXAR ESTOQUE (COM DATAVENDA)
+    // PARAR O SERVIÇO
     // ==========================================
-    private static void baixarEstoque(String itensJson) {
-        if (itensJson == null || itensJson.isEmpty()) {
-            return;
-        }
-
-        Connection con = null;
-        PreparedStatement stmt = null;
-
-        try {
-            con = ConnectionDB.getConnectionCloud();
-
-            JsonArray itensArray = gson.fromJson(itensJson, JsonArray.class);
-
-            if (itensArray == null || itensArray.size() == 0) {
-                return;
-            }
-
-            System.out.println("📦 [ESTOQUE] Baixando " + itensArray.size() + " item(ns)...");
-
-            for (int i = 0; i < itensArray.size(); i++) {
-                JsonObject item = itensArray.get(i).getAsJsonObject();
-                String codPeca = item.get("id").getAsString();
-                int quantidade = item.get("quantidade").getAsInt();
-
-                // ==========================================
-                // 🔥 ATUALIZA STATUS E DATAVENDA
-                // ==========================================
-                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'DISPONIVEL' LIMIT ?";
-
-                stmt = con.prepareStatement(sql);
-                stmt.setString(1, codPeca);
-                stmt.setInt(2, quantidade);
-                stmt.setQueryTimeout(10);
-                int rows = stmt.executeUpdate();
-
-                if (rows > 0) {
-                    System.out.println("   ✅ Estoque baixado: " + codPeca + " (" + rows + " unidade(s)) - Data: " + java.time.LocalDate.now());
-                } else {
-                    System.err.println("   ⚠️ Produto não encontrado: " + codPeca);
-                }
-
-                stmt.close();
-            }
-
-        } catch (JsonSyntaxException | ClassNotFoundException | SQLException e) {
-            System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) con.close(); } catch (SQLException e) {}
-        }
-    }
-
     public static void parar() {
         executando = false;
         if (scheduler != null) {
