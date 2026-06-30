@@ -3,7 +3,6 @@ package paginaweb;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
 
 import javax.swing.*;
@@ -155,7 +154,7 @@ public class NotificacaoVendasService {
                 }
             }
 
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (Exception e) {
             System.err.println("❌ Erro ao consultar banco: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
@@ -487,12 +486,19 @@ public class NotificacaoVendasService {
                     moverParaHistorico(con, notif);
                     
                     // ==========================================
-                    // 3. REGISTRAR NAS TABELAS
+                    // 3. REGISTRAR VENDA - RETORNA O ID
                     // ==========================================
                     System.out.println("📦 [RESPONDER] Registrando venda e baixando estoque...");
-                    registrarVenda(con, notif);
-                    registrarSacola(con, notif);
-                    registrarEntrega(con, notif);
+                    int idVenda = registrarVenda(con, notif);
+                    
+                    // ==========================================
+                    // 4. REGISTRAR SACOLA E ENTREGA COM O ID_VENDA
+                    // ==========================================
+                    if (idVenda > 0) {
+                        registrarSacola(con, notif);
+                        registrarEntrega(con, notif);
+                    }
+                    
                     baixarEstoque(con, notif.itens);
                     
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
@@ -505,8 +511,9 @@ public class NotificacaoVendasService {
                 }
             }
             
-        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+        } catch (Exception e) {
             System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
+            e.printStackTrace();
             mostrarMensagemTray("❌ Erro!", e.getMessage(), TrayIcon.MessageType.ERROR);
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -544,13 +551,11 @@ public class NotificacaoVendasService {
             stmt.setTimestamp(13, new Timestamp(System.currentTimeMillis()));
             
             stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
+            stmt.executeUpdate();
             
-            if (rows > 0) {
-                System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
-            }
+            System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
             
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -589,7 +594,7 @@ public class NotificacaoVendasService {
             
             System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
             
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -616,7 +621,7 @@ public class NotificacaoVendasService {
                 return rs.getTimestamp("data_criacao");
             }
             
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (Exception e) {
             System.err.println("⚠️ Erro ao buscar data_criacao: " + e.getMessage());
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
@@ -628,16 +633,23 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // 3. REGISTRAR VENDA (status = EM_SEPARACAO)
+    // 3. REGISTRAR VENDA (RETORNA O ID_GERADO)
     // ==========================================
-    private static void registrarVenda(Connection con, Notificacao notif) {
+    private static int registrarVenda(Connection con, Notificacao notif) {
         PreparedStatement stmt = null;
+        ResultSet rs = null;
+        int idVenda = 0;
         
         try {
-            String sql = "INSERT INTO vendas (datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // ==========================================
+            // ESTRUTURA DA TABELA VENDAS:
+            // datavenda, origemvenda, tipopag, valorvenda, 
+            // codpecas, nomecli, obsvendas, entrega, status, pedido_id
+            // ==========================================
+            String sql = "INSERT INTO vendas (datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status, pedido_id) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
-            stmt = con.prepareStatement(sql);
+            stmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             stmt.setDate(1, java.sql.Date.valueOf(java.time.LocalDate.now()));
             stmt.setString(2, "SITE");
             stmt.setString(3, notif.meioPagamento);
@@ -647,43 +659,59 @@ public class NotificacaoVendasService {
             stmt.setString(7, "Pedido: " + notif.pedidoId + " | " + notif.endereco);
             stmt.setString(8, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
             stmt.setString(9, "EM_SEPARACAO");
+            stmt.setString(10, notif.pedidoId);
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
             
-            System.out.println("   ✅ Venda registrada (EM_SEPARACAO): " + notif.pedidoId);
+            // ==========================================
+            // 🔥 RECUPERA O ID GERADO
+            // ==========================================
+            rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                idVenda = rs.getInt(1);
+            }
             
-        } catch (SQLException e) {
+            System.out.println("   ✅ Venda registrada (ID: " + idVenda + ", Pedido: " + notif.pedidoId + ")");
+            
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
         } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
         }
+        
+        return idVenda;
     }
 
     // ==========================================
-    // 4. REGISTRAR SACOLA (status = EM_SEPARACAO)
+    // 4. REGISTRAR SACOLA
     // ==========================================
     private static void registrarSacola(Connection con, Notificacao notif) {
         PreparedStatement stmt = null;
         
         try {
-            String sql = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            // ==========================================
+            // ESTRUTURA DA TABELA SACOLA:
+            // pedido_id, datavenda, valorvenda, status, 
+            // codpecas, nomecli, tipoentrega
+            // ==========================================
+            String sql = "INSERT INTO sacola (pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?)";
             
             stmt = con.prepareStatement(sql);
-            stmt.setString(1, notif.codPeca);
-            stmt.setString(2, notif.cliente);
+            stmt.setString(1, notif.pedidoId);
+            stmt.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
             stmt.setDouble(3, notif.valor);
-            stmt.setString(4, notif.meioPagamento);
-            stmt.setString(5, notif.pedidoId);
-            stmt.setString(6, notif.telefone);
-            stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-            stmt.setString(8, "EM_SEPARACAO");
+            stmt.setString(4, "EM_SEPARACAO");
+            stmt.setString(5, notif.codPeca);
+            stmt.setString(6, notif.cliente);
+            stmt.setString(7, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
             
-            System.out.println("   ✅ Sacola registrada (EM_SEPARACAO): " + notif.pedidoId);
+            System.out.println("   ✅ Sacola registrada (Pedido: " + notif.pedidoId + ")");
             
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -691,30 +719,39 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // 5. REGISTRAR ENTREGA (status = EM_SEPARACAO)
+    // 5. REGISTRAR ENTREGA
     // ==========================================
     private static void registrarEntrega(Connection con, Notificacao notif) {
         PreparedStatement stmt = null;
         
         try {
-            String tipoEntrega = notif.retirarLoja ? "RETIRADA" : "ENTREGA";
+            // ==========================================
+            // ESTRUTURA DA TABELA ENTREGAS:
+            // pedido_id, datavenda, nomecli, codpeca, valorfrete, 
+            // fretepago, entregue, status, tipoentrega, canal
+            // ==========================================
+            String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA";
             
-            String sql = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
-                         "VALUES (?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO entregas (pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, status, tipoentrega, canal) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             stmt = con.prepareStatement(sql);
             stmt.setString(1, notif.pedidoId);
-            stmt.setString(2, notif.cliente);
-            stmt.setString(3, notif.endereco);
-            stmt.setString(4, tipoEntrega);
-            stmt.setString(5, "EM_SEPARACAO");
-            stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            stmt.setDate(2, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(3, notif.cliente);
+            stmt.setString(4, notif.codPeca);
+            stmt.setDouble(5, 0.0);
+            stmt.setBoolean(6, false);
+            stmt.setBoolean(7, false);
+            stmt.setString(8, "EM_SEPARACAO");
+            stmt.setString(9, tipoEntrega);
+            stmt.setString(10, "SITE");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
             
-            System.out.println("   ✅ Entrega registrada (EM_SEPARACAO): " + notif.pedidoId + " (" + tipoEntrega + ")");
+            System.out.println("   ✅ Entrega registrada (Pedido: " + notif.pedidoId + ", " + tipoEntrega + ")");
             
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -762,7 +799,7 @@ public class NotificacaoVendasService {
                 stmt.close();
             }
 
-        } catch (JsonSyntaxException | SQLException e) {
+        } catch (Exception e) {
             System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -793,7 +830,7 @@ public class NotificacaoVendasService {
                         tipo == TrayIcon.MessageType.WARNING ? JOptionPane.WARNING_MESSAGE :
                         JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (AWTException | HeadlessException e) {
+            } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, mensagem, titulo, JOptionPane.INFORMATION_MESSAGE);
                 System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
             }

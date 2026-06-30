@@ -183,7 +183,7 @@ public class VendasDAO {
         System.out.println(sql);
         try {
             stmt = con.prepareStatement(sql);//tabela
-            rs = stmt.executeQuery(sql);
+            rs = stmt.executeQuery();
             if(rs.next()){
                 v.setIdVenda(rs.getInt(1));               
                 System.out.println("Acessou o banco de dados com sucesso!");
@@ -215,7 +215,7 @@ public class VendasDAO {
         System.out.println(sql);
         try {
             stmt2 = con2.prepareStatement(sql);//tabela
-            rs = stmt2.executeQuery(sql);
+            rs = stmt2.executeQuery();
             if(rs.next()){
                 v.setIdVenda(rs.getInt(1));               
                 System.out.println("Acessou o banco de dados com sucesso!");
