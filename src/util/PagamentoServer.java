@@ -145,7 +145,7 @@ public class PagamentoServer {
                     String payloadPix = gerarPayloadPix(total, "Pedido PORTOBERLLA");
 
                     response.put("success", true);
-                    response.put("meio", "pix");
+                    response.put("meio", "PIX");
                     response.put("payload", payloadPix);
                     response.put("total", total);
                     response.put("pedidoId", System.currentTimeMillis());
@@ -158,7 +158,7 @@ public class PagamentoServer {
 
                     if (link != null && !link.isEmpty()) {
                         response.put("success", true);
-                        response.put("meio", "mercado_pago");
+                        response.put("meio", "CREDITO");
                         response.put("paymentUrl", link);
                         System.out.println("   ✅ Link MP gerado: " + link);
                     } else {
@@ -1029,7 +1029,7 @@ public class PagamentoServer {
             // ==========================================
             // 3. REGISTRAR NA TABELA ENTREGA
             // ==========================================
-            String tipoEntrega = retirarLoja ? "RETIRADA" : "ENTREGA";
+            String tipoEntrega = retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO";
             String statusEntrega = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
 
             String sqlEntrega = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
