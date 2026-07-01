@@ -1124,11 +1124,11 @@ public class TelaEstoque extends javax.swing.JFrame {
             }                           
             salvarItemNaBase();
             cleanFields();
-            try {
-                atualizarSiteBrecho();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
-            }
+//            try {
+//                atualizarSiteBrecho();
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
+//            }
         }       
     }//GEN-LAST:event_buttonSalvarActionPerformed
 /////// Botao Limpar //////
@@ -1673,19 +1673,19 @@ public class TelaEstoque extends javax.swing.JFrame {
         }
     }
     
-    private void atualizarSiteBrecho() throws InterruptedException {
-        System.out.println("Iniciando atualizacao do Site....");
-        try {
-            pdao.gerarSiteEstoque();
-            System.out.println("Finalizando atualizacao do Site....");
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
-            System.err.println("Erro: "+ex);
-        } catch (SQLException ex) {
-            Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
-            System.err.println("Erro: "+ex);
-        }
-    }
+//    private void atualizarSiteBrecho() throws InterruptedException {
+//        System.out.println("Iniciando atualizacao do Site....");
+//        try {
+//            pdao.gerarSiteEstoque();
+//            System.out.println("Finalizando atualizacao do Site....");
+//        } catch (ClassNotFoundException ex) {
+//            Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
+//            System.err.println("Erro: "+ex);
+//        } catch (SQLException ex) {
+//            Logger.getLogger(TelaEstoque.class.getName()).log(Level.SEVERE, null, ex);
+//            System.err.println("Erro: "+ex);
+//        }
+//    }
 
      public static void main(String args[]) {
         /* Set the Nimbus look and feel */

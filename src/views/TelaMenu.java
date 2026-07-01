@@ -183,12 +183,12 @@ public class TelaMenu extends javax.swing.JFrame {
                 // ====================================================================================
                 // INJEÇÃO DA AUTOMAÇÃO COMERCIAL: Monitora o Mercado Pago e atualiza estoque na Aiven
                 // ====================================================================================
-                try {
-                    dao.ProdutoDAO produtoDao = new dao.ProdutoDAO();
-                    produtoDao.processarVendasMercadoPago();
-                } catch (ClassNotFoundException e) {
-                    System.err.println("Erro ao rodar processamento automatizado Mercado Pago: " + e.getMessage());
-                }
+//                try {
+//                    dao.ProdutoDAO produtoDao = new dao.ProdutoDAO();
+//                    produtoDao.processarVendasMercadoPago();
+//                } catch (ClassNotFoundException e) {
+//                    System.err.println("Erro ao rodar processamento automatizado Mercado Pago: " + e.getMessage());
+//                }
                 // ====================================================================================
 
                 // ATUALIZA O DASHBOARD COM OS NOVOS DADOS LOCAIS RECENTES (Já com as baixas online inclusas)
@@ -704,15 +704,15 @@ public class TelaMenu extends javax.swing.JFrame {
     private void buttonEstoqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonEstoqueActionPerformed
         new TelaEstoque().setVisible(true);
         this.setLocationRelativeTo(null);
-        try {
-            pdao.gerarSiteEstoque();
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SQLException ex) {
-            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            pdao.gerarSiteEstoque();
+//        } catch (ClassNotFoundException ex) {
+//            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (SQLException ex) {
+//            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(TelaMenu.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         dispose();
     }//GEN-LAST:event_buttonEstoqueActionPerformed
 

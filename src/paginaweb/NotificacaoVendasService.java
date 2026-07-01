@@ -495,7 +495,7 @@ public class NotificacaoVendasService {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO (COM CONFIRMAÇÃO DE ATUALIZAÇÃO)
+    // RESPONDER NOTIFICAÇÃO (COM ATUALIZAÇÃO DO SITE)
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
@@ -526,11 +526,8 @@ public class NotificacaoVendasService {
             stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
 
-            // ==========================================
-            // 🔥 VERIFICA SE ATUALIZOU CORRETAMENTE
-            // ==========================================
             if (rows > 0) {
-                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status + " (lida = 1)");
+                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
 
                 if (aprovado) {
                     // ==========================================
@@ -558,19 +555,16 @@ public class NotificacaoVendasService {
                     // ==========================================
                     baixarEstoque(con, notif.itens);
 
+                    // ==========================================
+                    // 🔥 6. ATUALIZAR O SITE (REGERAR HTML)
+                    // ==========================================
+                    atualizarSiteAsync();
+
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
                 } else {
-                    // ==========================================
-                    // REJEITADO - REGISTRA NO HISTÓRICO
-                    // ==========================================
                     moverParaHistoricoRejeitado(con, notif);
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
-            } else {
-                // ==========================================
-                // 🔥 SE NÃO ATUALIZOU, A NOTIFICAÇÃO JÁ FOI PROCESSADA
-                // ==========================================
-                System.err.println("⚠️ [RESPONDER] Notificação #" + notif.id + " já foi processada ou não existe!");
             }
 
         } catch (ClassNotFoundException | InterruptedException | SQLException e) {
@@ -582,6 +576,33 @@ public class NotificacaoVendasService {
         }
 
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
+    }
+
+    // ==========================================
+    // 🔥 ATUALIZAR O SITE (REGERAR HTML)
+    // ==========================================
+    private static void atualizarSite() {
+        try {
+            System.out.println("🔄 [SITE] Atualizando vitrine virtual...");
+
+            // ==========================================
+            // CHAMAR A CLASSE DE GERAÇÃO DO SITE
+            // ==========================================
+            GerarSiteEstoque gerador = new paginaweb.GerarSiteEstoque();
+            gerador.gerarSiteEstoque();
+
+            System.out.println("✅ [SITE] Vitrine virtual atualizada com sucesso!");
+            System.out.println("   📁 Arquivo gerado: C:\\Users\\DBC\\Documents\\estoqueVitrineWeb\\index.html");
+
+        } catch (ClassNotFoundException e) {
+            System.err.println("❌ [SITE] Erro de classe: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("❌ [SITE] Erro SQL: " + e.getMessage());
+        } catch (InterruptedException e) {
+            System.err.println("❌ [SITE] Erro de interrupção: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("❌ [SITE] Erro ao atualizar site: " + e.getMessage());
+        }
     }
 
     // ==========================================
@@ -956,6 +977,53 @@ public class NotificacaoVendasService {
                 System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
             }
         });
+    }
+    // ==========================================
+    // ATUALIZAR SITE EM THREAD SEPARADA
+    // ==========================================
+    private static void atualizarSiteAsync() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000); // Aguarda 5 segundos para garantir que o banco foi atualizado
+                atualizarSite();
+            } catch (InterruptedException e) {
+                System.err.println("❌ [SITE] Erro ao atualizar: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    // ==========================================
+    // ATUALIZAR SITE COM RETRY
+    // ==========================================
+    private static void atualizarSiteComRetry() {
+        int tentativas = 0;
+        int maxTentativas = 3;
+
+        while (tentativas < maxTentativas) {
+            try {
+                tentativas++;
+                System.out.println("🔄 [SITE] Tentativa " + tentativas + " de " + maxTentativas);
+
+                GerarSiteEstoque gerador = new GerarSiteEstoque();
+                gerador.gerarSiteEstoque();
+
+                System.out.println("✅ [SITE] Site atualizado com sucesso!");
+                return;
+
+            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+                System.err.println("⚠️ [SITE] Falha na tentativa " + tentativas + ": " + e.getMessage());
+
+                if (tentativas < maxTentativas) {
+                    try {
+                        Thread.sleep(3000); // Aguarda 3 segundos antes de tentar novamente
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        System.err.println("❌ [SITE] Falha ao atualizar site após " + maxTentativas + " tentativas");
     }
 
     // ==========================================

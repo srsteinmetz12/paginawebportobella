@@ -513,7 +513,7 @@ public class PagamentoServer {
                     String payloadPix = gerarPayloadPix(valorTotal, "Pedido PORTOBELLA");
                     
                     response.put("success", true);
-                    response.put("meio", "pix");
+                    response.put("meio", "PIX");
                     response.put("payload", payloadPix);
                     response.put("valor", valorTotal);
                     response.put("produto", nome);
