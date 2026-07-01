@@ -1155,100 +1155,182 @@ public class GerarSiteEstoque {
     }
     
     private void enviarParaGitHub(String diretorioDocumentos) {
-        System.out.println("📤 [GIT] Iniciando envio para o GitHub...");
+        System.out.println("📤 [GIT] ========================================");
+        System.out.println("📤 [GIT] INICIANDO ENVIO PARA O GITHUB");
+        System.out.println("📤 [GIT] ========================================");
 
         try {
             File pastaOrigem = new File(diretorioDocumentos);
+            File indexFile = new File(pastaOrigem, "index.html");
 
             // ==========================================
-            // CONFIGURAÇÃO DAS PAUSAS (em milissegundos)
+            // VERIFICAR SE O ARQUIVO EXISTE
             // ==========================================
-            final long PAUSA_ANTES_COMANDO = 4000;  // 4 segundos antes
-            final long PAUSA_DEPOIS_COMANDO = 2500; // 2.5 segundos depois
-
-            // ==========================================
-            // COMANDOS GIT
-            // ==========================================
-            String[][] comandos = {
-                {"git", "add", "-f", "index.html"},
-                {"git", "commit", "-m", "Atualização automática do estoque - " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date())},
-                {"git", "push", "origin", "main", "--force"},
-                {"git", "checkout", "HEAD", "--", "index.html"}  // Restaura o arquivo
-            };
-
-            for (String[] cmd : comandos) {
-                String cmdStr = String.join(" ", cmd);
-                System.out.println("   🔹 " + cmdStr);
-
-                // ==========================================
-                // 🔥 PAUSA ANTES DO COMANDO
-                // ==========================================
-                Thread.sleep(PAUSA_ANTES_COMANDO);
-
-                Process process = Runtime.getRuntime().exec(cmd, null, pastaOrigem);
-                int result = process.waitFor();
-
-                // Lê a saída padrão
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("   " + line);
-                }
-                reader.close();
-
-                // Lê a saída de erro
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-                while ((line = errorReader.readLine()) != null) {
-                    if (!line.contains("nothing to commit") && !line.contains("already up to date")) {
-                        System.err.println("   ❌ " + line);
-                    } else {
-                        System.out.println("   ℹ️ " + line);
-                    }
-                }
-                errorReader.close();
-
-                // ==========================================
-                // 🔥 PAUSA DEPOIS DO COMANDO
-                // ==========================================
-                Thread.sleep(PAUSA_DEPOIS_COMANDO);
+            if (!indexFile.exists()) {
+                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
+                return;
             }
 
+            System.out.println("📄 [GIT] Arquivo: " + indexFile.getAbsolutePath());
+            System.out.println("📄 [GIT] Tamanho: " + indexFile.length() + " bytes");
+            System.out.println("📄 [GIT] Modificação: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date(indexFile.lastModified())));
+            System.out.println("📤 [GIT] ========================================");
+
             // ==========================================
-            // VERIFICAÇÃO FINAL
+            // PAUSA INICIAL
             // ==========================================
-            System.out.println("📋 [GIT] Verificando status final...");
-            Thread.sleep(1000);
+            System.out.println("⏳ [GIT] Aguardando 3 segundos para garantir que o arquivo foi salvo...");
+            Thread.sleep(3000);
 
-            Process statusProcess = Runtime.getRuntime().exec(new String[]{"git", "status", "--porcelain"}, null, pastaOrigem);
-            BufferedReader statusReader = new BufferedReader(new InputStreamReader(statusProcess.getInputStream()));
-            String line;
-            boolean limpo = true;
-            while ((line = statusReader.readLine()) != null) {
-                System.out.println("   " + line);
-                if (line.contains("index.html")) {
-                    limpo = false;
-                }
-            }
-            statusReader.close();
+            // ==========================================
+            // 1. GIT STATUS ANTES DO ADD
+            // ==========================================
+            System.out.println("📋 [GIT] ========================================");
+            System.out.println("📋 [GIT] PASSO 1: Verificando status ANTES do git add...");
+            System.out.println("📋 [GIT] ========================================");
+            executarGitStatus(pastaOrigem);
+            Thread.sleep(2000);
 
-            if (limpo) {
-                System.out.println("✅ [GIT] Repositório limpo! Nada a commit.");
-            } else {
-                System.out.println("⚠️ [GIT] Ainda há modificações. Executando checkout forçado...");
-                Thread.sleep(1000);
-                Process forceCheckout = Runtime.getRuntime().exec(
-                    new String[]{"git", "checkout", "--", "index.html"}, 
-                    null, pastaOrigem);
-                forceCheckout.waitFor();
-                System.out.println("   ✅ Checkout forçado executado.");
-            }
+            // ==========================================
+            // 2. GIT ADD
+            // ==========================================
+            System.out.println("📤 [GIT] ========================================");
+            System.out.println("📤 [GIT] PASSO 2: Executando git add index.html...");
+            System.out.println("📤 [GIT] ========================================");
+            executarComandoGit(pastaOrigem, "git", "add", "index.html");
+            Thread.sleep(3000);
 
-            System.out.println("🚀 [GIT] Processo finalizado!");
-            System.out.println("✅ [GIT] Arquivo restaurado para o estado do repositório!");
+            // ==========================================
+            // 3. GIT STATUS DEPOIS DO ADD
+            // ==========================================
+            System.out.println("📋 [GIT] ========================================");
+            System.out.println("📋 [GIT] PASSO 3: Verificando status DEPOIS do git add...");
+            System.out.println("📋 [GIT] ========================================");
+            executarGitStatus(pastaOrigem);
+            Thread.sleep(2000);
+
+            // ==========================================
+            // 4. GIT COMMIT
+            // ==========================================
+            System.out.println("📤 [GIT] ========================================");
+            System.out.println("📤 [GIT] PASSO 4: Executando git commit...");
+            System.out.println("📤 [GIT] ========================================");
+            String dataHora = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
+            executarComandoGit(pastaOrigem, "git", "commit", "-m", "Atualização automática do estoque - " + dataHora);
+            Thread.sleep(3000);
+
+            // ==========================================
+            // 5. GIT STATUS DEPOIS DO COMMIT
+            // ==========================================
+            System.out.println("📋 [GIT] ========================================");
+            System.out.println("📋 [GIT] PASSO 5: Verificando status DEPOIS do git commit...");
+            System.out.println("📋 [GIT] ========================================");
+            executarGitStatus(pastaOrigem);
+            Thread.sleep(2000);
+
+            // ==========================================
+            // 6. GIT PUSH
+            // ==========================================
+            System.out.println("📤 [GIT] ========================================");
+            System.out.println("📤 [GIT] PASSO 6: Executando git push origin main --force...");
+            System.out.println("📤 [GIT] ========================================");
+            executarComandoGit(pastaOrigem, "git", "push", "origin", "main", "--force");
+            Thread.sleep(5000);
+
+            // ==========================================
+            // 7. GIT STATUS FINAL
+            // ==========================================
+            System.out.println("📋 [GIT] ========================================");
+            System.out.println("📋 [GIT] PASSO 7: Verificando status FINAL...");
+            System.out.println("📋 [GIT] ========================================");
+            executarGitStatus(pastaOrigem);
+            Thread.sleep(2000);
+
+            System.out.println("🚀 [GIT] ========================================");
+            System.out.println("🚀 [GIT] PROCESSO FINALIZADO COM SUCESSO!");
+            System.out.println("🚀 [GIT] ========================================");
 
         } catch (IOException | InterruptedException e) {
             System.err.println("❌ [GIT] Erro: " + e.getMessage());
         }
+    }
+
+    // ==========================================
+    // MÉTODO PARA EXECUTAR COMANDO GIT E MOSTRAR SAÍDA
+    // ==========================================
+    private void executarComandoGit(File diretorio, String... comando) throws IOException, InterruptedException {
+        String cmdStr = String.join(" ", comando);
+        System.out.println("   🔹 Executando: " + cmdStr);
+        System.out.println("   📁 Diretório: " + diretorio.getAbsolutePath());
+
+        Process process = Runtime.getRuntime().exec(comando, null, diretorio);
+        int result = process.waitFor();
+
+        // Lê a saída padrão
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        boolean hasOutput = false;
+        while ((line = reader.readLine()) != null) {
+            hasOutput = true;
+            System.out.println("   ✅ " + line);
+        }
+        reader.close();
+
+        // Lê a saída de erro
+        BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        boolean hasError = false;
+        while ((line = errorReader.readLine()) != null) {
+            if (!line.contains("nothing to commit") && !line.contains("already up to date")) {
+                hasError = true;
+                System.err.println("   ❌ " + line);
+            } else {
+                System.out.println("   ℹ️ " + line);
+            }
+        }
+        errorReader.close();
+
+        if (!hasOutput && !hasError) {
+            System.out.println("   ℹ️ Comando executado sem saída.");
+        }
+
+        System.out.println("   🔹 Resultado: " + (result == 0 ? "SUCESSO ✅" : "FALHA ❌ (código " + result + ")"));
+        System.out.println("");
+    }
+
+    // ==========================================
+    // MÉTODO PARA EXECUTAR GIT STATUS
+    // ==========================================
+    private void executarGitStatus(File diretorio) throws IOException, InterruptedException {
+        System.out.println("   🔹 Executando: git status");
+        System.out.println("   📁 Diretório: " + diretorio.getAbsolutePath());
+
+        Process process = Runtime.getRuntime().exec(new String[]{"git", "status"}, null, diretorio);
+        int result = process.waitFor();
+
+        // Lê a saída
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        boolean hasChanges = false;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("modified:") || line.contains("Changes to be committed") || line.contains("Untracked files")) {
+                hasChanges = true;
+            }
+            System.out.println("   📋 " + line);
+        }
+        reader.close();
+
+        // Lê erros
+        BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        while ((line = errorReader.readLine()) != null) {
+            System.err.println("   ❌ " + line);
+        }
+        errorReader.close();
+
+        if (!hasChanges) {
+            System.out.println("   ℹ️ Nenhuma alteração detectada.");
+        }
+
+        System.out.println("");
     }
     
 }
