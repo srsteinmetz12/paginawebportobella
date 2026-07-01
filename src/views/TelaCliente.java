@@ -698,45 +698,69 @@ public class TelaCliente extends javax.swing.JFrame {
     }//GEN-LAST:event_buttonMenuActionPerformed
 
     private void buttonSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonSalvarActionPerformed
-        if(!campoDataCadastroCli.getText().isEmpty() || !campoNomeCliente.getText().isEmpty() || !campoCodigoCliente.getText().isEmpty()){
-            try{               
-                c.setCodCli(campoCodigoCliente.getText());
-                SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy");      
-                try {
-                    c.setDataCadastro(fmt.parse(campoDataCadastroCli.getText()));
-                } catch (ParseException ex) {
-                    Logger.getLogger(TelaCliente.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                c.setNomeCli(campoNomeCliente.getText());
-                c.setCepCli(campoCepCliente.getText());
-                c.setCidadeCli(campoCidadeCli.getText());
-                c.setUFCli(campoUFCli.getText());
-                c.setEnderecoCli(campoEndCli.getText());
-                c.setNumeroCli(campoNumeroCli.getText());
-                c.setComplementoCli(campoComplCli.getText());
-                c.setBairroCli(campoBairroCli.getText());
-                c.setTamanhoCli(campoTamanhoCli.getText());
-                c.setEmailCli(campoEmailCli.getText());
-                c.setTelefoneCli(campoTelCli.getText());
-                c.setRedeCli(campoRedeCli.getText());
-                c.setObsCli(campoObsCli.getText());
-                if((campoCodigoCliente.getText().isEmpty()) || (campoDataCadastroCli.getText().isEmpty()) || (campoNomeCliente.getText().isEmpty())){
-                    MensagemSistema.mostrarAvisoDark(this, "Preencher Código, Data e nome!");
-                }else{
-                    salvaCadastroCliente();
-                    MensagemSistema.mostrarAvisoDark(this, "Registro SALVO na base!");
-                    System.out.println("Registro efetuado com sucesso!");
-                    System.out.println("-----------------------------------");
-                }              
-                limpaCamposCadastroClientes();
-            }catch(HeadlessException ex){
-                System.out.println("Erro: "+ex.getMessage());
-                MensagemSistema.mostrarAvisoDark(this, "Erro: "+ex.getMessage());           
-            }
-        }else{
+        // ==========================================
+        // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+        // ==========================================
+        if (campoDataCadastroCli.getText().isEmpty() || 
+            campoNomeCliente.getText().isEmpty() || 
+            campoCodigoCliente.getText().isEmpty()) {
+
             MensagemSistema.mostrarAvisoDark(this, "Campos Código, Data e Nome devem ser preenchidos!");
-            System.out.println("Não preencheu campos obrigatórios!");
-            System.out.println("----------------------------------");        
+            System.out.println("❌ Campos obrigatórios não preenchidos!");
+            return;
+        }
+
+        try {
+            // ==========================================
+            // PREENCHER OBJETO CLIENTE
+            // ==========================================
+            c.setCodCli(campoCodigoCliente.getText());
+
+            SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy");
+            try {
+                c.setDataCadastro(fmt.parse(campoDataCadastroCli.getText()));
+            } catch (ParseException ex) {
+                MensagemSistema.mostrarAvisoDark(this, "Data inválida! Use o formato dd/MM/yyyy");
+                System.err.println("❌ Erro ao converter data: " + ex.getMessage());
+                return;
+            }
+
+            c.setNomeCli(campoNomeCliente.getText());
+            c.setCepCli(campoCepCliente.getText());
+            c.setCidadeCli(campoCidadeCli.getText());
+            c.setUFCli(campoUFCli.getText());
+            c.setEnderecoCli(campoEndCli.getText());
+            c.setNumeroCli(campoNumeroCli.getText());
+            c.setComplementoCli(campoComplCli.getText());
+            c.setBairroCli(campoBairroCli.getText());
+            c.setTamanhoCli(campoTamanhoCli.getText());
+            c.setEmailCli(campoEmailCli.getText());
+            c.setTelefoneCli(campoTelCli.getText());
+            c.setRedeCli(campoRedeCli.getText());
+            c.setObsCli(campoObsCli.getText());
+
+            // ==========================================
+            // 🔥 SALVAR E VERIFICAR SE FOI BEM SUCEDIDO
+            // ==========================================
+            boolean salvou = salvaCadastroCliente();
+
+            if (salvou) {
+                MensagemSistema.mostrarAvisoDark(this, "Registro SALVO na base com sucesso!");
+                System.out.println("✅ Registro efetuado com sucesso!");
+                System.out.println("-----------------------------------");
+                limpaCamposCadastroClientes();
+            } else {
+                MensagemSistema.mostrarAvisoDark(this, "❌ Erro ao salvar registro! Tente novamente.");
+                System.err.println("❌ Falha ao salvar cliente!");
+            }
+
+        } catch (HeadlessException ex) {
+            System.err.println("❌ Erro: " + ex.getMessage());
+            MensagemSistema.mostrarAvisoDark(this, "❌ Erro ao salvar: " + ex.getMessage());
+        } catch (Exception ex) {
+            System.err.println("❌ Erro inesperado: " + ex.getMessage());
+            ex.printStackTrace();
+            MensagemSistema.mostrarAvisoDark(this, "❌ Erro inesperado: " + ex.getMessage());
         }
     }//GEN-LAST:event_buttonSalvarActionPerformed
 
@@ -942,17 +966,40 @@ public class TelaCliente extends javax.swing.JFrame {
     
     //////////////// METODOS DA CLASSE ////////////////////////
     
-    public void salvaCadastroCliente(){
-        System.out.println("Inserindo Cliente na base dde dados...");
+    private boolean salvaCadastroCliente() {
         try {
-            cdao.saveCliente(c);
+            // ==========================================
+            // CHAMAR O DAO PARA SALVAR
+            // ==========================================
             cdao.saveClienteCloud(c);
-            System.out.println("Cliente inserido com sucesso!");
-        } catch (ClassNotFoundException | SQLException ex) {
-            Logger.getLogger(TelaCliente.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println("Erro: "+ ex.getMessage());
-        }   
+
+            // ==========================================
+            // VERIFICAR SE O CLIENTE FOI INSERIDO
+            // ==========================================
+            // Opção 1: Se o DAO retornar boolean
+            // return cdao.inserirClienteCloud(c);
+
+            // Opção 2: Se o DAO lançar exceção em caso de erro
+            // Se chegou aqui, salvou com sucesso
+            return true;
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("❌ Erro inesperado: " + e.getMessage());
+            return false;
+        }
     }
+    
+//    public void salvaCadastroCliente(){
+//        System.out.println("Inserindo Cliente na base dde dados...");
+//        try {
+//            cdao.saveCliente(c);
+//            cdao.saveClienteCloud(c);
+//            System.out.println("Cliente inserido com sucesso!");
+//        } catch (ClassNotFoundException | SQLException ex) {
+//            Logger.getLogger(TelaCliente.class.getName()).log(Level.SEVERE, null, ex);
+//            System.out.println("Erro: "+ ex.getMessage());
+//        }   
+//    }
     
     public void atualizaCadastroCliente(){
         System.out.println("Iniciando atualização do cadastro do cliente...");

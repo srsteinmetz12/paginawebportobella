@@ -1159,169 +1159,95 @@ public class GerarSiteEstoque {
 
         try {
             File pastaOrigem = new File(diretorioDocumentos);
-            File indexFile = new File(pastaOrigem, "index.html");
-
-            if (!indexFile.exists()) {
-                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
-                return;
-            }
-
-            System.out.println("📄 [GIT] Arquivo index.html encontrado. Tamanho: " + indexFile.length() + " bytes");
 
             // ==========================================
-            // 1. VERIFICAR SE HÁ ALTERAÇÕES
+            // CONFIGURAÇÃO DAS PAUSAS (em milissegundos)
             // ==========================================
-            Process statusProcess = Runtime.getRuntime().exec(new String[]{"git", "status", "--porcelain"}, null, pastaOrigem);
-            BufferedReader statusReader = new BufferedReader(new InputStreamReader(statusProcess.getInputStream()));
-            String line;
-            boolean arquivoModificado = false;
-            while ((line = statusReader.readLine()) != null) {
-                System.out.println("   " + line);
-                if (line.contains("index.html")) {
-                    arquivoModificado = true;
+            final long PAUSA_ANTES_COMANDO = 4000;  // 4 segundos antes
+            final long PAUSA_DEPOIS_COMANDO = 2500; // 2.5 segundos depois
+
+            // ==========================================
+            // COMANDOS GIT
+            // ==========================================
+            String[][] comandos = {
+                {"git", "add", "-f", "index.html"},
+                {"git", "commit", "-m", "Atualização automática do estoque - " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date())},
+                {"git", "push", "origin", "main", "--force"},
+                {"git", "checkout", "HEAD", "--", "index.html"}  // Restaura o arquivo
+            };
+
+            for (String[] cmd : comandos) {
+                String cmdStr = String.join(" ", cmd);
+                System.out.println("   🔹 " + cmdStr);
+
+                // ==========================================
+                // 🔥 PAUSA ANTES DO COMANDO
+                // ==========================================
+                Thread.sleep(PAUSA_ANTES_COMANDO);
+
+                Process process = Runtime.getRuntime().exec(cmd, null, pastaOrigem);
+                int result = process.waitFor();
+
+                // Lê a saída padrão
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("   " + line);
                 }
-            }
-            statusReader.close();
+                reader.close();
 
-            if (!arquivoModificado) {
-                System.out.println("ℹ️ [GIT] Nenhuma alteração no index.html. Nada a enviar.");
-                return;
-            }
-
-            // ==========================================
-            // 2. GIT ADD
-            // ==========================================
-            System.out.println("📤 [GIT] Adicionando index.html...");
-            Process addProcess = Runtime.getRuntime().exec(new String[]{"git", "add", "-f", "index.html"}, null, pastaOrigem);
-            int addResult = addProcess.waitFor();
-            System.out.println("   git add resultado: " + addResult);
-
-            if (addResult != 0) {
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(addProcess.getErrorStream()));
+                // Lê a saída de erro
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                 while ((line = errorReader.readLine()) != null) {
-                    System.err.println("   ❌ " + line);
-                }
-                errorReader.close();
-                return;
-            }
-
-            // ==========================================
-            // 3. GIT COMMIT
-            // ==========================================
-            System.out.println("📤 [GIT] Commitando...");
-            String dataHora = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
-            String mensagem = "Atualização automática do estoque - " + dataHora;
-
-            Process commitProcess = Runtime.getRuntime().exec(
-                new String[]{"git", "commit", "-m", mensagem}, 
-                null, pastaOrigem);
-            int commitResult = commitProcess.waitFor();
-            System.out.println("   git commit resultado: " + commitResult);
-
-            // Lê a saída do commit
-            BufferedReader commitReader = new BufferedReader(new InputStreamReader(commitProcess.getInputStream()));
-            while ((line = commitReader.readLine()) != null) {
-                System.out.println("   " + line);
-            }
-            commitReader.close();
-
-            if (commitResult != 0) {
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(commitProcess.getErrorStream()));
-                boolean nothingToCommit = false;
-                while ((line = errorReader.readLine()) != null) {
-                    if (line.contains("nothing to commit")) {
-                        nothingToCommit = true;
-                        System.out.println("ℹ️ [GIT] Nada novo para commit.");
-                    } else {
+                    if (!line.contains("nothing to commit") && !line.contains("already up to date")) {
                         System.err.println("   ❌ " + line);
+                    } else {
+                        System.out.println("   ℹ️ " + line);
                     }
                 }
                 errorReader.close();
 
-                if (nothingToCommit) {
-                    return;
-                }
+                // ==========================================
+                // 🔥 PAUSA DEPOIS DO COMANDO
+                // ==========================================
+                Thread.sleep(PAUSA_DEPOIS_COMANDO);
             }
 
             // ==========================================
-            // 4. GIT PUSH
-            // ==========================================
-            System.out.println("📤 [GIT] Enviando para o GitHub...");
-            Process pushProcess = Runtime.getRuntime().exec(
-                new String[]{"git", "push", "origin", "main", "--force"}, 
-                null, pastaOrigem);
-            int pushResult = pushProcess.waitFor();
-            System.out.println("   git push resultado: " + pushResult);
-
-            // Lê a saída do push
-            BufferedReader pushReader = new BufferedReader(new InputStreamReader(pushProcess.getInputStream()));
-            while ((line = pushReader.readLine()) != null) {
-                System.out.println("   " + line);
-            }
-            pushReader.close();
-
-            if (pushResult == 0) {
-                System.out.println("🚀 [GIT] SUCESSO! Catálogo atualizado online!");
-            } else {
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(pushProcess.getErrorStream()));
-                System.err.println("❌ [GIT] Erro no push:");
-                while ((line = errorReader.readLine()) != null) {
-                    System.err.println("   ❌ " + line);
-                }
-                errorReader.close();
-                return;
-            }
-
-            // ==========================================
-            // 5. 🔥 RESTAURAR O ARQUIVO PARA O ESTADO DO REPOSITÓRIO
-            // ==========================================
-            System.out.println("📤 [GIT] Restaurando arquivo para o estado do repositório...");
-            Process restoreProcess = Runtime.getRuntime().exec(
-                new String[]{"git", "checkout", "HEAD", "--", "index.html"}, 
-                null, pastaOrigem);
-            int restoreResult = restoreProcess.waitFor();
-            System.out.println("   git checkout resultado: " + restoreResult);
-
-            if (restoreResult == 0) {
-                System.out.println("✅ [GIT] Arquivo restaurado para o estado do repositório!");
-            } else {
-                // Fallback: usa reset
-                System.out.println("🔄 [GIT] Tentando reset...");
-                Process resetProcess = Runtime.getRuntime().exec(
-                    new String[]{"git", "reset", "HEAD", "index.html"}, 
-                    null, pastaOrigem);
-                resetProcess.waitFor();
-                System.out.println("   git reset HEAD index.html executado.");
-            }
-
-            // ==========================================
-            // 6. VERIFICAR STATUS FINAL
+            // VERIFICAÇÃO FINAL
             // ==========================================
             System.out.println("📋 [GIT] Verificando status final...");
-            Process statusFinal = Runtime.getRuntime().exec(new String[]{"git", "status", "--porcelain"}, null, pastaOrigem);
-            BufferedReader finalReader = new BufferedReader(new InputStreamReader(statusFinal.getInputStream()));
-            boolean aindaModificado = false;
-            while ((line = finalReader.readLine()) != null) {
+            Thread.sleep(1000);
+
+            Process statusProcess = Runtime.getRuntime().exec(new String[]{"git", "status", "--porcelain"}, null, pastaOrigem);
+            BufferedReader statusReader = new BufferedReader(new InputStreamReader(statusProcess.getInputStream()));
+            String line;
+            boolean limpo = true;
+            while ((line = statusReader.readLine()) != null) {
                 System.out.println("   " + line);
                 if (line.contains("index.html")) {
-                    aindaModificado = true;
+                    limpo = false;
                 }
             }
-            finalReader.close();
+            statusReader.close();
 
-            if (aindaModificado) {
-                System.out.println("⚠️ [GIT] O arquivo ainda está modificado. Aplicando força...");
-                Process forceRestore = Runtime.getRuntime().exec(
+            if (limpo) {
+                System.out.println("✅ [GIT] Repositório limpo! Nada a commit.");
+            } else {
+                System.out.println("⚠️ [GIT] Ainda há modificações. Executando checkout forçado...");
+                Thread.sleep(1000);
+                Process forceCheckout = Runtime.getRuntime().exec(
                     new String[]{"git", "checkout", "--", "index.html"}, 
                     null, pastaOrigem);
-                forceRestore.waitFor();
+                forceCheckout.waitFor();
+                System.out.println("   ✅ Checkout forçado executado.");
             }
 
-            System.out.println("📌 [GIT] Processo finalizado!");
+            System.out.println("🚀 [GIT] Processo finalizado!");
+            System.out.println("✅ [GIT] Arquivo restaurado para o estado do repositório!");
 
         } catch (IOException | InterruptedException e) {
             System.err.println("❌ [GIT] Erro: " + e.getMessage());
-            e.printStackTrace();
         }
     }
     
