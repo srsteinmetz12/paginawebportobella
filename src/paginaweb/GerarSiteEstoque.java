@@ -463,20 +463,127 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("    let carrinho = { itens: [], frete: 0, cep: '' };");
             writer.println("");
+            // ========================================
+            // 🔥 FUNÇÃO PARA REMOVER ITEM DA VITRINE INSTANTANEAMENTE
+            // ========================================
+            writer.println("    function removerItemVitrine(id) {");
+            writer.println("      const card = document.getElementById('produto-card-' + id);");
+            writer.println("      if (card) {");
+            writer.println("        card.style.transition = 'opacity 0.5s ease';");
+            writer.println("        card.style.opacity = '0';");
+            writer.println("        setTimeout(() => card.remove(), 500);");
+            writer.println("      }");
+            writer.println("    }");
+            writer.println("    window.removerItemVitrine = removerItemVitrine;");
+
+            // ========================================
+            // ⚡ CARREGAR PRODUTOS DINAMICAMENTE DA VERCEL
+            // ========================================
+            writer.println("    async function carregarProdutosDinamicos() {");
+            writer.println("      try {");
+            writer.println("        const resposta = await fetch('/api/produtos');");
+            writer.println("        const produtos = await resposta.json();");
+            writer.println("        const vitrine = document.getElementById('vitrine-produtos');"); // ID da sua div de produtos
+            writer.println("        if (!vitrine) return;");
+            writer.println("        vitrine.innerHTML = '';");
+            writer.println("        ");
+            writer.println("        produtos.forEach(p => {");
+            // Aqui criamos o HTML do card de produto idêntico ao seu layout visual atual
+            writer.println("          const cardHtml = `");
+            writer.println("            <div class='produto-card' id='produto-card-${p.id}'>");
+            writer.println("              <h3>${p.nome}</h3>");
+            writer.println("              <p>R$ ${p.preco}</p>");
+            writer.println("              <button onclick=\"adicionarAoCarrinho(${p.id}, '${p.nome}', ${p.preco})\">Adicionar</button>");
+            writer.println("            </div>");
+            writer.println("          `;");
+            writer.println("          vitrine.innerHTML += cardHtml;");
+            writer.println("        });");
+            writer.println("      } catch (erro) {");
+            writer.println("        console.error('Erro ao buscar produtos do banco:', erro);");
+            writer.println("      }");
+            writer.println("    }");
+            writer.println("    window.onload = carregarProdutosDinamicos;");
             writer.println("    // ========================================");
-            writer.println("    // CARRINHO DE COMPRAS");
+            writer.println("    // CARRINHO DE COMPRAS (COM VERIFICAÇÃO DE DISPONIBILIDADE)");
             writer.println("    // ========================================");
             writer.println("    function adicionarAoCarrinho(id, nome, preco) {");
-            writer.println("      let itemExistente = carrinho.itens.find(item => item.id === id);");
-            writer.println("      if(itemExistente) {");
-            writer.println("        itemExistente.quantidade += 1;");
-            writer.println("      } else {");
-            writer.println("        carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });");
-            writer.println("      }");
-            writer.println("      atualizarCarrinho();");
-            writer.println("      mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');");
+            writer.println("      console.log('🔍 Verificando disponibilidade do item:', id);");
+            writer.println("      ");
+            writer.println("      // ==========================================");
+            writer.println("      // VERIFICAR DISPONIBILIDADE EM TEMPO REAL");
+            writer.println("      // ==========================================");
+            writer.println("      fetch(URL_BACKEND + '/api/pagamentos/verificar-disponibilidade', {");
+            writer.println("        method: 'POST',");
+            writer.println("        headers: { 'Content-Type': 'application/json' },");
+            writer.println("        body: JSON.stringify({");
+            writer.println("          codPeca: id");
+            writer.println("        })");
+            writer.println("      })");
+            writer.println("      .then(response => response.json())");
+            writer.println("      .then(data => {");
+            writer.println("        console.log('📥 Resposta disponibilidade:', data);");
+            writer.println("        ");
+            writer.println("        if (!data.disponivel) {");
+            writer.println("          // ==========================================");
+            writer.println("          // 🔥 ITEM INDISPONÍVEL - REMOVER DA VITRINE");
+            writer.println("          // ==========================================");
+            writer.println("          alert('❌ Este item não está mais disponível!\\n\\nInfelizmente, foi vendido para outro cliente.');");
+            writer.println("          removerItemVitrine(id);");
+            writer.println("          return;");
+            writer.println("        }");
+            writer.println("        ");
+            writer.println("        // ==========================================");
+            writer.println("        // ITEM DISPONÍVEL - ADICIONAR AO CARRINHO");
+            writer.println("        // ==========================================");
+            writer.println("        let itemExistente = carrinho.itens.find(item => item.id === id);");
+            writer.println("        if(itemExistente) {");
+            writer.println("          itemExistente.quantidade += 1;");
+            writer.println("        } else {");
+            writer.println("          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });");
+            writer.println("        }");
+            writer.println("        atualizarCarrinho();");
+            writer.println("        mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');");
+            writer.println("      })");
+            writer.println("      .catch(error => {");
+            writer.println("        console.error('❌ Erro ao verificar disponibilidade:', error);");
+            writer.println("        // Fallback: permite adicionar mesmo com erro");
+            writer.println("        let itemExistente = carrinho.itens.find(item => item.id === id);");
+            writer.println("        if(itemExistente) {");
+            writer.println("          itemExistente.quantidade += 1;");
+            writer.println("        } else {");
+            writer.println("          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });");
+            writer.println("        }");
+            writer.println("        atualizarCarrinho();");
+            writer.println("        mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');");
+            writer.println("      });");
             writer.println("    }");
             writer.println("    window.adicionarAoCarrinho = adicionarAoCarrinho;");
+            writer.println("");
+            writer.println("    // ========================================");
+            writer.println("    // 🔥 REMOVER ITEM DA VITRINE (EM TEMPO REAL)");
+            writer.println("    // ========================================");
+            writer.println("    function removerItemVitrine(codPeca) {");
+            writer.println("      console.log('🗑️ Removendo item da vitrine:', codPeca);");
+            writer.println("      let cards = document.querySelectorAll('.card');");
+            writer.println("      for (let card of cards) {");
+            writer.println("        let codigoElement = card.querySelector('.codigo-item');");
+            writer.println("        if (codigoElement && codigoElement.textContent.includes(codPeca)) {");
+            writer.println("          card.style.transition = 'opacity 0.5s, transform 0.5s';");
+            writer.println("          card.style.opacity = '0';");
+            writer.println("          card.style.transform = 'scale(0.8)';");
+            writer.println("          setTimeout(() => {");
+            writer.println("            card.remove();");
+            writer.println("            mostrarNotificacao('🔄 Item removido da vitrine!');");
+            writer.println("            // Verifica se a vitrine ficou vazia");
+            writer.println("            let vitrine = document.getElementById('listaVitrine');");
+            writer.println("            if (vitrine && vitrine.children.length === 0) {");
+            writer.println("              vitrine.innerHTML = '<div style=\"text-align:center;padding:50px;color:#666;font-size:18px;\">🛍️ Todos os produtos foram vendidos!<br>Volte em breve!</div>';");
+            writer.println("            }");
+            writer.println("          }, 500);");
+            writer.println("          break;");
+            writer.println("        }");
+            writer.println("      }");
+            writer.println("    }");
             writer.println("");
             writer.println("    function removerDoCarrinho(id) {");
             writer.println("      carrinho.itens = carrinho.itens.filter(item => item.id !== id);");
@@ -680,7 +787,7 @@ public class GerarSiteEstoque {
             writer.println("    }");
             writer.println("");
             writer.println("    // ========================================");
-            writer.println("    // FINALIZAR COMPRA (GERA PAGAMENTO - NÃO NOTIFICA)");
+            writer.println("    // FINALIZAR COMPRA (COM RESERVA OBRIGATÓRIA)");
             writer.println("    // ========================================");
             writer.println("    function finalizarCompraCarrinho(metodo) {");
             writer.println("      if(carrinho.itens.length === 0) {");
@@ -743,60 +850,131 @@ public class GerarSiteEstoque {
             writer.println("      let loading = document.createElement('div');");
             writer.println("      loading.id = 'loadingFinal';");
             writer.println("      loading.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;color:#FFF;font-size:18px;';");
-            writer.println("      loading.innerHTML = '⏳ Processando pedido...<br><small>Aguarde</small>';");
+            writer.println("      loading.innerHTML = '⏳ Reservando item...<br><small>Aguarde</small>';");
             writer.println("      document.body.appendChild(loading);");
             writer.println("");
             writer.println("      let itens = carrinho.itens.map(item => ({ id: item.id, nome: item.nome, preco: item.preco, quantidade: item.quantidade }));");
             writer.println("");
-            writer.println("      window.dadosCompra = {");
-            writer.println("        itens: itens,");
-            writer.println("        subtotal: subtotal,");
-            writer.println("        valorTotal: valorTotal,");
-            writer.println("        cep: retirarLoja ? '00000000' : cep,");
-            writer.println("        endereco: enderecoCompleto,");
-            writer.println("        destinatario: destinatario,");
-            writer.println("        telefone: telefone || 'Não informado',");
-            writer.println("        retirarLoja: retirarLoja,");
-            writer.println("        pedidoId: pedidoId");
-            writer.println("      };");
-            writer.println("");
-            writer.println("      fetch(URL_BACKEND + '/api/pagamentos/finalizar', {");
+            writer.println("      // ==========================================");
+            writer.println("      // 🔥 PASSO 1: RESERVAR O ITEM (OBRIGATÓRIO)");
+            writer.println("      // ==========================================");
+            writer.println("      let codPeca = itens[0]?.id || 'DESCONHECIDO';");
+            writer.println("      ");
+            writer.println("      console.log('📤 [RESERVA] Tentando reservar item:', codPeca);");
+            writer.println("      console.log('📤 [RESERVA] Pedido ID:', pedidoId);");
+            writer.println("      ");
+            writer.println("      fetch(URL_BACKEND + '/api/pagamentos/reservar', {");
             writer.println("        method: 'POST',");
             writer.println("        headers: { 'Content-Type': 'application/json' },");
             writer.println("        body: JSON.stringify({");
-            writer.println("          meio: metodo,");
+            writer.println("          codPeca: codPeca,");
+            writer.println("          pedidoId: pedidoId,");
+            writer.println("          quantidade: 1");
+            writer.println("        })");
+            writer.println("      })");
+            writer.println("      .then(response => {");
+            writer.println("        console.log('📥 [RESERVA] Status:', response.status);");
+            writer.println("        return response.json();");
+            writer.println("      })");
+            writer.println("      .then(data => {");
+            writer.println("        console.log('📥 [RESERVA] Resposta:', data);");
+            writer.println("        ");
+            writer.println("        if (!data.success) {");
+            writer.println("          document.getElementById('loadingFinal')?.remove();");
+            writer.println("          alert('❌ Este item não está mais disponível!\\n\\nInfelizmente, outro cliente comprou antes de você.');");
+            writer.println("          return;");
+            writer.println("        }");
+            writer.println("        ");
+            writer.println("        console.log('✅ [RESERVA] Item reservado com sucesso!');");
+            writer.println("        ");
+            writer.println("        // ==========================================");
+            writer.println("        // PASSO 2: GERAR O PAGAMENTO");
+            writer.println("        // ==========================================");
+            writer.println("        loading.innerHTML = '⏳ Processando pagamento...<br><small>Aguarde</small>';");
+            writer.println("        ");
+            writer.println("        window.dadosCompra = {");
             writer.println("          itens: itens,");
             writer.println("          subtotal: subtotal,");
-            writer.println("          frete: carrinho.frete,");
-            writer.println("          total: valorTotal,");
+            writer.println("          valorTotal: valorTotal,");
             writer.println("          cep: retirarLoja ? '00000000' : cep,");
             writer.println("          endereco: enderecoCompleto,");
             writer.println("          destinatario: destinatario,");
             writer.println("          telefone: telefone || 'Não informado',");
             writer.println("          retirarLoja: retirarLoja,");
+            writer.println("          pedidoId: pedidoId,");
+            writer.println("          codPeca: codPeca");
+            writer.println("        };");
+            writer.println("");
+            writer.println("        fetch(URL_BACKEND + '/api/pagamentos/finalizar', {");
+            writer.println("          method: 'POST',");
+            writer.println("          headers: { 'Content-Type': 'application/json' },");
+            writer.println("          body: JSON.stringify({");
+            writer.println("            meio: metodo,");
+            writer.println("            itens: itens,");
+            writer.println("            subtotal: subtotal,");
+            writer.println("            frete: carrinho.frete,");
+            writer.println("            total: valorTotal,");
+            writer.println("            cep: retirarLoja ? '00000000' : cep,");
+            writer.println("            endereco: enderecoCompleto,");
+            writer.println("            destinatario: destinatario,");
+            writer.println("            telefone: telefone || 'Não informado',");
+            writer.println("            retirarLoja: retirarLoja,");
+            writer.println("            pedidoId: pedidoId");
+            writer.println("          })");
+            writer.println("        })");
+            writer.println("        .then(response => response.json())");
+            writer.println("        .then(data => {");
+            writer.println("          document.getElementById('loadingFinal')?.remove();");
+            writer.println("          ");
+            writer.println("          if(data.success) {");
+            writer.println("            if(metodo === 'pix') {");
+            writer.println("              exibirModalPix(data.payload, data.total, 'Pedido #' + data.pedidoId);");
+            writer.println("            } else {");
+            writer.println("              window.location.href = data.paymentUrl;");
+            writer.println("            }");
+            writer.println("            carrinho.itens = [];");
+            writer.println("            carrinho.frete = 0;");
+            writer.println("            atualizarCarrinho();");
+            writer.println("          } else {");
+            writer.println("            // ==========================================");
+            writer.println("            // SE O PAGAMENTO FALHAR, LIBERAR A RESERVA");
+            writer.println("            // ==========================================");
+            writer.println("            liberarReserva(codPeca, pedidoId);");
+            writer.println("            alert('❌ Erro ao finalizar compra: ' + (data.error || 'Erro desconhecido'));");
+            writer.println("          }");
+            writer.println("        })");
+            writer.println("        .catch(error => {");
+            writer.println("          document.getElementById('loadingFinal')?.remove();");
+            writer.println("          liberarReserva(codPeca, pedidoId);");
+            writer.println("          alert('❌ Erro ao conectar: ' + error.message);");
+            writer.println("        });");
+            writer.println("      })");
+            writer.println("      .catch(error => {");
+            writer.println("        document.getElementById('loadingFinal')?.remove();");
+            writer.println("        console.error('❌ [RESERVA] Erro:', error);");
+            writer.println("        alert('❌ Erro ao reservar item: ' + error.message);");
+            writer.println("      });");
+            writer.println("    }");
+            writer.println("");
+            writer.println("    // ========================================");
+            writer.println("    // LIBERAR RESERVA (EM CASO DE FALHA)");
+            writer.println("    // ========================================");
+            writer.println("    function liberarReserva(codPeca, pedidoId) {");
+            writer.println("      console.log('📤 [LIBERAR] Liberando reserva:', codPeca, pedidoId);");
+            writer.println("      fetch(URL_BACKEND + '/api/pagamentos/liberar-reserva', {");
+            writer.println("        method: 'POST',");
+            writer.println("        headers: { 'Content-Type': 'application/json' },");
+            writer.println("        body: JSON.stringify({");
+            writer.println("          codPeca: codPeca,");
             writer.println("          pedidoId: pedidoId");
             writer.println("        })");
             writer.println("      })");
             writer.println("      .then(response => response.json())");
             writer.println("      .then(data => {");
-            writer.println("        document.getElementById('loadingFinal')?.remove();");
-            writer.println("");
-            writer.println("        if(data.success) {");
-            writer.println("          if(metodo === 'pix') {");
-            writer.println("            exibirModalPix(data.payload, data.total, 'Pedido #' + data.pedidoId);");
-            writer.println("          } else {");
-            writer.println("            window.location.href = data.paymentUrl;");
-            writer.println("          }");
-            writer.println("          carrinho.itens = [];");
-            writer.println("          carrinho.frete = 0;");
-            writer.println("          atualizarCarrinho();");
-            writer.println("        } else {");
-            writer.println("          alert('❌ Erro ao finalizar compra: ' + (data.error || 'Erro desconhecido'));");
-            writer.println("        }");
+            writer.println("        console.log('📥 [LIBERAR] Reserva liberada:', data);");
             writer.println("      })");
             writer.println("      .catch(error => {");
-            writer.println("        document.getElementById('loadingFinal')?.remove();");
-            writer.println("        alert('❌ Erro ao conectar: ' + error.message);");
+            writer.println("        console.error('❌ [LIBERAR] Erro:', error);");
             writer.println("      });");
             writer.println("    }");
             writer.println("");
@@ -1068,65 +1246,6 @@ public class GerarSiteEstoque {
             // ==========================================
             // GIT AUTOMÁTICO
             // ==========================================
-//            System.out.println("Iniciando sincronização automática com o GitHub...");
-//            try {
-//                java.io.File pastaOrigem = new java.io.File(diretorioDocumentos);
-//
-//                Process remoteCheck = Runtime.getRuntime().exec(new String[]{"git", "remote", "get-url", "origin"}, null, pastaOrigem);
-//                int remoteExit = remoteCheck.waitFor();
-//
-//                if (remoteExit != 0) {
-//                    String token = "ghp_jbHaoTzV1RpikgH8fsAtqxFCnT3LlK3wvKXA";
-//                    String remoteUrl = "https://srsteinmetz12:" + token + "@github.com/srsteinmetz12/paginawebportobella.git";
-//                    Process addRemote = Runtime.getRuntime().exec(new String[]{"git", "remote", "add", "origin", remoteUrl}, null, pastaOrigem);
-//                    addRemote.waitFor();
-//                    System.out.println("📌 Remote configurado.");
-//                }
-//
-//                Process addProcess = Runtime.getRuntime().exec(new String[]{"git", "add", "-f", "index.html"}, null, pastaOrigem);
-//                int addResult = addProcess.waitFor();
-//                System.out.println("git add resultado: " + addResult);
-//
-//                if (addResult == 0) {
-//                    Process commitProcess = Runtime.getRuntime().exec(new String[]{"git", "commit", "-m", "Atualização automática do estoque com carrossel e PIX"}, null, pastaOrigem);
-//                    int commitResult = commitProcess.waitFor();
-//                    System.out.println("git commit resultado: " + commitResult);
-//
-//                    if (commitResult != 0) {
-//                        BufferedReader errorReader = new BufferedReader(new InputStreamReader(commitProcess.getErrorStream()));
-//                        String line;
-//                        System.out.println("⚠️ Erro no commit:");
-//                        while ((line = errorReader.readLine()) != null) {
-//                            System.out.println("   " + line);
-//                        }
-//                        errorReader.close();
-//                    }
-//
-//                    Process pushProcess = Runtime.getRuntime().exec(new String[]{"git", "push", "origin", "main", "--force"}, null, pastaOrigem);
-//                    int pushResult = pushProcess.waitFor();
-//                    System.out.println("git push resultado: " + pushResult);
-//
-//                    if (pushResult == 0) {
-//                        System.out.println("🚀 SUCESSO! O catálogo está atualizado e online!");
-//                    } else {
-//                        BufferedReader errorReader = new BufferedReader(new InputStreamReader(pushProcess.getErrorStream()));
-//                        String line;
-//                        System.out.println("⚠️ Erro no push:");
-//                        while ((line = errorReader.readLine()) != null) {
-//                            System.out.println("   " + line);
-//                        }
-//                        errorReader.close();
-//                    }
-//
-//                    Process resetProcess = Runtime.getRuntime().exec(new String[]{"git", "reset", "HEAD", "index.html"}, null, pastaOrigem);
-//                    resetProcess.waitFor();
-//                } else {
-//                    System.out.println("⚠️ Erro ao adicionar arquivo index.html");
-//                }
-//
-//            } catch (IOException | InterruptedException e) {
-//                System.err.println("⚠️ Erro ao executar Git: " + e.getMessage());
-//            }
             enviarParaGitHub(diretorioDocumentos);
         } catch (java.io.IOException ex) {
             System.err.println("Erro ao escrever arquivo HTML: " + ex.getMessage());
