@@ -4,11 +4,12 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -20,34 +21,74 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import paginaweb.GerarSiteEstoque;
 
 public class PagamentoServer {
-    
+
     private static final Gson gson = new Gson();
     private static HttpServer server;
-    
+
     // ==========================================
-    // 🔥 CONFIGURAÇÕES DO PIX (SEM MERCADO PAGO)
+    // CONFIGURAÇÕES DO PIX
     // ==========================================
-    private static final String CHAVE_PIX = "portobella.brecho@gmail.com"; // ⚠️ Coloque sua chave Pix aqui
-    private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI"; // ⚠️ Coloque seu nome aqui
+    private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
+    private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI";
     private static final String CIDADE = "PORTO ALEGRE";
-    
+
     // ==========================================
-    // 🔥 TOKEN DO MERCADO PAGO (SOMENTE PARA LINK)
+    // TOKEN DO MERCADO PAGO
     // ==========================================
     private static final String TOKEN_MP = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128";
-    
+
+    // ==========================================
+    // CLASSE NOTIFICACAO (AUXILIAR)
+    // ==========================================
+    private static class Notificacao {
+        int id;
+        String pedidoId;
+        String codPeca;
+        String cliente;
+        String telefone;
+        double valor;
+        String meioPagamento;
+        boolean retirarLoja;
+        String endereco;
+        String dataCriacao;
+        String itens;
+
+        Notificacao(int id, String pedidoId, String codPeca, String cliente, String telefone,
+                    double valor, String meioPagamento, boolean retirarLoja,
+                    String endereco, String dataCriacao, String itens) {
+            this.id = id;
+            this.pedidoId = pedidoId;
+            this.codPeca = codPeca;
+            this.cliente = cliente;
+            this.telefone = telefone;
+            this.valor = valor;
+            this.meioPagamento = meioPagamento;
+            this.retirarLoja = retirarLoja;
+            this.endereco = endereco;
+            this.dataCriacao = dataCriacao;
+            this.itens = itens;
+        }
+    }
+
+    // ==========================================
+    // CORS HEADERS
+    // ==========================================
     private static void addCorsHeaders(HttpExchange exchange) {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
         exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
     }
-    
+
+    // ==========================================
+    // INICIAR SERVIDOR
+    // ==========================================
     public static void iniciar() throws IOException {
         server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
-        
+
         server.createContext("/api/pagamentos/criar", new CriarPagamentoHandler());
         server.createContext("/api/pagamentos/status", new StatusPagamentoHandler());
         server.createContext("/api/webhook", new WebhookHandler());
@@ -55,24 +96,29 @@ public class PagamentoServer {
         server.createContext("/api/frete/calcular", new CalcularFreteHandler());
         server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
         server.createContext("/api/pagamentos/consultar", new ConsultarNotificacoesHandler());
-        
+        server.createContext("/api/pagamentos/reservar", new ReservarItemHandler());
+        server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
+        server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
+
         server.setExecutor(null);
         server.start();
-        
+
         System.out.println("✅ Servidor de pagamentos rodando em http://localhost:8080");
-        System.out.println("   🔥 PIX: GERADO SEM MERCADO PAGO (usando chave: " + CHAVE_PIX + ")");
+        System.out.println("   🔥 PIX: GERADO SEM MERCADO PAGO (chave: " + CHAVE_PIX + ")");
         System.out.println("   💳 MERCADO PAGO: SOMENTE PARA LINK DE PAGAMENTO");
         System.out.println("   📦 Frete: Cálculo por CEP (ViaCEP + Fallback)");
         System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
         System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
+        System.out.println("   🔒 Reservar: /api/pagamentos/reservar");
+        System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
     }
-    
+
     public static void parar() {
         if (server != null) {
             server.stop(0);
         }
     }
-    
+
     // ==========================================
     // HANDLER: FINALIZAR COMPRA (CARRINHO)
     // ==========================================
@@ -94,18 +140,12 @@ public class PagamentoServer {
             }
 
             try {
-                // ==========================================
-                // 🔥 CORRIGIDO: BufferedReader (NÃO BufferedWriter)
-                // ==========================================
                 String body = new BufferedReader(
-                    new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                    .lines().reduce("", (a, b) -> a + b);
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
 
                 System.out.println("📥 Body recebido: " + body);
 
-                // ==========================================
-                // 🔥 CORRIGIDO: SEM "var" (Java 8)
-                // ==========================================
                 JsonObject json = gson.fromJson(body, JsonObject.class);
                 String meio = json.get("meio").getAsString();
                 double subtotal = json.get("subtotal").getAsDouble();
@@ -114,9 +154,6 @@ public class PagamentoServer {
                 String cep = json.get("cep").getAsString();
                 String endereco = json.get("endereco").getAsString();
 
-                // ==========================================
-                // 🔥 CORRIGIDO: JsonArray (NÃO "var")
-                // ==========================================
                 com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
                 String codPeca = itensArray.get(0).getAsJsonObject().get("id").getAsString();
                 String nomeProduto = itensArray.get(0).getAsJsonObject().get("nome").getAsString();
@@ -130,32 +167,20 @@ public class PagamentoServer {
                 System.out.println("   Endereço: " + endereco);
                 System.out.println("   Produto: " + nomeProduto);
 
-                // ==========================================
-                // REGISTRA A VENDA NO BANCO
-                // ==========================================
                 registrarVendaCarrinho(codPeca, subtotal, frete, total, endereco, cep, meio);
 
-                // ==========================================
-                // PREPARA RESPOSTA
-                // ==========================================
                 Map<String, Object> response = new HashMap<>();
 
                 if ("pix".equalsIgnoreCase(meio)) {
-                    // Gera payload Pix com o valor TOTAL
                     String payloadPix = gerarPayloadPix(total, "Pedido PORTOBERLLA");
-
                     response.put("success", true);
                     response.put("meio", "PIX");
                     response.put("payload", payloadPix);
                     response.put("total", total);
                     response.put("pedidoId", System.currentTimeMillis());
-
                     System.out.println("   ✅ Pix gerado com sucesso!");
-
                 } else {
-                    // Gera link do Mercado Pago
                     String link = criarLinkMercadoPago(codPeca, "Pedido PORTOBELLA", total);
-
                     if (link != null && !link.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "CREDITO");
@@ -177,11 +202,8 @@ public class PagamentoServer {
             }
         }
 
-        // ==========================================
-        // REGISTRAR VENDA NO BANCO
-        // ==========================================
-        private void registrarVendaCarrinho(String codPeca, double subtotal, double frete, double total, 
-                                             String endereco, String cep, String meio) {
+        private void registrarVendaCarrinho(String codPeca, double subtotal, double frete, double total,
+                                            String endereco, String cep, String meio) {
             Connection con = null;
             PreparedStatement stmt = null;
 
@@ -210,7 +232,7 @@ public class PagamentoServer {
             }
         }
     }
-    
+
     // ==========================================
     // HANDLER: CALCULAR FRETE POR CEP
     // ==========================================
@@ -241,7 +263,6 @@ public class PagamentoServer {
                     return;
                 }
 
-                // Remove caracteres não numéricos
                 cep = cep.replaceAll("\\D", "");
 
                 if (cep.length() != 8) {
@@ -251,20 +272,10 @@ public class PagamentoServer {
 
                 System.out.println("📦 Calculando frete para CEP: " + cep);
 
-                // ==========================================
-                // 1. TENTA BUSCAR ENDEREÇO PELO ViaCEP
-                // ==========================================
                 String uf = buscarUFViaCEP(cep);
-
-                // ==========================================
-                // 2. CALCULA FRETE BASEADO NA UF
-                // ==========================================
                 double valorFrete = calcularFretePorUF(uf);
                 String prazo = estimarPrazoPorUF(uf);
 
-                // ==========================================
-                // 3. MONTAR RESPOSTA
-                // ==========================================
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("cep", cep);
@@ -287,9 +298,6 @@ public class PagamentoServer {
             }
         }
 
-        // ==========================================
-        // BUSCAR UF PELO CEP (ViaCEP)
-        // ==========================================
         private String buscarUFViaCEP(String cep) {
             try {
                 String url = "https://viacep.com.br/ws/" + cep + "/json/";
@@ -302,7 +310,6 @@ public class PagamentoServer {
                 if (responseCode == 200) {
                     String responseBody = lerResposta(conn);
                     JsonObject json = gson.fromJson(responseBody, JsonObject.class);
-
                     if (json.has("uf") && !json.get("uf").isJsonNull()) {
                         return json.get("uf").getAsString();
                     }
@@ -310,14 +317,9 @@ public class PagamentoServer {
             } catch (JsonSyntaxException | IOException e) {
                 System.out.println("   ⚠️ ViaCEP indisponível: " + e.getMessage());
             }
-
-            // Fallback: estimar UF pelo prefixo do CEP
             return estimarUFporCEP(cep);
         }
 
-        // ==========================================
-        // BUSCAR CIDADE PELO CEP (ViaCEP)
-        // ==========================================
         private String buscarCidadeViaCEP(String cep) {
             try {
                 String url = "https://viacep.com.br/ws/" + cep + "/json/";
@@ -330,7 +332,6 @@ public class PagamentoServer {
                 if (responseCode == 200) {
                     String responseBody = lerResposta(conn);
                     JsonObject json = gson.fromJson(responseBody, JsonObject.class);
-
                     if (json.has("localidade") && !json.get("localidade").isJsonNull()) {
                         return json.get("localidade").getAsString();
                     }
@@ -341,130 +342,50 @@ public class PagamentoServer {
             return "Não informado";
         }
 
-        // ==========================================
-        // ESTIMAR UF PELO PREFIXO DO CEP (FALLBACK)
-        // ==========================================
         private String estimarUFporCEP(String cep) {
             String prefixo = cep.substring(0, 1);
-
             switch (prefixo) {
-                case "0": return "SP";  // São Paulo
-                case "1": return "SP";  // São Paulo
-                case "2": return "RJ";  // Rio de Janeiro
-                case "3": return "MG";  // Minas Gerais
-                case "4": return "BA";  // Bahia
-                case "5": return "PE";  // Pernambuco
-                case "6": return "CE";  // Ceará
-                case "7": return "DF";  // Distrito Federal
-                case "8": return "PR";  // Paraná
-                case "9": return "RS";  // Rio Grande do Sul
+                case "0": return "SP";
+                case "1": return "SP";
+                case "2": return "RJ";
+                case "3": return "MG";
+                case "4": return "BA";
+                case "5": return "PE";
+                case "6": return "CE";
+                case "7": return "DF";
+                case "8": return "PR";
+                case "9": return "RS";
                 default: return "SP";
             }
         }
 
-        // ==========================================
-        // CALCULAR FRETE POR UF
-        // ==========================================
         private double calcularFretePorUF(String uf) {
-            if (uf == null || uf.isEmpty()) {
-                return 35.90;
-            }
-
+            if (uf == null || uf.isEmpty()) return 35.90;
             switch (uf.toUpperCase()) {
-                // Sudeste (mais próximo)
-                case "SP":
-                case "RJ":
-                case "MG":
-                case "ES":
-                    return 25.90;
-
-                // Sul
-                case "PR":
-                case "SC":
-                case "RS":
-                    return 35.90;
-
-                // Centro-Oeste
-                case "DF":
-                case "GO":
-                case "MT":
-                case "MS":
-                    return 40.90;
-
-                // Nordeste
-                case "BA":
-                case "SE":
-                case "AL":
-                case "PE":
-                case "PB":
-                case "RN":
-                case "CE":
-                case "PI":
-                case "MA":
-                    return 45.90;
-
-                // Norte
-                case "PA":
-                case "AM":
-                case "AC":
-                case "RR":
-                case "RO":
-                case "AP":
-                case "TO":
-                    return 55.90;
-
-                default:
-                    return 35.90;
+                case "SP": case "RJ": case "MG": case "ES": return 25.90;
+                case "PR": case "SC": case "RS": return 35.90;
+                case "DF": case "GO": case "MT": case "MS": return 40.90;
+                case "BA": case "SE": case "AL": case "PE": case "PB": case "RN": case "CE": case "PI": case "MA": return 45.90;
+                case "PA": case "AM": case "AC": case "RR": case "RO": case "AP": case "TO": return 55.90;
+                default: return 35.90;
             }
         }
 
-        // ==========================================
-        // ESTIMAR PRAZO POR UF
-        // ==========================================
         private String estimarPrazoPorUF(String uf) {
-            if (uf == null || uf.isEmpty()) {
-                return "5 a 7 dias úteis";
-            }
-
+            if (uf == null || uf.isEmpty()) return "5 a 7 dias úteis";
             switch (uf.toUpperCase()) {
-                case "SP":
-                case "RJ":
-                    return "2 a 4 dias úteis";
-                case "MG":
-                case "ES":
-                    return "3 a 5 dias úteis";
-                case "PR":
-                case "SC":
-                    return "4 a 6 dias úteis";
-                case "RS":
-                    return "5 a 7 dias úteis";
-                case "DF":
-                case "GO":
-                    return "5 a 7 dias úteis";
-                case "BA":
-                case "SE":
-                    return "5 a 8 dias úteis";
-                case "PE":
-                case "PB":
-                case "RN":
-                case "CE":
-                    return "6 a 9 dias úteis";
-                case "AM":
-                case "PA":
-                case "AC":
-                case "RR":
-                case "RO":
-                case "AP":
-                case "TO":
-                    return "8 a 12 dias úteis";
-                default:
-                    return "5 a 7 dias úteis";
+                case "SP": case "RJ": return "2 a 4 dias úteis";
+                case "MG": case "ES": return "3 a 5 dias úteis";
+                case "PR": case "SC": return "4 a 6 dias úteis";
+                case "RS": return "5 a 7 dias úteis";
+                case "DF": case "GO": return "5 a 7 dias úteis";
+                case "BA": case "SE": return "5 a 8 dias úteis";
+                case "PE": case "PB": case "RN": case "CE": return "6 a 9 dias úteis";
+                case "AM": case "PA": case "AC": case "RR": case "RO": case "AP": case "TO": return "8 a 12 dias úteis";
+                default: return "5 a 7 dias úteis";
             }
         }
 
-        // ==========================================
-        // LER RESPOSTA DA API
-        // ==========================================
         private String lerResposta(java.net.HttpURLConnection conn) throws IOException {
             java.io.InputStream is = conn.getInputStream();
             try (java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A")) {
@@ -472,325 +393,198 @@ public class PagamentoServer {
             }
         }
     }
-    
+
     // ==========================================
-    // HANDLER: CRIAR PAGAMENTO
+    // HANDLER: RESERVAR ITEM
     // ==========================================
-    static class CriarPagamentoHandler implements HttpHandler {
+    static class ReservarItemHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-            
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(204, -1);
                 return;
             }
-            
+
             try {
-                String query = exchange.getRequestURI().getQuery();
-                Map<String, String> params = parseQueryParams(query);
-                
-                String meio = params.get("meio");
-                String produtoId = params.get("id");
-                double preco = Double.parseDouble(params.getOrDefault("preco", "0"));
-                String nome = params.get("nome");
-                double frete = Double.parseDouble(params.getOrDefault("frete", "0"));
-                double valorTotal = preco + frete;
-                
-                System.out.println("📝 Criando pagamento para: " + nome + " - R$ " + valorTotal);
-                System.out.println("   Meio: " + meio);
-                
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                String codPeca = json.get("codPeca").getAsString();
+                String pedidoId = json.get("pedidoId").getAsString();
+                int quantidade = json.has("quantidade") ? json.get("quantidade").getAsInt() : 1;
+
+                boolean reservado = reservarItem(codPeca, pedidoId, quantidade);
+
                 Map<String, Object> response = new HashMap<>();
-                
-                if ("pix".equalsIgnoreCase(meio)) {
-                    // ==========================================
-                    // 🔥 PIX: GERAR QR CODE SEM MERCADO PAGO
-                    // ==========================================
-                    System.out.println("   🔥 Gerando QR Code Pix SEM Mercado Pago...");
-                    
-                    String payloadPix = gerarPayloadPix(valorTotal, "Pedido PORTOBELLA");
-                    
-                    response.put("success", true);
-                    response.put("meio", "PIX");
-                    response.put("payload", payloadPix);
-                    response.put("valor", valorTotal);
-                    response.put("produto", nome);
-                    
-                    System.out.println("   ✅ Payload Pix gerado com sucesso!");
-                    System.out.println("   Chave: " + CHAVE_PIX);
-                    
-                } else if ("mercado_pago".equalsIgnoreCase(meio)) {
-                    // ==========================================
-                    // 💳 MERCADO PAGO: GERAR LINK DE PAGAMENTO
-                    // ==========================================
-                    System.out.println("   💳 Gerando link do Mercado Pago...");
-                    
-                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal);
-                    
-                    if (linkPagamento != null && !linkPagamento.isEmpty()) {
-                        response.put("success", true);
-                        response.put("meio", "mercado_pago");
-                        response.put("paymentUrl", linkPagamento);
-                        System.out.println("   ✅ Link gerado: " + linkPagamento);
-                    } else {
-                        response.put("success", false);
-                        response.put("error", "Erro ao gerar link do Mercado Pago");
-                    }
-                } else {
-                    response.put("success", false);
-                    response.put("error", "Meio de pagamento inválido: " + meio);
-                }
-                
+                response.put("success", reservado);
+                response.put("codPeca", codPeca);
+                response.put("pedidoId", pedidoId);
+                response.put("mensagem", reservado ? "Item reservado com sucesso!" : "Item indisponível!");
+
                 sendResponse(exchange, 200, gson.toJson(response));
-                addCorsHeaders(exchange);
-            } catch (IOException | NumberFormatException e) {
+
+            } catch (JsonSyntaxException | IOException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
         }
-    }
-    
-    // ==========================================
-    // GERAR PAYLOAD PIX COMPLETO
-    // ==========================================
-    public static String gerarPayloadPix(double valor, String descricao) {
-        try {
-            System.out.println("🔧 Gerando payload Pix...");
-            System.out.println("💰 Valor: R$ " + valor);
-            
-            StringBuilder payload = new StringBuilder();
-            
-            // 1. Payload Format Indicator (00)
-            payload.append(emvField("00", "01"));
-            
-            // 2. Point of Initiation Method (01)
-            payload.append(emvField("01", "11"));
-            
-            // 3. Merchant Account Information - PIX (26)
-            String gui = "br.gov.bcb.pix";
-            String chavePix = CHAVE_PIX;
-            
-            // Subcampos do 26
-            String sub00 = emvField("00", gui);
-            String sub01 = emvField("01", chavePix);
-            String valor26 = sub00 + sub01;
-            
-            payload.append(emvField("26", valor26));
-            
-            // 4. Merchant Category Code (52)
-            payload.append(emvField("52", "0000"));
-            
-            // 5. Transaction Currency (53)
-            payload.append(emvField("53", "986"));
-            
-            // 6. Transaction Amount (54) - SÓ SE TIVER VALOR
-            if (valor > 0) {
-                String valorFormatado = String.format("%.2f", valor);
-                payload.append(emvField("54", valorFormatado));
-            }
-            
-            // 7. Country Code (58)
-            payload.append(emvField("58", "BR"));
-            
-            // 8. Merchant Name (59)
-            payload.append(emvField("59", NOME_RECEBEDOR));
-            
-            // 9. Merchant City (60)
-            payload.append(emvField("60", CIDADE));
-            
-            // 10. Additional Data Field Template (62)
-            String txid = "***";
-            String sub05 = emvField("05", txid);
-            payload.append(emvField("62", sub05));
-            
-            // 11. CRC (63) - Calculado no final
-            String payloadSemCRC = payload.toString();
-            String crc = calcularCRC16(payloadSemCRC);
-            payload.append(emvField("63", crc));
-            
-            String payloadFinal = payload.toString();
-            
-            System.out.println("✅ Payload gerado com sucesso!");
-            System.out.println("📋 Payload: " + payloadFinal);
-            System.out.println("📏 Tamanho: " + payloadFinal.length());
-            
-            return payloadFinal;
-            
-        } catch (Exception e) {
-            System.err.println("❌ Erro ao gerar payload: " + e.getMessage());
-            return null;
-        }
-    }
-    
-    // ==========================================
-    // CRIAR CAMPO EMV PADRÃO (ID + TAMANHO + VALOR)
-    // ==========================================
-    private static String emvField(String id, String valor) {
-        if (valor == null) {
-            valor = "";
-        }
-        int tamanho = valor.length();
-        return id + String.format("%02d", tamanho) + valor;
-    }
-    
-    // ==========================================
-    // CALCULAR CRC16 (PADRÃO PIX)
-    // ==========================================
-    private static String calcularCRC16(String input) {
-        try {
-            int crc = 0xFFFF;
-            byte[] bytes = input.getBytes(StandardCharsets.ISO_8859_1);
-            
-            for (byte b : bytes) {
-                crc ^= (b & 0xFF) << 8;
-                for (int i = 0; i < 8; i++) {
-                    if ((crc & 0x8000) != 0) {
-                        crc = (crc << 1) ^ 0x1021;
-                    } else {
-                        crc = crc << 1;
-                    }
+
+        private boolean reservarItem(String codPeca, String pedidoId, int quantidade) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+            boolean reservado = false;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+                con.setAutoCommit(false);
+
+                String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL' FOR UPDATE";
+                stmt = con.prepareStatement(sqlCheck);
+                stmt.setString(1, codPeca);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+
+                if (!rs.next()) {
+                    System.out.println("❌ [RESERVA] Item não disponível: " + codPeca);
+                    con.rollback();
+                    return false;
                 }
+
+                int qtdDisponivel = rs.getInt("quantidade");
+                if (qtdDisponivel < quantidade) {
+                    System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
+                    con.rollback();
+                    return false;
+                }
+
+                String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - ? WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlUpdate);
+                stmt.setInt(1, quantidade);
+                stmt.setString(2, codPeca);
+                stmt.executeUpdate();
+
+                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
+                stmt = con.prepareStatement(sqlReserva);
+                stmt.setString(1, codPeca);
+                stmt.setString(2, pedidoId);
+                stmt.setInt(3, quantidade);
+                stmt.executeUpdate();
+
+                con.commit();
+                reservado = true;
+                System.out.println("✅ [RESERVA] Item reservado: " + codPeca + " (Pedido: " + pedidoId + ") → RESERVADO");
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("❌ [RESERVA] Erro: " + e.getMessage());
+                try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
             }
-            
-            return String.format("%04X", crc & 0xFFFF);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Erro no CRC16: " + e.getMessage());
-            return "0000";
+
+            return reservado;
         }
     }
-    
-    // ==========================================
-    // 💳 MERCADO PAGO: Criar link de pagamento
-    // ==========================================
-    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor) {
-        try {
-            String precoFormatado = String.format(java.util.Locale.US, "%.2f", valor);
-            
-            // Monta o JSON da preferência
-            String jsonPayload = "{"
-                + "\"items\": [{"
-                + "\"id\": \"" + codPeca + "\","
-                + "\"title\": \"" + titulo + "\","
-                + "\"quantity\": 1,"
-                + "\"currency_id\": \"BRL\","
-                + "\"unit_price\": " + precoFormatado
-                + "}],"
-                + "\"back_urls\": {"
-                + "\"success\": \"https://srsteinmetz12.github.io/sucesso.html\","
-                + "\"failure\": \"https://srsteinmetz12.github.io/falha.html\","
-                + "\"pending\": \"https://srsteinmetz12.github.io/pendente.html\""
-                + "},"
-                + "\"auto_return\": \"approved\""
-                + "}";
 
-            System.out.println("   📤 JSON MP: " + jsonPayload);
-
-            // Faz a requisição para o Mercado Pago
-            java.net.URL url = new java.net.URL("https://api.mercadopago.com/checkout/preferences");
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
-            conn.setDoOutput(true);
-
-            try (java.io.OutputStream os = conn.getOutputStream()) {
-                os.write(jsonPayload.getBytes("utf-8"));
-            }
-
-            int responseCode = conn.getResponseCode();
-            
-            if (responseCode == 200 || responseCode == 201) {
-                java.io.BufferedReader br = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getInputStream(), "utf-8"));
-                StringBuilder res = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    res.append(line.trim());
-                }
-                
-                String txt = res.toString();
-                int inicio = txt.indexOf("\"init_point\":\"") + 14;
-                int fim = txt.indexOf("\"", inicio);
-                String link = txt.substring(inicio, fim).replace("\\/", "/");
-                
-                return link;
-            } else {
-                System.err.println("   ❌ MP rejeitou. Código: " + responseCode);
-                
-                // Lê o erro
-                try (java.io.BufferedReader br = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getErrorStream(), "utf-8"))) {
-                    StringBuilder erro = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        erro.append(line);
-                    }
-                    System.err.println("   Erro: " + erro.toString());
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("   ❌ Erro MP: " + e.getMessage());
-        }
-        
-        return null;
-    }
-    
     // ==========================================
-    // STATUS PAGAMENTO (para o frontend)
+    // HANDLER: LIBERAR RESERVA (REJEIÇÃO)
     // ==========================================
-    static class StatusPagamentoHandler implements HttpHandler {
+    static class LiberarReservaHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
             try {
-                String path = exchange.getRequestURI().getPath();
-                String paymentIdStr = path.substring(path.lastIndexOf("/") + 1);
-                
-                // Para Pix (pagamento direto), sempre retorna como pendente
-                // O cliente confirma manualmente
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                String codPeca = json.get("codPeca").getAsString();
+                String pedidoId = json.get("pedidoId").getAsString();
+
+                boolean liberado = liberarReserva(codPeca, pedidoId);
+
                 Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("paymentId", paymentIdStr);
-                response.put("status", "pending");
-                
+                response.put("success", liberado);
+                response.put("mensagem", liberado ? "Reserva liberada! Item disponível novamente." : "Erro ao liberar reserva!");
+
                 sendResponse(exchange, 200, gson.toJson(response));
-                
-            } catch (IOException e) {
+
+            } catch (JsonSyntaxException | IOException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
         }
-    }
-    
-    // ==========================================
-    // WEBHOOK (para Mercado Pago)
-    // ==========================================
-    static class WebhookHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
+
+        private boolean liberarReserva(String codPeca, String pedidoId) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+
             try {
-                String body = new BufferedReader(
-                    new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                    .lines().reduce("", (a, b) -> a + b);
-                
-                System.out.println("📢 Webhook: " + body);
-                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
-                
-            } catch (IOException e) {
-                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+                con = ConnectionDB.getConnectionCloud();
+                con.setAutoCommit(false);
+
+                String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
+                stmt = con.prepareStatement(sqlCheck);
+                stmt.setString(1, codPeca);
+                stmt.setString(2, pedidoId);
+                stmt.setQueryTimeout(10);
+                ResultSet rs = stmt.executeQuery();
+
+                if (!rs.next()) {
+                    con.rollback();
+                    return false;
+                }
+
+                int quantidade = rs.getInt("quantidade");
+
+                String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlUpdate);
+                stmt.setInt(1, quantidade);
+                stmt.setString(2, codPeca);
+                stmt.executeUpdate();
+
+                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+                stmt = con.prepareStatement(sqlReserva);
+                stmt.setString(1, codPeca);
+                stmt.setString(2, pedidoId);
+                stmt.executeUpdate();
+
+                con.commit();
+                System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " (Pedido: " + pedidoId + ") → DISPONIVEL");
+                return true;
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("❌ [RESERVA] Erro ao liberar: " + e.getMessage());
+                try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+                return false;
+            } finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
             }
         }
     }
+
     // ==========================================
     // HANDLER: NOTIFICAR SISTEMA DESKTOP
     // ==========================================
@@ -813,8 +607,8 @@ public class PagamentoServer {
 
             try {
                 String body = new BufferedReader(
-                    new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                    .lines().reduce("", (a, b) -> a + b);
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
 
                 System.out.println("📥 Notificação recebida: " + body);
 
@@ -837,15 +631,9 @@ public class PagamentoServer {
                 System.out.println("   Peça: " + codPeca);
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
-                // ==========================================
-                // 🔥 SALVAR NO BANCO DE DADOS
-                // ==========================================
-                salvarNotificacaoNoBanco(codPeca, nomeCliente, valorTotal, meioPagamento, 
-                                      retirarLoja, endereco, pedidoId, telefone, itens);
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, valorTotal, meioPagamento,
+                        retirarLoja, endereco, pedidoId, telefone, itens);
 
-                // ==========================================
-                // RETORNA SUCESSO IMEDIATO PARA O CLIENTE
-                // ==========================================
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("pedidoId", pedidoId);
@@ -859,16 +647,12 @@ public class PagamentoServer {
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
-            
         }
 
-        // ==========================================
-        // SALVAR NOTIFICAÇÃO NO BANCO DE DADOS
-        // ==========================================
         private void salvarNotificacaoNoBanco(String codPeca, String cliente, double valor,
-                                               String meioPagamento, boolean retirarLoja,
-                                               String endereco, String pedidoId, String telefone,
-                                               String itens) {
+                                              String meioPagamento, boolean retirarLoja,
+                                              String endereco, String pedidoId, String telefone,
+                                              String itens) {
             Connection con = null;
             PreparedStatement stmt = null;
 
@@ -876,9 +660,9 @@ public class PagamentoServer {
                 con = ConnectionDB.getConnectionCloud();
 
                 String sql = "INSERT INTO notificacoes_pendentes " +
-                             "(pedido_id, cod_peca, cliente, telefone, valor, meio_pagamento, " +
-                             "endereco, retirar_loja, itens, data_criacao, status, lida) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
+                        "(pedido_id, cod_peca, cliente, telefone, valor, meio_pagamento, " +
+                        "endereco, retirar_loja, itens, data_criacao, status, lida) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
 
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, pedidoId);
@@ -904,7 +688,7 @@ public class PagamentoServer {
             }
         }
     }
-    
+
     // ==========================================
     // HANDLER: CONSULTAR NOTIFICAÇÕES
     // ==========================================
@@ -929,12 +713,11 @@ public class PagamentoServer {
                 try {
                     con = ConnectionDB.getConnectionCloud();
 
-                    // Busca notificações PENDENTES e NÃO LIDAS
                     String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                                 "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
-                                 "FROM notificacoes_pendentes " +
-                                 "WHERE status = 'PENDENTE' AND lida = 0 " +
-                                 "ORDER BY data_criacao ASC";
+                            "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
+                            "FROM notificacoes_pendentes " +
+                            "WHERE status = 'PENDENTE' AND lida = 0 " +
+                            "ORDER BY data_criacao ASC";
 
                     stmt = con.prepareStatement(sql);
                     rs = stmt.executeQuery();
@@ -976,131 +759,805 @@ public class PagamentoServer {
             }
         }
     }
-    
+
     // ==========================================
-    // REGISTRAR VENDA NAS TABELAS
+    // HANDLER: RESPONDER NOTIFICAÇÃO
     // ==========================================
-    private static void registrarVenda(String codPeca, String cliente, double valor, 
-                                        String meioPagamento, String pedidoId, 
-                                        String endereco, boolean retirarLoja, String telefone) {
-        Connection con = null;
-        PreparedStatement stmt = null;
+    static class ResponderNotificacaoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
 
-        try {
-            con = ConnectionDB.getConnectionCloud();
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
 
-            // ==========================================
-            // 1. REGISTRAR NA TABELA VENDAS
-            // ==========================================
-            String sqlVenda = "INSERT INTO vendas (datavenda, codpeca, cliente, valor_total, meio_pagamento, " +
-                             "pedido_id, endereco_entrega, retirar_loja, telefone, status_pagamento) " +
-                             "VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMADO')";
+            try {
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
 
-            stmt = con.prepareStatement(sqlVenda);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, cliente);
-            stmt.setDouble(3, valor);
-            stmt.setString(4, meioPagamento);
-            stmt.setString(5, pedidoId);
-            stmt.setString(6, endereco);
-            stmt.setBoolean(7, retirarLoja);
-            stmt.setString(8, telefone);
-            stmt.executeUpdate();
-            System.out.println("   ✅ Venda registrada: " + pedidoId);
-            stmt.close();
+                System.out.println("📥 Resposta recebida: " + body);
 
-            // ==========================================
-            // 2. REGISTRAR NA TABELA SACOLA
-            // ==========================================
-            String sqlSacola = "INSERT INTO sacola (codpeca, cliente, valor, meio_pagamento, pedido_id, telefone, data, status) " +
-                              "VALUES (?, ?, ?, ?, ?, ?, NOW(), 'CONFIRMADO')";
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                int id = json.get("id").getAsInt();
+                String pedidoId = json.get("pedidoId").getAsString();
+                boolean aprovado = json.get("aprovado").getAsBoolean();
 
-            stmt = con.prepareStatement(sqlSacola);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, cliente);
-            stmt.setDouble(3, valor);
-            stmt.setString(4, meioPagamento);
-            stmt.setString(5, pedidoId);
-            stmt.setString(6, telefone);
-            stmt.executeUpdate();
-            System.out.println("   ✅ Sacola registrada: " + pedidoId);
-            stmt.close();
+                Notificacao notif = buscarNotificacaoPorId(id);
 
-            // ==========================================
-            // 3. REGISTRAR NA TABELA ENTREGA
-            // ==========================================
-            String tipoEntrega = retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO";
-            String statusEntrega = retirarLoja ? "AGUARDANDO_RETIRADA" : "AGUARDANDO_ENVIO";
+                if (notif != null) {
+                    responderNotificacao(notif, aprovado);
+                }
 
-            String sqlEntrega = "INSERT INTO entrega (pedido_id, cliente, endereco, tipo_entrega, status, data) " +
-                               "VALUES (?, ?, ?, ?, ?, NOW())";
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("mensagem", "Resposta registrada com sucesso!");
 
-            stmt = con.prepareStatement(sqlEntrega);
-            stmt.setString(1, pedidoId);
-            stmt.setString(2, cliente);
-            stmt.setString(3, endereco);
-            stmt.setString(4, tipoEntrega);
-            stmt.setString(5, statusEntrega);
-            stmt.executeUpdate();
-            System.out.println("   ✅ Entrega registrada: " + tipoEntrega);
-            stmt.close();
+                sendResponse(exchange, 200, gson.toJson(response));
 
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) con.close(); } catch (SQLException e) {}
+            } catch (JsonSyntaxException | IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+
+        private Notificacao buscarNotificacaoPorId(int id) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+
+                String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                        "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
+                        "FROM notificacoes_pendentes WHERE id = ?";
+
+                stmt = con.prepareStatement(sql);
+                stmt.setInt(1, id);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new Notificacao(
+                            rs.getInt("id"),
+                            rs.getString("pedido_id"),
+                            rs.getString("cod_peca"),
+                            rs.getString("cliente"),
+                            rs.getString("telefone"),
+                            rs.getDouble("valor"),
+                            rs.getString("meio_pagamento"),
+                            rs.getBoolean("retirar_loja"),
+                            rs.getString("endereco"),
+                            rs.getString("data_criacao"),
+                            rs.getString("itens")
+                    );
+                }
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("❌ Erro ao buscar notificação: " + e.getMessage());
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+
+            return null;
         }
     }
 
     // ==========================================
-    // ATUALIZAR ESTOQUE (BAIXA DO PRODUTO)
+    // HANDLER: CRIAR PAGAMENTO
     // ==========================================
-    private static void atualizarEstoque(String codPeca) {
+    static class CriarPagamentoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                Map<String, String> params = parseQueryParams(query);
+
+                String meio = params.get("meio");
+                String produtoId = params.get("id");
+                double preco = Double.parseDouble(params.getOrDefault("preco", "0"));
+                String nome = params.get("nome");
+                double frete = Double.parseDouble(params.getOrDefault("frete", "0"));
+                double valorTotal = preco + frete;
+
+                System.out.println("📝 Criando pagamento para: " + nome + " - R$ " + valorTotal);
+                System.out.println("   Meio: " + meio);
+
+                Map<String, Object> response = new HashMap<>();
+
+                if ("pix".equalsIgnoreCase(meio)) {
+                    String payloadPix = gerarPayloadPix(valorTotal, "Pedido PORTOBELLA");
+                    response.put("success", true);
+                    response.put("meio", "PIX");
+                    response.put("payload", payloadPix);
+                    response.put("valor", valorTotal);
+                    response.put("produto", nome);
+                    System.out.println("   ✅ Payload Pix gerado com sucesso!");
+                } else if ("mercado_pago".equalsIgnoreCase(meio)) {
+                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal);
+                    if (linkPagamento != null && !linkPagamento.isEmpty()) {
+                        response.put("success", true);
+                        response.put("meio", "mercado_pago");
+                        response.put("paymentUrl", linkPagamento);
+                        System.out.println("   ✅ Link gerado: " + linkPagamento);
+                    } else {
+                        response.put("success", false);
+                        response.put("error", "Erro ao gerar link do Mercado Pago");
+                    }
+                } else {
+                    response.put("success", false);
+                    response.put("error", "Meio de pagamento inválido: " + meio);
+                }
+
+                sendResponse(exchange, 200, gson.toJson(response));
+                addCorsHeaders(exchange);
+            } catch (IOException | NumberFormatException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+    }
+
+    // ==========================================
+    // HANDLER: STATUS PAGAMENTO
+    // ==========================================
+    static class StatusPagamentoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+
+            try {
+                String path = exchange.getRequestURI().getPath();
+                String paymentIdStr = path.substring(path.lastIndexOf("/") + 1);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("paymentId", paymentIdStr);
+                response.put("status", "pending");
+
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+    }
+
+    // ==========================================
+    // HANDLER: WEBHOOK
+    // ==========================================
+    static class WebhookHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            try {
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                System.out.println("📢 Webhook: " + body);
+                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+
+            } catch (IOException e) {
+                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+            }
+        }
+    }
+
+    // ==========================================
+    // GERAR PAYLOAD PIX
+    // ==========================================
+    public static String gerarPayloadPix(double valor, String descricao) {
+        try {
+            System.out.println("🔧 Gerando payload Pix...");
+            System.out.println("💰 Valor: R$ " + valor);
+
+            StringBuilder payload = new StringBuilder();
+
+            payload.append(emvField("00", "01"));
+            payload.append(emvField("01", "11"));
+
+            String gui = "br.gov.bcb.pix";
+            String chavePix = CHAVE_PIX;
+
+            String sub00 = emvField("00", gui);
+            String sub01 = emvField("01", chavePix);
+            String valor26 = sub00 + sub01;
+
+            payload.append(emvField("26", valor26));
+            payload.append(emvField("52", "0000"));
+            payload.append(emvField("53", "986"));
+
+            if (valor > 0) {
+                String valorFormatado = String.format("%.2f", valor);
+                payload.append(emvField("54", valorFormatado));
+            }
+
+            payload.append(emvField("58", "BR"));
+            payload.append(emvField("59", NOME_RECEBEDOR));
+            payload.append(emvField("60", CIDADE));
+
+            String txid = "***";
+            String sub05 = emvField("05", txid);
+            payload.append(emvField("62", sub05));
+
+            String payloadSemCRC = payload.toString();
+            String crc = calcularCRC16(payloadSemCRC);
+            payload.append(emvField("63", crc));
+
+            String payloadFinal = payload.toString();
+
+            System.out.println("✅ Payload gerado com sucesso!");
+            System.out.println("📋 Payload: " + payloadFinal);
+            System.out.println("📏 Tamanho: " + payloadFinal.length());
+
+            return payloadFinal;
+
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao gerar payload: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // ==========================================
+    // EMV FIELD
+    // ==========================================
+    private static String emvField(String id, String valor) {
+        if (valor == null) valor = "";
+        return id + String.format("%02d", valor.length()) + valor;
+    }
+
+    // ==========================================
+    // CALCULAR CRC16
+    // ==========================================
+    private static String calcularCRC16(String input) {
+        try {
+            int crc = 0xFFFF;
+            byte[] bytes = input.getBytes(StandardCharsets.ISO_8859_1);
+
+            for (byte b : bytes) {
+                crc ^= (b & 0xFF) << 8;
+                for (int i = 0; i < 8; i++) {
+                    if ((crc & 0x8000) != 0) {
+                        crc = (crc << 1) ^ 0x1021;
+                    } else {
+                        crc = crc << 1;
+                    }
+                }
+            }
+
+            return String.format("%04X", crc & 0xFFFF);
+
+        } catch (Exception e) {
+            System.err.println("❌ Erro no CRC16: " + e.getMessage());
+            return "0000";
+        }
+    }
+
+    // ==========================================
+    // MERCADO PAGO
+    // ==========================================
+    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor) {
+        try {
+            String precoFormatado = String.format(java.util.Locale.US, "%.2f", valor);
+
+            String jsonPayload = "{"
+                    + "\"items\": [{"
+                    + "\"id\": \"" + codPeca + "\","
+                    + "\"title\": \"" + titulo + "\","
+                    + "\"quantity\": 1,"
+                    + "\"currency_id\": \"BRL\","
+                    + "\"unit_price\": " + precoFormatado
+                    + "}],"
+                    + "\"back_urls\": {"
+                    + "\"success\": \"https://srsteinmetz12.github.io/sucesso.html\","
+                    + "\"failure\": \"https://srsteinmetz12.github.io/falha.html\","
+                    + "\"pending\": \"https://srsteinmetz12.github.io/pendente.html\""
+                    + "},"
+                    + "\"auto_return\": \"approved\""
+                    + "}";
+
+            System.out.println("   📤 JSON MP: " + jsonPayload);
+
+            java.net.URL url = new java.net.URL("https://api.mercadopago.com/checkout/preferences");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
+            conn.setDoOutput(true);
+
+            try (java.io.OutputStream os = conn.getOutputStream()) {
+                os.write(jsonPayload.getBytes("utf-8"));
+            }
+
+            int responseCode = conn.getResponseCode();
+
+            if (responseCode == 200 || responseCode == 201) {
+                java.io.BufferedReader br = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream(), "utf-8"));
+                StringBuilder res = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    res.append(line.trim());
+                }
+
+                String txt = res.toString();
+                int inicio = txt.indexOf("\"init_point\":\"") + 14;
+                int fim = txt.indexOf("\"", inicio);
+                String link = txt.substring(inicio, fim).replace("\\/", "/");
+
+                return link;
+            } else {
+                System.err.println("   ❌ MP rejeitou. Código: " + responseCode);
+
+                try (java.io.BufferedReader br = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getErrorStream(), "utf-8"))) {
+                    StringBuilder erro = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        erro.append(line);
+                    }
+                    System.err.println("   Erro: " + erro.toString());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("   ❌ Erro MP: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    // ==========================================
+    // RESPONDER NOTIFICAÇÃO
+    // ==========================================
+    private static void responderNotificacao(Notificacao notif, boolean aprovado) {
+        System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
+
         Connection con = null;
         PreparedStatement stmt = null;
 
         try {
             con = ConnectionDB.getConnectionCloud();
 
-            // ==========================================
-            // 1. ATUALIZAR STATUS DA PEÇA PARA VENDIDO
-            // ==========================================
-            String sqlUpdate = "UPDATE estoque SET status = 'VENDIDO' WHERE codpeca = ? AND status = 'DISPONIVEL'";
+            if (con == null || con.isClosed()) {
+                Thread.sleep(2000);
+                con = ConnectionDB.getConnectionCloud();
+                if (con == null) {
+                    throw new SQLException("Não foi possível reconectar ao banco");
+                }
+            }
 
-            stmt = con.prepareStatement(sqlUpdate);
-            stmt.setString(1, codPeca);
+            String status = aprovado ? "CONFIRMADO" : "REJEITADO";
+
+            String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
+            stmt = con.prepareStatement(sql);
+            stmt.setString(1, status);
+            stmt.setInt(2, notif.id);
+            stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
 
             if (rows > 0) {
-                System.out.println("   ✅ Estoque atualizado: " + codPeca + " -> VENDIDO");
-            } else {
-                System.out.println("   ⚠️ Produto já vendido ou não encontrado: " + codPeca);
+                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
+
+                if (aprovado) {
+                    moverParaHistorico(con, notif);
+                    int idVenda = registrarVenda(con, notif);
+
+                    if (idVenda > 0) {
+                        registrarSacola(con, notif, idVenda);
+                        registrarEntrega(con, notif, idVenda);
+                    }
+
+                    confirmarReserva(notif.codPeca, notif.pedidoId);
+                    atualizarSiteAsync();
+                    mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId);
+
+                } else {
+                    liberarReserva(notif.codPeca, notif.pedidoId);
+                    moverParaHistoricoRejeitado(con, notif);
+                    atualizarSiteAsync();
+                    mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId);
+                }
             }
-            stmt.close();
 
-            // ==========================================
-            // 2. REGISTRAR MOVIMENTAÇÃO DE ESTOQUE
-            // ==========================================
-            String sqlMov = "INSERT INTO movimentacao_estoque (codpeca, data_movimento, status_anterior, status_novo, observacao) " +
-                           "SELECT ?, NOW(), status, 'VENDIDO', 'Venda confirmada - Pedido #' || ? FROM estoque WHERE codpeca = ?";
-
-            stmt = con.prepareStatement(sqlMov);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, codPeca);
-            stmt.setString(3, codPeca);
-            stmt.executeUpdate();
-            System.out.println("   ✅ Movimentação registrada: " + codPeca);
-            stmt.close();
-
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("   ❌ Erro ao atualizar estoque: " + e.getMessage());
+        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+            System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
             try { if (con != null) con.close(); } catch (SQLException e) {}
         }
+
+        System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
     }
-    
+
+    // ==========================================
+    // CONFIRMAR RESERVA
+    // ==========================================
+    private static void confirmarReserva(String codPeca, String pedidoId) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ConnectionDB.getConnectionCloud();
+            con.setAutoCommit(false);
+
+            String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+            stmt = con.prepareStatement(sqlReserva);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, pedidoId);
+            stmt.executeUpdate();
+
+            String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'RESERVADO'";
+            stmt = con.prepareStatement(sqlEstoque);
+            stmt.setString(1, codPeca);
+            stmt.executeUpdate();
+
+            con.commit();
+            System.out.println("✅ [RESERVA] Venda confirmada: " + codPeca + " → VENDIDO");
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("❌ [RESERVA] Erro ao confirmar: " + e.getMessage());
+            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // LIBERAR RESERVA
+    // ==========================================
+    private static void liberarReserva(String codPeca, String pedidoId) {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ConnectionDB.getConnectionCloud();
+            con.setAutoCommit(false);
+
+            String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
+            stmt = con.prepareStatement(sqlCheck);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, pedidoId);
+            stmt.setQueryTimeout(10);
+            ResultSet rs = stmt.executeQuery();
+
+            if (!rs.next()) {
+                con.rollback();
+                return;
+            }
+
+            int quantidade = rs.getInt("quantidade");
+
+            String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
+            stmt = con.prepareStatement(sqlUpdate);
+            stmt.setInt(1, quantidade);
+            stmt.setString(2, codPeca);
+            stmt.executeUpdate();
+
+            String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+            stmt = con.prepareStatement(sqlReserva);
+            stmt.setString(1, codPeca);
+            stmt.setString(2, pedidoId);
+            stmt.executeUpdate();
+
+            con.commit();
+            System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " → DISPONIVEL");
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("❌ [RESERVA] Erro ao liberar: " + e.getMessage());
+            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // MOVER PARA HISTÓRICO (CONFIRMADO)
+    // ==========================================
+    private static void moverParaHistorico(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+
+        try {
+            String sql = "INSERT INTO notificacoes_historico " +
+                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, notif.id);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setString(3, notif.codPeca);
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.telefone);
+            stmt.setDouble(6, notif.valor);
+            stmt.setString(7, notif.meioPagamento);
+            stmt.setString(8, notif.endereco);
+            stmt.setBoolean(9, notif.retirarLoja);
+            stmt.setString(10, notif.itens);
+            stmt.setString(11, "CONFIRMADO");
+            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
+
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+
+            System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // MOVER PARA HISTÓRICO (REJEITADO)
+    // ==========================================
+    private static void moverParaHistoricoRejeitado(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+
+        try {
+            String sql = "INSERT INTO notificacoes_historico " +
+                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, notif.id);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setString(3, notif.codPeca);
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.telefone);
+            stmt.setDouble(6, notif.valor);
+            stmt.setString(7, notif.meioPagamento);
+            stmt.setString(8, notif.endereco);
+            stmt.setBoolean(9, notif.retirarLoja);
+            stmt.setString(10, notif.itens);
+            stmt.setString(11, "REJEITADO");
+            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
+
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+
+            System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // REGISTRAR VENDA
+    // ==========================================
+    private static int registrarVenda(Connection con, Notificacao notif) {
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        int idVenda = 0;
+
+        try {
+            int proximoId = getProximoIdVenda(con);
+
+            String obsVendas = "Pedido: " + notif.pedidoId;
+            if (notif.endereco != null && !notif.endereco.isEmpty()) {
+                String enderecoResumido = notif.endereco;
+                int espacoRestante = 50 - obsVendas.length() - 3;
+                if (espacoRestante > 0 && enderecoResumido.length() > espacoRestante) {
+                    enderecoResumido = enderecoResumido.substring(0, espacoRestante) + "...";
+                } else if (espacoRestante <= 0) {
+                    enderecoResumido = "";
+                }
+                if (!enderecoResumido.isEmpty()) {
+                    obsVendas += " | " + enderecoResumido;
+                }
+            }
+            if (obsVendas.length() > 50) {
+                obsVendas = obsVendas.substring(0, 47) + "...";
+            }
+
+            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
+
+            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomedi, obsvendas, entrega, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, proximoId);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(4, "SITE");
+            stmt.setString(5, notif.meioPagamento);
+            stmt.setString(6, valorFormatado);
+            stmt.setString(7, notif.codPeca);
+            stmt.setString(8, notif.cliente);
+            stmt.setString(9, obsVendas);
+            stmt.setString(10, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
+            stmt.setString(11, "EM_SEPARACAO");
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+
+            idVenda = proximoId;
+
+            System.out.println("   ✅ Venda registrada (ID: " + idVenda + ", Pedido: " + notif.pedidoId + ")");
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+
+        return idVenda;
+    }
+
+    // ==========================================
+    // BUSCAR PRÓXIMO ID DA VENDA
+    // ==========================================
+    private static int getProximoIdVenda(Connection con) {
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        int proximoId = 1;
+
+        try {
+            String sql = "SELECT MAX(id) FROM vendas";
+            stmt = con.prepareStatement(sql);
+            stmt.setQueryTimeout(10);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int maxId = rs.getInt(1);
+                proximoId = maxId + 1;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("⚠️ Erro ao buscar próximo ID: " + e.getMessage());
+            proximoId = (int) (System.currentTimeMillis() / 1000);
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+
+        return proximoId;
+    }
+
+    // ==========================================
+    // REGISTRAR SACOLA
+    // ==========================================
+    private static void registrarSacola(Connection con, Notificacao notif, int idVenda) {
+        PreparedStatement stmt = null;
+
+        try {
+            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
+
+            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, idVenda);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(4, valorFormatado);
+            stmt.setString(5, "EM_SEPARACAO");
+            stmt.setString(6, notif.codPeca);
+            stmt.setString(7, notif.cliente);
+            stmt.setString(8, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+
+            System.out.println("   ✅ Sacola registrada (ID_Venda: " + idVenda + ")");
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // REGISTRAR ENTREGA
+    // ==========================================
+    private static void registrarEntrega(Connection con, Notificacao notif, int idVenda) {
+        PreparedStatement stmt = null;
+
+        try {
+            String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO";
+
+            String sql = "INSERT INTO entregas (idvenda, pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, dataentrega, status, tipoentrega, canal) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, idVenda);
+            stmt.setString(2, notif.pedidoId);
+            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            stmt.setString(4, notif.cliente);
+            stmt.setString(5, notif.codPeca);
+            stmt.setDouble(6, 0.0);
+            stmt.setBoolean(7, false);
+            stmt.setBoolean(8, false);
+            stmt.setNull(9, java.sql.Types.DATE);
+            stmt.setString(10, "EM_SEPARACAO");
+            stmt.setString(11, tipoEntrega);
+            stmt.setString(12, "SITE");
+            stmt.setQueryTimeout(10);
+            stmt.executeUpdate();
+
+            System.out.println("   ✅ Entrega registrada (ID_Venda: " + idVenda + ")");
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // ATUALIZAR SITE (ASSÍNCRONO)
+    // ==========================================
+    private static void atualizarSiteAsync() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000);
+                System.out.println("🔄 [SITE] Atualizando vitrine virtual...");
+
+                GerarSiteEstoque gerador = new GerarSiteEstoque();
+                gerador.gerarSiteEstoque();
+
+                System.out.println("✅ [SITE] Vitrine virtual atualizada!");
+            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+                System.err.println("❌ [SITE] Erro ao atualizar: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    // ==========================================
+    // MOSTRAR MENSAGEM NA BANDEJA
+    // ==========================================
+    private static void mostrarMensagemTray(String titulo, String mensagem) {
+        System.out.println("🔔 [" + titulo + "] " + mensagem);
+        try {
+            if (SystemTray.isSupported()) {
+                SystemTray tray = SystemTray.getSystemTray();
+                Image image = Toolkit.getDefaultToolkit().createImage("");
+                TrayIcon trayIcon = new TrayIcon(image, "PORTOBELLA");
+                trayIcon.setImageAutoSize(true);
+                tray.add(trayIcon);
+                trayIcon.displayMessage(titulo, mensagem, TrayIcon.MessageType.INFO);
+                new Timer(3000, e -> {
+                    tray.remove(trayIcon);
+                }).start();
+            }
+        } catch (AWTException e) {
+            System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
+        }
+    }
+
     // ==========================================
     // MÉTODOS AUXILIARES
     // ==========================================
@@ -1116,7 +1573,7 @@ public class PagamentoServer {
         }
         return params;
     }
-    
+
     private static void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
@@ -1124,12 +1581,15 @@ public class PagamentoServer {
             os.write(response.getBytes());
         }
     }
-    
+
+    // ==========================================
+    // MAIN
+    // ==========================================
     public static void main(String[] args) {
         try {
             iniciar();
         } catch (IOException ex) {
-            System.err.println("Erro: "+ex);
+            System.err.println("Erro: " + ex);
         }
-    }    
+    }
 }
