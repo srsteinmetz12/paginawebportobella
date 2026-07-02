@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
     // Seleciona os itens do banco que não estão marcados como vendidos (ajuste os nomes das colunas se precisar)
     const [rows] = await connection.execute(
-      'SELECT id, nome, preco FROM produtos WHERE vendido = 0'
+      'SELECT id, nome, preco FROM estoque WHERE vendido = 0'
     );
     
     await connection.end();
