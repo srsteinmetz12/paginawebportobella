@@ -1,2 +1,4 @@
 "config.properties" 
 "config.properties" 
+.vercel
+.env*

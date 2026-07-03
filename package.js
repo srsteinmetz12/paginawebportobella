@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.14.1"
   }
 }
