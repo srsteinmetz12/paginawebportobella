@@ -49,8 +49,8 @@ public class ListarProdutosHandler implements HttpHandler {
     private JsonArray listarProdutosDisponiveis() throws ClassNotFoundException, SQLException {
         JsonArray lista = new JsonArray();
 
-        String sql = "SELECT codpeca, nome, valor, foto, descricao, categoria, status " +
-                     "FROM estoque WHERE status = 'DISPONIVEL' ORDER BY nome ASC";
+        String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade " +
+                     "FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
 
         try (Connection con = ConnectionDB.getConnectionCloud();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -59,12 +59,13 @@ public class ListarProdutosHandler implements HttpHandler {
             while (rs.next()) {
                 JsonObject produto = new JsonObject();
                 produto.addProperty("id", rs.getString("codpeca"));
-                produto.addProperty("nome", rs.getString("nome"));
-                produto.addProperty("preco", rs.getDouble("valor"));
-                produto.addProperty("foto", rs.getString("foto") != null ? rs.getString("foto") : "default.jpg");
-                produto.addProperty("descricao", rs.getString("descricao") != null ? rs.getString("descricao") : "");
-                produto.addProperty("categoria", rs.getString("categoria") != null ? rs.getString("categoria") : "Geral");
+                produto.addProperty("nome", rs.getString("itemdesc"));
+                produto.addProperty("marca", rs.getString("marca") != null ? rs.getString("marca") : "");
+                produto.addProperty("tamanho", rs.getString("tamanho") != null ? rs.getString("tamanho") : "");
+                produto.addProperty("preco", rs.getDouble("precosug"));
+                produto.addProperty("foto", rs.getString("imagem") != null ? rs.getString("imagem") : "default.jpg");
                 produto.addProperty("status", rs.getString("status"));
+                produto.addProperty("quantidade", rs.getInt("quantidade"));
                 lista.add(produto);
             }
         }
