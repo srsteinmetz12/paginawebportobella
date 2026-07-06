@@ -13,7 +13,7 @@
     header p { margin: 0; color: #A0A0A0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
     .carrinho-icon { position: relative; cursor: pointer; font-size: 28px; }
     .carrinho-contador { position: absolute; top: -8px; right: -8px; background: #00a650; color: #FFF; border-radius: 50%; padding: 2px 8px; font-size: 12px; font-weight: bold; }
-    .busca-container { max-width: 1160px; margin: 20px auto 0 auto; padding: 0 20px; position: sticky; top: 0; background-color: #1E1E1E; z-index: 99; }
+    .busca-container { max-width: 1160px; margin: 0 auto; padding: 10px 20px; position: sticky; top: 60px; background-color: #1E1E1E; z-index: 99; border-bottom: 1px solid #2D2D2D; }
     .busca-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; }
     .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
     .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -127418,4 +127418,4 @@
             let dadosNotificacao = {
               codPeca: dados.itens?.[0]?.id || 'DESCONHECIDO',
               destinatario: dados.destinatario || 'Cliente',
-              telefone: dados.telefone || 'Não informado',
+              telefone: dado
