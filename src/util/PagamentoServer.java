@@ -99,6 +99,7 @@ public class PagamentoServer {
         server.createContext("/api/pagamentos/reservar", new ReservarItemHandler());
         server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
         server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
+        server.createContext("/api/produtos", new ListarProdutosHandler());
 
         server.setExecutor(null);
         server.start();
@@ -111,6 +112,7 @@ public class PagamentoServer {
         System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
         System.out.println("   🔒 Reservar: /api/pagamentos/reservar");
         System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
+        System.out.println("   🔓 Rodando: /api/produtos");
     }
 
     public static void parar() {
