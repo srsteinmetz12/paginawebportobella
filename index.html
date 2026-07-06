@@ -13,7 +13,7 @@
     header p { margin: 0; color: #A0A0A0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
     .carrinho-icon { position: relative; cursor: pointer; font-size: 28px; }
     .carrinho-contador { position: absolute; top: -8px; right: -8px; background: #00a650; color: #FFF; border-radius: 50%; padding: 2px 8px; font-size: 12px; font-weight: bold; }
-    .busca-container { max-width: 1160px; margin: 0 auto; padding: 10px 20px; position: sticky; top: 60px; background-color: #1E1E1E; z-index: 99; border-bottom: 1px solid #2D2D2D; }
+    .busca-container { max-width: 1160px; margin: 20px auto 0 auto; padding: 0 20px; position: sticky; top: 0; background-color: #1E1E1E; z-index: 99; }
     .busca-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; }
     .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
     .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -126906,43 +126906,19 @@
     // CARRINHO DE COMPRAS
     // ========================================
     function adicionarAoCarrinho(id, nome, preco) {
-      console.log('🔍 Verificando disponibilidade do item:', id);
+      console.log('🛒 Adicionando item ao carrinho:', id);
       
-      fetch(URL_BACKEND + '/api/pagamentos/verificar-disponibilidade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codPeca: id })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('📥 Resposta disponibilidade:', data);
-        
-        if (!data.disponivel) {
-          alert('❌ Este item não está mais disponível!\n\nInfelizmente, foi vendido para outro cliente.');
-          removerItemVitrine(id);
-          return;
-        }
-        
-        let itemExistente = carrinho.itens.find(item => item.id === id);
-        if(itemExistente) {
-          itemExistente.quantidade += 1;
-        } else {
-          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
-        }
-        atualizarCarrinho();
-        mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
-      })
-      .catch(error => {
-        console.error('❌ Erro ao verificar disponibilidade:', error);
-        let itemExistente = carrinho.itens.find(item => item.id === id);
-        if(itemExistente) {
-          itemExistente.quantidade += 1;
-        } else {
-          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
-        }
-        atualizarCarrinho();
-        mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
-      });
+      // 🔥 VERIFICA SE O ITEM JÁ ESTÁ NO CARRINHO
+      let itemExistente = carrinho.itens.find(item => item.id === id);
+      if (itemExistente) {
+        alert('⚠️ Este item já está no seu carrinho!\n\nCada produto é único e só pode ser adicionado uma vez.');
+        return;
+      }
+      
+      // 🔥 ADICIONA DIRETO AO CARRINHO (SEM RESERVAR E SEM VERIFICAR DISPONIBILIDADE)
+      carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
+      atualizarCarrinho();
+      mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
     }
     window.adicionarAoCarrinho = adicionarAoCarrinho;
 
@@ -127211,31 +127187,52 @@
       let loading = document.createElement('div');
       loading.id = 'loadingFinal';
       loading.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;color:#FFF;font-size:18px;';
-      loading.innerHTML = '⏳ Reservando item...<br><small>Aguarde</small>';
+      loading.innerHTML = '⏳ Processando pagamento...<br><small>Aguarde</small>';
       document.body.appendChild(loading);
 
-      let itens = carrinho.itens.map(item => ({ id: item.id, nome: item.nome, preco: item.preco, quantidade: item.quantidade }));
+      let itens = carrinho.itens.map(item => ({ id: item.id, nome: item.nome, preco: item.preco, quantidade: 1 }));
 
-      let codPeca = itens[0]?.id || 'DESCONHECIDO';
-      
-      console.log('📤 [RESERVA] Tentando reservar item:', codPeca);
-      console.log('📤 [RESERVA] Pedido ID:', pedidoId);
-      
-      fetch(URL_BACKEND + '/api/pagamentos/reservar', {
+      console.log('📤 [PAGAMENTO] Gerando pagamento para ' + itens.length + ' itens...');
+
+      // 🔥 PASSO 1: GERAR PAGAMENTO (SEM RESERVAR)
+      fetch(URL_BACKEND + '/api/pagamentos/finalizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          codPeca: codPeca,
-          pedidoId: pedidoId,
-          quantidade: 1
+          meio: metodo,
+          itens: itens,
+          subtotal: subtotal,
+          frete: carrinho.frete,
+          total: valorTotal,
+          cep: retirarLoja ? '00000000' : cep,
+          endereco: enderecoCompleto,
+          destinatario: destinatario,
+          telefone: telefone || 'Não informado',
+          retirarLoja: retirarLoja,
+          pedidoId: pedidoId
         })
       })
-      .then(response => {
-        console.log('📥 [RESERVA] Status:', response.status);
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
-        console.log('📥 [RESERVA] Resposta:', data);
+        document.getElementById('loadingFinal')?.remove();
         
-        if (!data.success) {
-        
+        if(data.success) {
+          if(metodo === 'pix') {
+            // 🔥 PASSA OS DADOS PARA O MODAL PIX
+            window.dadosCompra = {
+              itens: itens,
+              subtotal: subtotal,
+              valorTotal: valorTotal,
+              cep: retirarLoja ? '00000000' : cep,
+              endereco: enderecoCompleto,
+              destinatario: destinatario,
+              telefone: telefone || 'Não informado',
+              retirarLoja: retirarLoja,
+              pedidoId: pedidoId
+            };
+            exibirModalPix(data.payload, data.total, 'Pedido #' + data.pedidoId);
+          } else {
+            window.location.href = data.paymentUrl;
+          }
+          carrinho.itens = [];
+          carr
