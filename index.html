@@ -126842,15 +126842,16 @@
       let html = '';
       
       produtos.forEach(produto => {
-        const codPeca = produto.codpeca || '0000';
-        const descricao = produto.itemdesc || 'Produto';
+        // 🔥 Usando os nomes corretos do JSON
+        const codPeca = produto.id || '0000';
+        const descricao = produto.nome || 'Produto';
         const tamanho = produto.tamanho || 'Único';
-        const preco = typeof produto.precosug === 'string' ? parseFloat(produto.precosug).toFixed(2).replace('.', ',') : (produto.precosug || 0).toFixed(2).replace('.', ',');
-        const precoNumero = typeof produto.precosug === 'string' ? parseFloat(produto.precosug) : (produto.precosug || 0);
+        const preco = typeof produto.preco === 'string' ? parseFloat(produto.preco).toFixed(2).replace('.', ',') : (produto.preco || 0).toFixed(2).replace('.', ',');
+        const precoNumero = typeof produto.preco === 'string' ? parseFloat(produto.preco) : (produto.preco || 0);
         
         let imagens = [];
-        if (produto.imagem) {
-          imagens = produto.imagem.split(';').filter(img => img.trim());
+        if (produto.foto) {
+          imagens = produto.foto.split(';').filter(img => img.trim());
         }
 
         html += `<div class="card" data-busca="${descricao.toLowerCase()} tam: ${tamanho.toLowerCase()} ref: ${codPeca.toLowerCase()}" data-codigo="${codPeca}">`;
@@ -127420,4 +127421,4 @@
               telefone: dados.telefone || 'Não informado',
               total: valor,
               meio: 'pix',
-              endereco:
+    
