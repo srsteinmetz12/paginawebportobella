@@ -100,6 +100,7 @@ public class PagamentoServer {
         server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
         server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
         server.createContext("/api/produtos", new ListarProdutosHandler());
+        server.createContext("/api/pagamentos/verificar-disponibilidade", new VerificarDisponibilidadeHandler());
 
         server.setExecutor(null);
         server.start();
@@ -113,6 +114,7 @@ public class PagamentoServer {
         System.out.println("   🔒 Reservar: /api/pagamentos/reservar");
         System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
         System.out.println("   🔓 Rodando: /api/produtos");
+        System.out.println("   🔓 Rodando: /api/verificar-disponibilidade");
     }
 
     public static void parar() {
@@ -393,6 +395,76 @@ public class PagamentoServer {
             try (java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A")) {
                 return s.hasNext() ? s.next() : "";
             }
+        }
+    }
+    
+    // ==========================================
+    // HANDLER: VERIFICAR DISPONIBILIDADE
+    // ==========================================
+    static class VerificarDisponibilidadeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            try {
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                String codPeca = json.get("codPeca").getAsString();
+
+                boolean disponivel = verificarDisponibilidade(codPeca);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("disponivel", disponivel);
+                response.put("codPeca", codPeca);
+
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (JsonSyntaxException | IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+
+        private boolean verificarDisponibilidade(String codPeca) {
+            Connection con = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+                String sql = "SELECT status, quantidade FROM estoque WHERE codpeca = ?";
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, codPeca);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    int quantidade = rs.getInt("quantidade");
+                    return "DISPONIVEL".equals(status) && quantidade > 0;
+                }
+
+            } catch (ClassNotFoundException | SQLException e) {
+                System.err.println("❌ Erro ao verificar disponibilidade: " + e.getMessage());
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+
+            return false;
         }
     }
 

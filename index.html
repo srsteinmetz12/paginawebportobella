@@ -127394,4 +127394,296 @@
       .catch(error => {
         document.getElementById('loadingFinal')?.remove();
         console.error('❌ [RESERVA] Erro:', error);
-      
+        alert('❌ Erro ao reservar item: ' + error.message);
+      });
+    }
+
+    // ========================================
+    // LIBERAR RESERVA (EM CASO DE FALHA)
+    // ========================================
+    function liberarReserva(codPeca, pedidoId) {
+      console.log('📤 [LIBERAR] Liberando reserva:', codPeca, pedidoId);
+      fetch(URL_BACKEND + '/api/pagamentos/liberar-reserva', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codPeca: codPeca,
+          pedidoId: pedidoId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('📥 [LIBERAR] Reserva liberada:', data);
+      })
+      .catch(error => {
+        console.error('❌ [LIBERAR] Erro:', error);
+      });
+    }
+
+    // ========================================
+    // FILTRO DE PRODUTOS
+    // ========================================
+    function filtrarProdutos() {
+      let input = document.getElementById('inputBusca').value.toLowerCase();
+      let cards = document.getElementsByClassName('card');
+      for (let i = 0; i < cards.length; i++) {
+        let txtValue = cards[i].getAttribute('data-busca') || '';
+        cards[i].style.display = txtValue.indexOf(input) > -1 ? '' : 'none';
+      }
+    }
+
+    // ========================================
+    // FUNÇÕES DO PIX
+    // ========================================
+
+    function exibirModalPix(payload, valor, nome) {
+      console.log('📱 Exibindo modal Pix...');
+
+      let container = document.getElementById('qrCodeContainer');
+      container.innerHTML = '<p style="color:#888;font-size:13px;">⏳ Gerando QR Code...</p>';
+
+      document.getElementById('modalValor').textContent = 'R$ ' + valor.toFixed(2).replace('.', ',');
+      document.getElementById('modalDescricao').textContent = nome || 'Pedido #' + Date.now();
+      document.getElementById('pixCode').value = payload || '';
+
+      if (!payload || payload.trim() === '') {
+        container.innerHTML = '<p style="color:#ff6b6b;font-size:13px;">⚠️ Erro: Código Pix não disponível</p>';
+        document.getElementById('statusPagamento').className = 'status-pagamento';
+        document.getElementById('statusPagamento').textContent = '❌ Erro ao gerar Pix';
+        document.getElementById('modalPix').style.display = 'flex';
+        return;
+      }
+
+      try {
+        if (typeof QRCode === 'undefined') {
+          console.warn('⚠️ QRCode.js não carregado, tentando carregar...');
+          carregarQRCodeLib(function() {
+            gerarQRCode(payload, container);
+          });
+        } else {
+          console.log('✅ QRCode.js já carregado');
+          gerarQRCode(payload, container);
+        }
+      } catch(e) {
+        console.error('❌ Erro ao gerar QR Code:', e);
+        container.innerHTML = '<p style="color:#ff6b6b;font-size:13px;">⚠️ Erro ao gerar QR Code.<br>Use o código copia e cola.</p>';
+      }
+
+      document.getElementById('modalPix').style.display = 'flex';
+      document.getElementById('statusPagamento').className = 'status-pagamento';
+      document.getElementById('statusPagamento').textContent = '⏳ Aguardando pagamento...';
+
+      setTimeout(() => {
+        if (document.getElementById('modalPix').style.display === 'flex') {
+          if (confirm('✅ Já realizou o pagamento?\n\nClique em OK para confirmar.')) {
+
+            let statusDiv = document.getElementById('statusPagamento');
+            statusDiv.className = 'status-pagamento';
+            statusDiv.textContent = '📤 Notificando a loja...';
+
+            let dados = window.dadosCompra || {};
+
+            let dadosNotificacao = {
+              codPeca: dados.itens?.[0]?.id || 'DESCONHECIDO',
+              destinatario: dados.destinatario || 'Cliente',
+              telefone: dados.telefone || 'Não informado',
+              total: valor,
+              meio: 'pix',
+              endereco: dados.endereco || 'Não informado',
+              retirarLoja: dados.retirarLoja || false,
+              pedidoId: dados.pedidoId || String(Date.now()),
+              itens: dados.itens || []
+            };
+
+            console.log('📤 Notificando sistema desktop (pagamento confirmado)...', dadosNotificacao);
+
+            fetch(URL_BACKEND + '/api/pagamentos/notificar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(dadosNotificacao)
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('📥 Resposta:', data);
+
+              statusDiv.className = 'status-pagamento aprovado';
+              statusDiv.textContent = '✅ Pagamento realizado!\nA loja irá confirmar em breve.';
+              mostrarNotificacao('✅ Pagamento realizado! Aguarde a confirmação da loja.');
+
+              setTimeout(() => {
+                fecharModalPix();
+                alert('✅ Pedido enviado para a loja!\n\nAguardando confirmação do pagamento.\nObrigado pela compra!');
+                window.dadosCompra = null;
+                location.reload();
+              }, 3000);
+            })
+            .catch(error => {
+              console.error('❌ Erro ao notificar:', error);
+              statusDiv.className = 'status-pagamento';
+              statusDiv.textContent = '✅ Pagamento realizado!\nA loja será notificada em breve.';
+
+              setTimeout(() => {
+                fecharModalPix();
+                alert('✅ Pedido enviado para a loja!\n\nAguardando confirmação do pagamento.\nObrigado pela compra!');
+                window.dadosCompra = null;
+                location.reload();
+              }, 3000);
+            });
+          }
+        }
+      }, 15000);
+    }
+
+    function carregarQRCodeLib(callback) {
+      let script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      script.onload = function() {
+        console.log('✅ QRCode.js carregado com sucesso!');
+        if (callback) callback();
+      };
+      script.onerror = function() {
+        console.error('❌ Erro ao carregar QRCode.js');
+        let container = document.getElementById('qrCodeContainer');
+        container.innerHTML = '<p style="color:#ff6b6b;font-size:13px;">⚠️ Erro ao carregar biblioteca QR Code.<br>Use o código copia e cola.</p>';
+      };
+      document.head.appendChild(script);
+    }
+
+    function gerarQRCode(payload, container) {
+      try {
+        container.innerHTML = '';
+        new QRCode(container, {
+          text: payload,
+          width: 200,
+          height: 200,
+          colorDark: '#000000',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        console.log('✅ QR Code gerado com sucesso!');
+      } catch(e) {
+        console.error('❌ Erro ao gerar QR Code:', e);
+        container.innerHTML = '<p style="color:#ff6b6b;font-size:13px;">⚠️ Erro ao gerar QR Code.<br>Use o código copia e cola.</p>';
+      }
+    }
+
+    function copiarPix() {
+      let texto = document.getElementById('pixCode');
+
+      if (!texto || !texto.value || texto.value.trim() === '') {
+        alert('⚠️ Nenhum código Pix para copiar!');
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto.value)
+          .then(() => {
+            mostrarNotificacao('✅ Código Pix copiado com sucesso!');
+          })
+          .catch(err => {
+            console.warn('⚠️ Clipboard API falhou:', err);
+            copiarPixFallback();
+          });
+      } else {
+        copiarPixFallback();
+      }
+    }
+
+    function copiarPixFallback() {
+      let texto = document.getElementById('pixCode');
+
+      if (!texto || !texto.value || texto.value.trim() === '') {
+        alert('⚠️ Nenhum código Pix para copiar!');
+        return;
+      }
+
+      try {
+        texto.select();
+        texto.setSelectionRange(0, 99999);
+        let sucesso = document.execCommand('copy');
+        if (sucesso) {
+          mostrarNotificacao('✅ Código Pix copiado com sucesso!');
+        } else {
+          alert('⚠️ Selecione o código manualmente e copie (Ctrl+C).');
+        }
+      } catch(e) {
+        console.error('❌ Erro ao copiar:', e);
+        alert('⚠️ Erro ao copiar. Selecione o código manualmente.');
+      }
+    }
+
+    function fecharModalPix() {
+      document.getElementById('modalPix').style.display = 'none';
+      let container = document.getElementById('qrCodeContainer');
+      container.innerHTML = '<p style="color:#888;font-size:13px;">⏳ Gerando QR Code...</p>';
+    }
+
+    function mostrarNotificacao(mensagem) {
+      let notificacao = document.createElement('div');
+      notificacao.className = 'notificacao';
+      notificacao.textContent = mensagem;
+      notificacao.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#00a650;color:#FFF;padding:15px 25px;border-radius:8px;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.5s ease;';
+      document.body.appendChild(notificacao);
+      setTimeout(() => {
+        notificacao.style.opacity = '0';
+        notificacao.style.transition = 'opacity 0.5s';
+        setTimeout(() => notificacao.remove(), 500);
+      }, 3000);
+    }
+
+    // ========================================
+    // CARREGAR QRCODE QUANDO A PÁGINA CARREGAR
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📱 Página carregada.');
+      console.log('QRCode.js disponível:', typeof QRCode !== 'undefined' ? '✅ SIM' : '❌ NÃO');
+
+      if (typeof QRCode === 'undefined') {
+        console.log('🔄 Carregando QRCode.js...');
+        carregarQRCodeLib(function() {
+          console.log('✅ QRCode.js carregado com sucesso!');
+        });
+      }
+    });
+
+    // ========================================
+    // INICIAR - CARREGAR PRODUTOS AO ABRIR
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      carregarProdutos();
+    });
+
+    // ========================================
+    // EVENTOS PARA ATUALIZAR ENDEREÇO COMPLETO
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];
+      campos.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('change', atualizarEnderecoCompleto);
+          el.addEventListener('keyup', atualizarEnderecoCompleto);
+        }
+      });
+    });
+
+    // ========================================
+    // FECHAR MODAIS COM ESC
+    // ========================================
+    document.addEventListener('keydown', function(event) {
+      if(event.key === 'Escape') {
+        fecharCarrinho();
+        fecharModalPix();
+      }
+    });
+
+    document.getElementById('modalCarrinho').addEventListener('click', function(event) {
+      if(event.target === this) fecharCarrinho();
+    });
+
+    document.getElementById('modalPix').addEventListener('click', function(event) {
+      if(event.target === this) fecharModalPix();
+    });
+  </script>
+</body>
+</html>
