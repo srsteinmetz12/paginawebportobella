@@ -126994,6 +126994,13 @@
     function adicionarAoCarrinho(id, nome, preco) {
       console.log('🔍 Verificando disponibilidade do item:', id);
       
+      // 🔥 VERIFICA SE O ITEM JÁ ESTÁ NO CARRINHO
+      let itemExistente = carrinho.itens.find(item => item.id === id);
+      if (itemExistente) {
+        alert('⚠️ Este item já está no seu carrinho!\n\nCada produto é único e só pode ser adicionado uma vez.');
+        return;
+      }
+      
       fetch(URL_BACKEND + '/api/pagamentos/verificar-disponibilidade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127009,25 +127016,14 @@
           return;
         }
         
-        let itemExistente = carrinho.itens.find(item => item.id === id);
-        if(itemExistente) {
-          itemExistente.quantidade += 1;
-        } else {
-          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
-        }
+        // 🔥 ADICIONA COM QUANTIDADE = 1
+        carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
         atualizarCarrinho();
         mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
       })
       .catch(error => {
         console.error('❌ Erro ao verificar disponibilidade:', error);
-        let itemExistente = carrinho.itens.find(item => item.id === id);
-        if(itemExistente) {
-          itemExistente.quantidade += 1;
-        } else {
-          carrinho.itens.push({ id: id, nome: nome, preco: preco, quantidade: 1 });
-        }
-        atualizarCarrinho();
-        mostrarNotificacao('✅ ' + nome + ' adicionado ao carrinho!');
+        alert('❌ Erro ao verificar disponibilidade. Tente novamente.');
       });
     }
     window.adicionarAoCarrinho = adicionarAoCarrinho;
@@ -127396,4 +127392,6 @@
         });
       })
       .catch(error => {
-        document
+        document.getElementById('loadingFinal')?.remove();
+        console.error('❌ [RESERVA] Erro:', error);
+      
