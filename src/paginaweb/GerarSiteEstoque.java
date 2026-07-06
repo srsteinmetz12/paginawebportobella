@@ -28,7 +28,7 @@ public class GerarSiteEstoque {
     private static final String DIRETORIO_DOCUMENTOS = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
     private static final String CAMINHO_ARQUIVO = DIRETORIO_DOCUMENTOS + "\\index.html";
     private static final String SUBPASTA_FOTOS = DIRETORIO_DOCUMENTOS + "\\fotos";
-    private static final String URL_BACKEND = "https://paginawebportobella-1.onrender.com";
+    private static final String URL_BACKEND = "https://paginawebportobella.onrender.com";
     
     // ==========================================
     // CONEXÕES
