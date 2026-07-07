@@ -525,55 +525,53 @@ public class PagamentoServer {
             Connection con = null;
             PreparedStatement stmt = null;
             ResultSet rs = null;
-            List<String> reservados = new ArrayList<>();
 
             try {
                 con = ConnectionDB.getConnectionCloud();
                 con.setAutoCommit(false);
 
-                // 🔥 1. Verifica se TODOS os itens estão disponíveis
+                // 🔥 1. Verifica se todos os itens estão disponíveis
                 for (String codPeca : codPecas) {
                     String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL' FOR UPDATE";
                     stmt = con.prepareStatement(sqlCheck);
                     stmt.setString(1, codPeca);
-                    stmt.setQueryTimeout(10);
                     rs = stmt.executeQuery();
 
                     if (!rs.next()) {
-                        System.out.println("❌ [RESERVA-LOTE] Item não disponível: " + codPeca);
+                        System.out.println("❌ [RESERVA] Item não disponível: " + codPeca);
                         con.rollback();
                         return false;
                     }
 
-                    int qtdDisponivel = rs.getInt("quantidade");
-                    if (qtdDisponivel < 1) {
-                        System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca);
+                    int qtd = rs.getInt("quantidade");
+                    if (qtd < 1) {
+                        System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
                         con.rollback();
                         return false;
                     }
                 }
 
-                // 🔥 2. Atualiza o estoque para RESERVADO (todos os itens)
+                // 🔥 2. Atualiza estoque para RESERVADO (um por um)
                 for (String codPeca : codPecas) {
                     String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
                     stmt = con.prepareStatement(sqlUpdate);
                     stmt.setString(1, codPeca);
                     stmt.executeUpdate();
-                    reservados.add(codPeca);
                 }
 
-                // 🔥 3. Insere um único registro na tabela reservas com o array de códigos
-                String codPecasJson = gson.toJson(codPecas);
-                String sqlReserva = "INSERT INTO reservas (pedido_id, cod_peca, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
+                // 🔥 3. Insere UM registro na tabela reservas com TODOS os códigos
+                String codPecaStr = String.join(",", codPecas); // "19995,19998"
+
+                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, pedidoId);
-                stmt.setString(2, codPecasJson);
-                stmt.setInt(3, codPecas.size());
+                stmt.setString(1, codPecaStr);      // 🔥 Array de itens como string
+                stmt.setString(2, pedidoId);
+                stmt.setInt(3, codPecas.size());    // Quantidade total
                 stmt.executeUpdate();
 
                 con.commit();
-                System.out.println("✅ [RESERVA-LOTE] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
-                System.out.println("   📦 Itens: " + reservados);
+                System.out.println("✅ [RESERVA] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
+                System.out.println("   📦 Itens: " + codPecaStr);
                 return true;
 
             } catch (ClassNotFoundException | SQLException e) {
@@ -1297,16 +1295,25 @@ public class PagamentoServer {
             con = ConnectionDB.getConnectionCloud();
             con.setAutoCommit(false);
 
-            String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
-            stmt = con.prepareStatement(sqlReserva);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, pedidoId);
-            stmt.executeUpdate();
+            // 🔥 Divide a string de códigos (ex: "19995,19998")
+            String[] codigos = codPeca.split(",");
 
-            String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'RESERVADO'";
-            stmt = con.prepareStatement(sqlEstoque);
-            stmt.setString(1, codPeca);
-            stmt.executeUpdate();
+            for (String cod : codigos) {
+                cod = cod.trim();
+
+                // Atualiza reserva
+                String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+                stmt = con.prepareStatement(sqlReserva);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.executeUpdate();
+
+                // Atualiza estoque
+                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'RESERVADO'";
+                stmt = con.prepareStatement(sqlEstoque);
+                stmt.setString(1, cod);
+                stmt.executeUpdate();
+            }
 
             con.commit();
             System.out.println("✅ [RESERVA] Venda confirmada: " + codPeca + " → VENDIDO");
@@ -1331,31 +1338,37 @@ public class PagamentoServer {
             con = ConnectionDB.getConnectionCloud();
             con.setAutoCommit(false);
 
-            String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
-            stmt = con.prepareStatement(sqlCheck);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, pedidoId);
-            stmt.setQueryTimeout(10);
-            ResultSet rs = stmt.executeQuery();
+            String[] codigos = codPeca.split(",");
 
-            if (!rs.next()) {
-                con.rollback();
-                return;
+            for (String cod : codigos) {
+                cod = cod.trim();
+
+                String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
+                stmt = con.prepareStatement(sqlCheck);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.setQueryTimeout(10);
+                ResultSet rs = stmt.executeQuery();
+
+                if (!rs.next()) {
+                    con.rollback();
+                    return;
+                }
+
+                int quantidade = rs.getInt("quantidade");
+
+                String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlUpdate);
+                stmt.setInt(1, quantidade);
+                stmt.setString(2, cod);
+                stmt.executeUpdate();
+
+                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+                stmt = con.prepareStatement(sqlReserva);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.executeUpdate();
             }
-
-            int quantidade = rs.getInt("quantidade");
-
-            String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
-            stmt = con.prepareStatement(sqlUpdate);
-            stmt.setInt(1, quantidade);
-            stmt.setString(2, codPeca);
-            stmt.executeUpdate();
-
-            String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
-            stmt = con.prepareStatement(sqlReserva);
-            stmt.setString(1, codPeca);
-            stmt.setString(2, pedidoId);
-            stmt.executeUpdate();
 
             con.commit();
             System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " → DISPONIVEL");

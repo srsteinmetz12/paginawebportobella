@@ -570,7 +570,7 @@ public class GerarSiteEstoque {
             writer.println("          }");
             writer.println("        }");
             writer.println("      });");
-            writer.println("      mostrarNotificacao('🔄 Itens removidos da vitrine!');");
+//            writer.println("      mostrarNotificacao('🔄 Itens removidos da vitrine!');");
             writer.println("    }");
             writer.println("    window.removerItensVitrine = removerItensVitrine;");
             writer.println("");
@@ -1032,7 +1032,7 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("                // 🔥 NOTIFICAR A LOJA");
             writer.println("                let dadosNotificacao = {");
-            writer.println("                  codPeca: dados.itens?.[0]?.id || 'DESCONHECIDO',");
+            writer.println("                  codPeca: dados.itens.map(item => item.id).join(','),");
             writer.println("                  destinatario: dados.destinatario || 'Cliente',");
             writer.println("                  telefone: dados.telefone || 'Não informado',");
             writer.println("                  total: valor,");
