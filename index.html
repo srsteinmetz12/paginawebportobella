@@ -127400,7 +127400,7 @@
 
             let dados = window.dadosCompra || {};
 
-            // 🔥 RESERVAR TODOS OS ITENS APÓS O PAGAMENTO
+            // 🔥 RESERVAR LOTE (todos os itens de uma vez)
             let pedidoId = dados.pedidoId || String(Date.now());
             let itensParaReservar = dados.itens || [];
 
@@ -127410,4 +127410,4 @@
               return;
             }
 
-            // 
+            let c
