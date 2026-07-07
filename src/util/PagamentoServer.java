@@ -96,7 +96,7 @@ public class PagamentoServer {
         server.createContext("/api/frete/calcular", new CalcularFreteHandler());
         server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
         server.createContext("/api/pagamentos/consultar", new ConsultarNotificacoesHandler());
-        server.createContext("/api/pagamentos/reservar", new ReservarItemHandler());
+        server.createContext("/api/pagamentos/reservar-lote", new ReservarLoteHandler());
         server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
         server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
         server.createContext("/api/produtos", new ListarProdutosHandler());
@@ -111,7 +111,7 @@ public class PagamentoServer {
         System.out.println("   📦 Frete: Cálculo por CEP (ViaCEP + Fallback)");
         System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
         System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
-        System.out.println("   🔒 Reservar: /api/pagamentos/reservar");
+        System.out.println("   🔒 Reservar: /api/pagamentos/reservar-lote");
         System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
         System.out.println("   🔓 Rodando: /api/produtos");
         System.out.println("   🔓 Rodando: /api/verificar-disponibilidade");
@@ -469,9 +469,9 @@ public class PagamentoServer {
     }
 
     // ==========================================
-    // HANDLER: RESERVAR ITEM
+    // HANDLER: RESERVAR LOTE (MÚLTIPLOS ITENS)
     // ==========================================
-    static class ReservarItemHandler implements HttpHandler {
+    static class ReservarLoteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
@@ -489,17 +489,20 @@ public class PagamentoServer {
                         .lines().reduce("", (a, b) -> a + b);
 
                 JsonObject json = gson.fromJson(body, JsonObject.class);
-                String codPeca = json.get("codPeca").getAsString();
                 String pedidoId = json.get("pedidoId").getAsString();
-                int quantidade = json.has("quantidade") ? json.get("quantidade").getAsInt() : 1;
+                com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
 
-                boolean reservado = reservarItem(codPeca, pedidoId, quantidade);
+                List<String> codPecas = new ArrayList<>();
+                for (int i = 0; i < itensArray.size(); i++) {
+                    codPecas.add(itensArray.get(i).getAsString());
+                }
+
+                boolean reservado = reservarLote(codPecas, pedidoId);
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", reservado);
-                response.put("codPeca", codPeca);
                 response.put("pedidoId", pedidoId);
-                response.put("mensagem", reservado ? "Item reservado com sucesso!" : "Item indisponível!");
+                response.put("mensagem", reservado ? "Itens reservados com sucesso!" : "Falha ao reservar itens!");
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
@@ -511,7 +514,7 @@ public class PagamentoServer {
             }
         }
 
-        private boolean reservarItem(String codPeca, String pedidoId, int quantidade) {
+        private boolean reservarLote(List<String> codPecas, String pedidoId) {
             Connection con = null;
             PreparedStatement stmt = null;
             ResultSet rs = null;
@@ -521,52 +524,48 @@ public class PagamentoServer {
                 con = ConnectionDB.getConnectionCloud();
                 con.setAutoCommit(false);
 
-                // 🔥 Verifica se o item está disponível OU já reservado (mas não vendido)
-                String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status IN ('DISPONIVEL', 'RESERVADO') FOR UPDATE";
-                stmt = con.prepareStatement(sqlCheck);
-                stmt.setString(1, codPeca);
-                stmt.setQueryTimeout(10);
-                rs = stmt.executeQuery();
+                // 🔥 1. Verifica se TODOS os itens estão disponíveis
+                for (String codPeca : codPecas) {
+                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status IN ('DISPONIVEL') FOR UPDATE";
+                    stmt = con.prepareStatement(sqlCheck);
+                    stmt.setString(1, codPeca);
+                    stmt.setQueryTimeout(10);
+                    rs = stmt.executeQuery();
 
-                if (!rs.next()) {
-                    System.out.println("❌ [RESERVA] Item não encontrado: " + codPeca);
-                    con.rollback();
-                    return false;
+                    if (!rs.next()) {
+                        System.out.println("❌ [RESERVA] Item não disponível: " + codPeca);
+                        con.rollback();
+                        return false;
+                    }
+
+                    int qtdDisponivel = rs.getInt("quantidade");
+                    if (qtdDisponivel < 1) {
+                        System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
+                        con.rollback();
+                        return false;
+                    }
                 }
 
-                String statusAtual = rs.getString("status");
-                int qtdDisponivel = rs.getInt("quantidade");
-
-                if ("RESERVADO".equals(statusAtual)) {
-                    System.out.println("❌ [RESERVA] Item já reservado por outro pedido: " + codPeca);
-                    con.rollback();
-                    return false;
+                // 🔥 2. Atualiza o estoque para RESERVADO (todos os itens)
+                for (String codPeca : codPecas) {
+                    String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
+                    stmt = con.prepareStatement(sqlUpdate);
+                    stmt.setString(1, codPeca);
+                    stmt.executeUpdate();
                 }
 
-                if (qtdDisponivel < quantidade) {
-                    System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
-                    con.rollback();
-                    return false;
-                }
-
-                // Atualiza estoque
-                String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - ? WHERE codpeca = ?";
-                stmt = con.prepareStatement(sqlUpdate);
-                stmt.setInt(1, quantidade);
-                stmt.setString(2, codPeca);
-                stmt.executeUpdate();
-
-                // Insere na tabela de reservas
-                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
+                // 🔥 3. Insere um único registro na tabela reservas com o array de códigos
+                String codPecasJson = gson.toJson(codPecas); // Converte lista para JSON
+                String sqlReserva = "INSERT INTO reservas (pedido_id, cod_pecas, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, codPeca);
-                stmt.setString(2, pedidoId);
-                stmt.setInt(3, quantidade);
+                stmt.setString(1, pedidoId);
+                stmt.setString(2, codPecasJson);
+                stmt.setInt(3, codPecas.size());
                 stmt.executeUpdate();
 
                 con.commit();
                 reservado = true;
-                System.out.println("✅ [RESERVA] Item reservado: " + codPeca + " (Pedido: " + pedidoId + ") → RESERVADO");
+                System.out.println("✅ [RESERVA] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
 
             } catch (ClassNotFoundException | SQLException e) {
                 System.err.println("❌ [RESERVA] Erro: " + e.getMessage());
