@@ -13,7 +13,7 @@
     header p { margin: 0; color: #A0A0A0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
     .carrinho-icon { position: relative; cursor: pointer; font-size: 28px; }
     .carrinho-contador { position: absolute; top: -8px; right: -8px; background: #00a650; color: #FFF; border-radius: 50%; padding: 2px 8px; font-size: 12px; font-weight: bold; }
-    .busca-container { max-width: 1160px; margin: 20px auto 0 auto; padding: 0 20px; position: sticky; top: 0; background-color: #1E1E1E; z-index: 99; }
+    .busca-container { max-width: 1160px; margin: 0 auto; padding: 10px 20px; position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background-color: #1E1E1E; z-index: 99; border-bottom: 1px solid #2D2D2D; width: 100%; max-width: 1200px; }
     .busca-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; }
     .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
     .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -519,32 +519,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='alça de bolsa rosa tam: u ref: 2588'>
-        <div class='galeria' id='galeria-2588'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-1.jpg' alt='Alça de Bolsa Rosa - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-2.jpg' alt='Alça de Bolsa Rosa - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-3.jpg' alt='Alça de Bolsa Rosa - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-4.jpg' alt='Alça de Bolsa Rosa - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-5.jpg' alt='Alça de Bolsa Rosa - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2588", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2588", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2588'>
-            <span class='dot ativo' onclick='irParaSlide("2588", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2588", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2588", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2588", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2588", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>Alça de Bolsa Rosa</h3>
-        <div class='info'>Tamanho: U</div>
-        <div class='codigo-item'>Código: 2588</div>
-        <div class='preco'>R$ 19,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2588", "Alça de Bolsa Rosa", 19.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='alça de bolsa rosa tam: u ref: 2589'>
         <div class='galeria' id='galeria-2589'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2589-1.jpg' alt='Alça de Bolsa Rosa - Foto 1' class='slide ativo'>
@@ -568,6 +542,32 @@
         <div class='codigo-item'>Código: 2589</div>
         <div class='preco'>R$ 19,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2589", "Alça de Bolsa Rosa", 19.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='alça de bolsa rosa tam: u ref: 2588'>
+        <div class='galeria' id='galeria-2588'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-1.jpg' alt='Alça de Bolsa Rosa - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-2.jpg' alt='Alça de Bolsa Rosa - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-3.jpg' alt='Alça de Bolsa Rosa - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-4.jpg' alt='Alça de Bolsa Rosa - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2588-5.jpg' alt='Alça de Bolsa Rosa - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2588", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2588", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2588'>
+            <span class='dot ativo' onclick='irParaSlide("2588", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2588", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2588", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2588", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2588", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>Alça de Bolsa Rosa</h3>
+        <div class='info'>Tamanho: U</div>
+        <div class='codigo-item'>Código: 2588</div>
+        <div class='preco'>R$ 19,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2588", "Alça de Bolsa Rosa", 19.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -23085,32 +23085,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='blusa t-shirt podrinha verde lima tam: unico ref: 1992'>
-        <div class='galeria' id='galeria-1992'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-1.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-2.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-3.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-4.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-5.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("1992", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("1992", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-1992'>
-            <span class='dot ativo' onclick='irParaSlide("1992", 0)'></span>
-            <span class='dot' onclick='irParaSlide("1992", 1)'></span>
-            <span class='dot' onclick='irParaSlide("1992", 2)'></span>
-            <span class='dot' onclick='irParaSlide("1992", 3)'></span>
-            <span class='dot' onclick='irParaSlide("1992", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>BLUSA T-SHIRT PODRINHA VERDE LIMA</h3>
-        <div class='info'>Tamanho: UNICO</div>
-        <div class='codigo-item'>Código: 1992</div>
-        <div class='preco'>R$ 29,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1992", "BLUSA T-SHIRT PODRINHA VERDE LIMA", 29.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='blusa t-shirt podrinha verde lima tam: unico ref: 1993'>
         <div class='galeria' id='galeria-1993'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1993-1.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 1' class='slide ativo'>
@@ -23134,6 +23108,32 @@
         <div class='codigo-item'>Código: 1993</div>
         <div class='preco'>R$ 29,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1993", "BLUSA T-SHIRT PODRINHA VERDE LIMA", 29.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='blusa t-shirt podrinha verde lima tam: unico ref: 1992'>
+        <div class='galeria' id='galeria-1992'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-1.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-2.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-3.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-4.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1992-5.jpg' alt='BLUSA T-SHIRT PODRINHA VERDE LIMA - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("1992", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("1992", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-1992'>
+            <span class='dot ativo' onclick='irParaSlide("1992", 0)'></span>
+            <span class='dot' onclick='irParaSlide("1992", 1)'></span>
+            <span class='dot' onclick='irParaSlide("1992", 2)'></span>
+            <span class='dot' onclick='irParaSlide("1992", 3)'></span>
+            <span class='dot' onclick='irParaSlide("1992", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>BLUSA T-SHIRT PODRINHA VERDE LIMA</h3>
+        <div class='info'>Tamanho: UNICO</div>
+        <div class='codigo-item'>Código: 1992</div>
+        <div class='preco'>R$ 29,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1992", "BLUSA T-SHIRT PODRINHA VERDE LIMA", 29.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -32205,29 +32205,29 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça  rosa soltinha tactel tam: 48 ref: 1875'>
-        <div class='galeria' id='galeria-1875'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-1.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-2.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-3.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-4.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-5.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("1875", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("1875", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-1875'>
-            <span class='dot ativo' onclick='irParaSlide("1875", 0)'></span>
-            <span class='dot' onclick='irParaSlide("1875", 1)'></span>
-            <span class='dot' onclick='irParaSlide("1875", 2)'></span>
-            <span class='dot' onclick='irParaSlide("1875", 3)'></span>
-            <span class='dot' onclick='irParaSlide("1875", 4)'></span>
+      <div class='card' data-busca='calça  rosa soltinha tactel tam: 44 ref: 1874'>
+        <div class='galeria' id='galeria-1874'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-1.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-2.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-3.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-4.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-5.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("1874", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("1874", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-1874'>
+            <span class='dot ativo' onclick='irParaSlide("1874", 0)'></span>
+            <span class='dot' onclick='irParaSlide("1874", 1)'></span>
+            <span class='dot' onclick='irParaSlide("1874", 2)'></span>
+            <span class='dot' onclick='irParaSlide("1874", 3)'></span>
+            <span class='dot' onclick='irParaSlide("1874", 4)'></span>
           </div>
           <span class='contador-fotos'>1/5</span>
         </div>
         <h3>CALÇA  ROSA SOLTINHA TACTEL</h3>
-        <div class='info'>Tamanho: 48</div>
-        <div class='codigo-item'>Código: 1875</div>
+        <div class='info'>Tamanho: 44</div>
+        <div class='codigo-item'>Código: 1874</div>
         <div class='preco'>R$ 69,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1875", "CALÇA  ROSA SOLTINHA TACTEL", 69.9)'>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1874", "CALÇA  ROSA SOLTINHA TACTEL", 69.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -32257,29 +32257,29 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça  rosa soltinha tactel tam: 44 ref: 1874'>
-        <div class='galeria' id='galeria-1874'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-1.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-2.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-3.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-4.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1874-5.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("1874", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("1874", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-1874'>
-            <span class='dot ativo' onclick='irParaSlide("1874", 0)'></span>
-            <span class='dot' onclick='irParaSlide("1874", 1)'></span>
-            <span class='dot' onclick='irParaSlide("1874", 2)'></span>
-            <span class='dot' onclick='irParaSlide("1874", 3)'></span>
-            <span class='dot' onclick='irParaSlide("1874", 4)'></span>
+      <div class='card' data-busca='calça  rosa soltinha tactel tam: 48 ref: 1875'>
+        <div class='galeria' id='galeria-1875'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-1.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-2.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-3.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-4.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/1875-5.jpg' alt='CALÇA  ROSA SOLTINHA TACTEL - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("1875", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("1875", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-1875'>
+            <span class='dot ativo' onclick='irParaSlide("1875", 0)'></span>
+            <span class='dot' onclick='irParaSlide("1875", 1)'></span>
+            <span class='dot' onclick='irParaSlide("1875", 2)'></span>
+            <span class='dot' onclick='irParaSlide("1875", 3)'></span>
+            <span class='dot' onclick='irParaSlide("1875", 4)'></span>
           </div>
           <span class='contador-fotos'>1/5</span>
         </div>
         <h3>CALÇA  ROSA SOLTINHA TACTEL</h3>
-        <div class='info'>Tamanho: 44</div>
-        <div class='codigo-item'>Código: 1874</div>
+        <div class='info'>Tamanho: 48</div>
+        <div class='codigo-item'>Código: 1875</div>
         <div class='preco'>R$ 69,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1874", "CALÇA  ROSA SOLTINHA TACTEL", 69.9)'>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("1875", "CALÇA  ROSA SOLTINHA TACTEL", 69.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -33193,32 +33193,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça alfaiataria preta tam: 48 ref: 3410'>
-        <div class='galeria' id='galeria-3410'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-1.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-2.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-3.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-4.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-5.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("3410", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("3410", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-3410'>
-            <span class='dot ativo' onclick='irParaSlide("3410", 0)'></span>
-            <span class='dot' onclick='irParaSlide("3410", 1)'></span>
-            <span class='dot' onclick='irParaSlide("3410", 2)'></span>
-            <span class='dot' onclick='irParaSlide("3410", 3)'></span>
-            <span class='dot' onclick='irParaSlide("3410", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CALÇA ALFAIATARIA PRETA</h3>
-        <div class='info'>Tamanho: 48</div>
-        <div class='codigo-item'>Código: 3410</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3410", "CALÇA ALFAIATARIA PRETA", 49.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='calça alfaiataria preta tam: 38 ref: 4172'>
         <div class='galeria' id='galeria-4172'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4172-1.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 1' class='slide ativo'>
@@ -33242,6 +33216,32 @@
         <div class='codigo-item'>Código: 4172</div>
         <div class='preco'>R$ 49,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("4172", "CALÇA ALFAIATARIA PRETA", 49.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='calça alfaiataria preta tam: 48 ref: 3410'>
+        <div class='galeria' id='galeria-3410'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-1.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-2.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-3.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-4.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3410-5.jpg' alt='CALÇA ALFAIATARIA PRETA - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("3410", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("3410", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-3410'>
+            <span class='dot ativo' onclick='irParaSlide("3410", 0)'></span>
+            <span class='dot' onclick='irParaSlide("3410", 1)'></span>
+            <span class='dot' onclick='irParaSlide("3410", 2)'></span>
+            <span class='dot' onclick='irParaSlide("3410", 3)'></span>
+            <span class='dot' onclick='irParaSlide("3410", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CALÇA ALFAIATARIA PRETA</h3>
+        <div class='info'>Tamanho: 48</div>
+        <div class='codigo-item'>Código: 3410</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3410", "CALÇA ALFAIATARIA PRETA", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -37183,18 +37183,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça gremio teste tam: pp ref: 19998'>
-        <div class='galeria' id='galeria-19998'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/19998-1.jpg' alt='CALÇA GREMIO TESTE - Foto 1' class='slide ativo'>
-        </div>
-        <h3>CALÇA GREMIO TESTE</h3>
-        <div class='info'>Tamanho: PP</div>
-        <div class='codigo-item'>Código: 19998</div>
-        <div class='preco'>R$ 1,00</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("19998", "CALÇA GREMIO TESTE", 1.0)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='calça jaens preta reta com brilho strass tam: 40 ref: 5863'>
         <div class='galeria' id='galeria-5863'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/5863-1.jpg' alt='CALÇA JAENS PRETA RETA COM BRILHO STRASS - Foto 1' class='slide ativo'>
@@ -38469,32 +38457,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça jeans clara tam: 40 ref: 7101'>
-        <div class='galeria' id='galeria-7101'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-1.jpg' alt='CALÇA JEANS CLARA - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-2.jpg' alt='CALÇA JEANS CLARA - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-3.jpg' alt='CALÇA JEANS CLARA - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-4.jpg' alt='CALÇA JEANS CLARA - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-5.jpg' alt='CALÇA JEANS CLARA - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("7101", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("7101", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-7101'>
-            <span class='dot ativo' onclick='irParaSlide("7101", 0)'></span>
-            <span class='dot' onclick='irParaSlide("7101", 1)'></span>
-            <span class='dot' onclick='irParaSlide("7101", 2)'></span>
-            <span class='dot' onclick='irParaSlide("7101", 3)'></span>
-            <span class='dot' onclick='irParaSlide("7101", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CALÇA JEANS CLARA</h3>
-        <div class='info'>Tamanho: 40</div>
-        <div class='codigo-item'>Código: 7101</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("7101", "CALÇA JEANS CLARA", 49.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='calça jeans clara tam: 40 ref: 8227'>
         <div class='galeria' id='galeria-8227'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/8227-1.jpg' alt='CALÇA JEANS CLARA - Foto 1' class='slide ativo'>
@@ -38518,6 +38480,32 @@
         <div class='codigo-item'>Código: 8227</div>
         <div class='preco'>R$ 79,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("8227", "CALÇA JEANS CLARA", 79.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='calça jeans clara tam: 40 ref: 7101'>
+        <div class='galeria' id='galeria-7101'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-1.jpg' alt='CALÇA JEANS CLARA - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-2.jpg' alt='CALÇA JEANS CLARA - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-3.jpg' alt='CALÇA JEANS CLARA - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-4.jpg' alt='CALÇA JEANS CLARA - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/7101-5.jpg' alt='CALÇA JEANS CLARA - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("7101", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("7101", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-7101'>
+            <span class='dot ativo' onclick='irParaSlide("7101", 0)'></span>
+            <span class='dot' onclick='irParaSlide("7101", 1)'></span>
+            <span class='dot' onclick='irParaSlide("7101", 2)'></span>
+            <span class='dot' onclick='irParaSlide("7101", 3)'></span>
+            <span class='dot' onclick='irParaSlide("7101", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CALÇA JEANS CLARA</h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 7101</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("7101", "CALÇA JEANS CLARA", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -41875,6 +41863,32 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
+      <div class='card' data-busca='calça jeans perna reta tam: 42 ref: 3047'>
+        <div class='galeria' id='galeria-3047'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-2.jpg' alt='CALÇA JEANS PERNA RETA - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-3.jpg' alt='CALÇA JEANS PERNA RETA - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-4.jpg' alt='CALÇA JEANS PERNA RETA - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-5.jpg' alt='CALÇA JEANS PERNA RETA - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("3047", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("3047", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-3047'>
+            <span class='dot ativo' onclick='irParaSlide("3047", 0)'></span>
+            <span class='dot' onclick='irParaSlide("3047", 1)'></span>
+            <span class='dot' onclick='irParaSlide("3047", 2)'></span>
+            <span class='dot' onclick='irParaSlide("3047", 3)'></span>
+            <span class='dot' onclick='irParaSlide("3047", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CALÇA JEANS PERNA RETA</h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 3047</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3047", "CALÇA JEANS PERNA RETA", 49.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
       <div class='card' data-busca='calça jeans perna reta tam: 42 ref: 2712'>
         <div class='galeria' id='galeria-2712'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2712-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
@@ -41953,32 +41967,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça jeans perna reta tam: 42 ref: 3047'>
-        <div class='galeria' id='galeria-3047'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-2.jpg' alt='CALÇA JEANS PERNA RETA - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-3.jpg' alt='CALÇA JEANS PERNA RETA - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-4.jpg' alt='CALÇA JEANS PERNA RETA - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3047-5.jpg' alt='CALÇA JEANS PERNA RETA - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("3047", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("3047", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-3047'>
-            <span class='dot ativo' onclick='irParaSlide("3047", 0)'></span>
-            <span class='dot' onclick='irParaSlide("3047", 1)'></span>
-            <span class='dot' onclick='irParaSlide("3047", 2)'></span>
-            <span class='dot' onclick='irParaSlide("3047", 3)'></span>
-            <span class='dot' onclick='irParaSlide("3047", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CALÇA JEANS PERNA RETA</h3>
-        <div class='info'>Tamanho: 42</div>
-        <div class='codigo-item'>Código: 3047</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3047", "CALÇA JEANS PERNA RETA", 49.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='calça jeans perna reta tam: 46-48 ref: 2710'>
         <div class='galeria' id='galeria-2710'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2710-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
@@ -42002,32 +41990,6 @@
         <div class='codigo-item'>Código: 2710</div>
         <div class='preco'>R$ 59,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2710", "CALÇA JEANS PERNA RETA", 59.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
-      <div class='card' data-busca='calça jeans perna reta tam: 38 ref: 4087'>
-        <div class='galeria' id='galeria-4087'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-1.jpg' alt='calça jeans perna reta - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-2.jpg' alt='calça jeans perna reta - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-3.jpg' alt='calça jeans perna reta - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-4.jpg' alt='calça jeans perna reta - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-5.jpg' alt='calça jeans perna reta - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("4087", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("4087", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-4087'>
-            <span class='dot ativo' onclick='irParaSlide("4087", 0)'></span>
-            <span class='dot' onclick='irParaSlide("4087", 1)'></span>
-            <span class='dot' onclick='irParaSlide("4087", 2)'></span>
-            <span class='dot' onclick='irParaSlide("4087", 3)'></span>
-            <span class='dot' onclick='irParaSlide("4087", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>calça jeans perna reta</h3>
-        <div class='info'>Tamanho: 38</div>
-        <div class='codigo-item'>Código: 4087</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("4087", "calça jeans perna reta", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -42057,6 +42019,58 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
+      <div class='card' data-busca='calça jeans perna reta tam: 42 ref: 3357'>
+        <div class='galeria' id='galeria-3357'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-2.jpg' alt='CALÇA JEANS PERNA RETA - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-3.jpg' alt='CALÇA JEANS PERNA RETA - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-4.jpg' alt='CALÇA JEANS PERNA RETA - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-5.jpg' alt='CALÇA JEANS PERNA RETA - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("3357", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("3357", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-3357'>
+            <span class='dot ativo' onclick='irParaSlide("3357", 0)'></span>
+            <span class='dot' onclick='irParaSlide("3357", 1)'></span>
+            <span class='dot' onclick='irParaSlide("3357", 2)'></span>
+            <span class='dot' onclick='irParaSlide("3357", 3)'></span>
+            <span class='dot' onclick='irParaSlide("3357", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CALÇA JEANS PERNA RETA</h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 3357</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3357", "CALÇA JEANS PERNA RETA", 49.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='calça jeans perna reta tam: 38 ref: 4087'>
+        <div class='galeria' id='galeria-4087'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-1.jpg' alt='calça jeans perna reta - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-2.jpg' alt='calça jeans perna reta - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-3.jpg' alt='calça jeans perna reta - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-4.jpg' alt='calça jeans perna reta - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/4087-5.jpg' alt='calça jeans perna reta - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("4087", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("4087", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-4087'>
+            <span class='dot ativo' onclick='irParaSlide("4087", 0)'></span>
+            <span class='dot' onclick='irParaSlide("4087", 1)'></span>
+            <span class='dot' onclick='irParaSlide("4087", 2)'></span>
+            <span class='dot' onclick='irParaSlide("4087", 3)'></span>
+            <span class='dot' onclick='irParaSlide("4087", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>calça jeans perna reta</h3>
+        <div class='info'>Tamanho: 38</div>
+        <div class='codigo-item'>Código: 4087</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("4087", "calça jeans perna reta", 49.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
       <div class='card' data-busca='calça jeans perna reta tam: 36 ref: 3336'>
         <div class='galeria' id='galeria-3336'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3336-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
@@ -42083,29 +42097,29 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça jeans perna reta tam: 42 ref: 3357'>
-        <div class='galeria' id='galeria-3357'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-1.jpg' alt='CALÇA JEANS PERNA RETA - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-2.jpg' alt='CALÇA JEANS PERNA RETA - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-3.jpg' alt='CALÇA JEANS PERNA RETA - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-4.jpg' alt='CALÇA JEANS PERNA RETA - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3357-5.jpg' alt='CALÇA JEANS PERNA RETA - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("3357", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("3357", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-3357'>
-            <span class='dot ativo' onclick='irParaSlide("3357", 0)'></span>
-            <span class='dot' onclick='irParaSlide("3357", 1)'></span>
-            <span class='dot' onclick='irParaSlide("3357", 2)'></span>
-            <span class='dot' onclick='irParaSlide("3357", 3)'></span>
-            <span class='dot' onclick='irParaSlide("3357", 4)'></span>
+      <div class='card' data-busca='calça jeans perna reta  tam: 40 ref: 2127'>
+        <div class='galeria' id='galeria-2127'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-1.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-2.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-3.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-4.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-5.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2127", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2127", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2127'>
+            <span class='dot ativo' onclick='irParaSlide("2127", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2127", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2127", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2127", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2127", 4)'></span>
           </div>
           <span class='contador-fotos'>1/5</span>
         </div>
-        <h3>CALÇA JEANS PERNA RETA</h3>
-        <div class='info'>Tamanho: 42</div>
-        <div class='codigo-item'>Código: 3357</div>
+        <h3>CALÇA JEANS PERNA RETA </h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 2127</div>
         <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3357", "CALÇA JEANS PERNA RETA", 49.9)'>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2127", "CALÇA JEANS PERNA RETA ", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -42158,32 +42172,6 @@
         <div class='codigo-item'>Código: 3136</div>
         <div class='preco'>R$ 49,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3136", "CALÇA JEANS PERNA RETA ", 49.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
-      <div class='card' data-busca='calça jeans perna reta  tam: 40 ref: 2127'>
-        <div class='galeria' id='galeria-2127'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-1.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-2.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-3.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-4.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2127-5.jpg' alt='CALÇA JEANS PERNA RETA  - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2127", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2127", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2127'>
-            <span class='dot ativo' onclick='irParaSlide("2127", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2127", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2127", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2127", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2127", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CALÇA JEANS PERNA RETA </h3>
-        <div class='info'>Tamanho: 40</div>
-        <div class='codigo-item'>Código: 2127</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2127", "CALÇA JEANS PERNA RETA ", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -49335,32 +49323,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='calça preta flare  tam: 42 ref: 2425'>
-        <div class='galeria' id='galeria-2425'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-1.jpg' alt='CALÇA PRETA FLARE  - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-2.jpg' alt='CALÇA PRETA FLARE  - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-3.jpg' alt='CALÇA PRETA FLARE  - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-4.jpg' alt='CALÇA PRETA FLARE  - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-5.jpg' alt='CALÇA PRETA FLARE  - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2425", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2425", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2425'>
-            <span class='dot ativo' onclick='irParaSlide("2425", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2425", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2425", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2425", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2425", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CALÇA PRETA FLARE </h3>
-        <div class='info'>Tamanho: 42</div>
-        <div class='codigo-item'>Código: 2425</div>
-        <div class='preco'>R$ 49,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2425", "CALÇA PRETA FLARE ", 49.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='calça preta flare  tam: p ref: 3342'>
         <div class='galeria' id='galeria-3342'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3342-1.jpg' alt='CALÇA PRETA FLARE  - Foto 1' class='slide ativo'>
@@ -49384,6 +49346,32 @@
         <div class='codigo-item'>Código: 3342</div>
         <div class='preco'>R$ 49,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3342", "CALÇA PRETA FLARE ", 49.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='calça preta flare  tam: 42 ref: 2425'>
+        <div class='galeria' id='galeria-2425'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-1.jpg' alt='CALÇA PRETA FLARE  - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-2.jpg' alt='CALÇA PRETA FLARE  - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-3.jpg' alt='CALÇA PRETA FLARE  - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-4.jpg' alt='CALÇA PRETA FLARE  - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2425-5.jpg' alt='CALÇA PRETA FLARE  - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2425", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2425", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2425'>
+            <span class='dot ativo' onclick='irParaSlide("2425", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2425", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2425", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2425", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2425", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CALÇA PRETA FLARE </h3>
+        <div class='info'>Tamanho: 42</div>
+        <div class='codigo-item'>Código: 2425</div>
+        <div class='preco'>R$ 49,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2425", "CALÇA PRETA FLARE ", 49.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -77111,32 +77099,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='conjunto de 3 peças preto tam: gg ref: 2862'>
-        <div class='galeria' id='galeria-2862'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-1.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-2.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-3.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-4.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-5.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2862", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2862", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2862'>
-            <span class='dot ativo' onclick='irParaSlide("2862", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2862", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2862", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2862", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2862", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CONJUNTO DE 3 PEÇAS PRETO</h3>
-        <div class='info'>Tamanho: GG</div>
-        <div class='codigo-item'>Código: 2862</div>
-        <div class='preco'>R$ 189,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2862", "CONJUNTO DE 3 PEÇAS PRETO", 189.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='conjunto de 3 peças preto tam: m ref: 2757'>
         <div class='galeria' id='galeria-2757'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2757-1.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 1' class='slide ativo'>
@@ -77160,6 +77122,32 @@
         <div class='codigo-item'>Código: 2757</div>
         <div class='preco'>R$ 189,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2757", "CONJUNTO DE 3 PEÇAS PRETO", 189.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='conjunto de 3 peças preto tam: gg ref: 2862'>
+        <div class='galeria' id='galeria-2862'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-1.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-2.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-3.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-4.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2862-5.jpg' alt='CONJUNTO DE 3 PEÇAS PRETO - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2862", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2862", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2862'>
+            <span class='dot ativo' onclick='irParaSlide("2862", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2862", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2862", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2862", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2862", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CONJUNTO DE 3 PEÇAS PRETO</h3>
+        <div class='info'>Tamanho: GG</div>
+        <div class='codigo-item'>Código: 2862</div>
+        <div class='preco'>R$ 189,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2862", "CONJUNTO DE 3 PEÇAS PRETO", 189.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -78515,32 +78503,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='conjunto rosa de 3 peças tam: g ref: 2760'>
-        <div class='galeria' id='galeria-2760'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-1.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-2.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-3.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-4.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-5.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2760", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2760", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2760'>
-            <span class='dot ativo' onclick='irParaSlide("2760", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2760", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2760", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2760", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2760", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>CONJUNTO ROSA DE 3 PEÇAS</h3>
-        <div class='info'>Tamanho: G</div>
-        <div class='codigo-item'>Código: 2760</div>
-        <div class='preco'>R$ 189,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2760", "CONJUNTO ROSA DE 3 PEÇAS", 189.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='conjunto rosa de 3 peças tam: g ref: 2762'>
         <div class='galeria' id='galeria-2762'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2762-1.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 1' class='slide ativo'>
@@ -78564,6 +78526,32 @@
         <div class='codigo-item'>Código: 2762</div>
         <div class='preco'>R$ 189,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2762", "CONJUNTO ROSA DE 3 PEÇAS", 189.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='conjunto rosa de 3 peças tam: g ref: 2760'>
+        <div class='galeria' id='galeria-2760'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-1.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-2.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-3.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-4.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2760-5.jpg' alt='CONJUNTO ROSA DE 3 PEÇAS - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2760", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2760", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2760'>
+            <span class='dot ativo' onclick='irParaSlide("2760", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2760", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2760", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2760", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2760", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>CONJUNTO ROSA DE 3 PEÇAS</h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 2760</div>
+        <div class='preco'>R$ 189,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2760", "CONJUNTO ROSA DE 3 PEÇAS", 189.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -81697,32 +81685,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='jaqueta jeans  tam: g ref: 3009'>
-        <div class='galeria' id='galeria-3009'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-1.jpg' alt='JAQUETA JEANS  - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-2.jpg' alt='JAQUETA JEANS  - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-3.jpg' alt='JAQUETA JEANS  - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-4.jpg' alt='JAQUETA JEANS  - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-5.jpg' alt='JAQUETA JEANS  - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("3009", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("3009", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-3009'>
-            <span class='dot ativo' onclick='irParaSlide("3009", 0)'></span>
-            <span class='dot' onclick='irParaSlide("3009", 1)'></span>
-            <span class='dot' onclick='irParaSlide("3009", 2)'></span>
-            <span class='dot' onclick='irParaSlide("3009", 3)'></span>
-            <span class='dot' onclick='irParaSlide("3009", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>JAQUETA JEANS </h3>
-        <div class='info'>Tamanho: G</div>
-        <div class='codigo-item'>Código: 3009</div>
-        <div class='preco'>R$ 69,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3009", "JAQUETA JEANS ", 69.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='jaqueta jeans  tam: g ref: 2693'>
         <div class='galeria' id='galeria-2693'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2693-1.jpg' alt='JAQUETA JEANS  - Foto 1' class='slide ativo'>
@@ -81746,6 +81708,32 @@
         <div class='codigo-item'>Código: 2693</div>
         <div class='preco'>R$ 59,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2693", "JAQUETA JEANS ", 59.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='jaqueta jeans  tam: g ref: 3009'>
+        <div class='galeria' id='galeria-3009'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-1.jpg' alt='JAQUETA JEANS  - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-2.jpg' alt='JAQUETA JEANS  - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-3.jpg' alt='JAQUETA JEANS  - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-4.jpg' alt='JAQUETA JEANS  - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/3009-5.jpg' alt='JAQUETA JEANS  - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("3009", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("3009", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-3009'>
+            <span class='dot ativo' onclick='irParaSlide("3009", 0)'></span>
+            <span class='dot' onclick='irParaSlide("3009", 1)'></span>
+            <span class='dot' onclick='irParaSlide("3009", 2)'></span>
+            <span class='dot' onclick='irParaSlide("3009", 3)'></span>
+            <span class='dot' onclick='irParaSlide("3009", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>JAQUETA JEANS </h3>
+        <div class='info'>Tamanho: G</div>
+        <div class='codigo-item'>Código: 3009</div>
+        <div class='preco'>R$ 69,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("3009", "JAQUETA JEANS ", 69.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -105505,32 +105493,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='tenis preto  tam: 40 ref: 2966'>
-        <div class='galeria' id='galeria-2966'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-1.jpg' alt='TENIS PRETO  - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-2.jpg' alt='TENIS PRETO  - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-3.jpg' alt='TENIS PRETO  - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-4.jpg' alt='TENIS PRETO  - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-5.jpg' alt='TENIS PRETO  - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2966", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2966", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2966'>
-            <span class='dot ativo' onclick='irParaSlide("2966", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2966", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2966", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2966", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2966", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>TENIS PRETO </h3>
-        <div class='info'>Tamanho: 40</div>
-        <div class='codigo-item'>Código: 2966</div>
-        <div class='preco'>R$ 79,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2966", "TENIS PRETO ", 79.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='tênis preto  tam: 36 ref: 2177'>
         <div class='galeria' id='galeria-2177'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2177-1.jpg' alt='TÊNIS PRETO  - Foto 1' class='slide ativo'>
@@ -105554,6 +105516,32 @@
         <div class='codigo-item'>Código: 2177</div>
         <div class='preco'>R$ 69,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2177", "TÊNIS PRETO ", 69.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='tenis preto  tam: 40 ref: 2966'>
+        <div class='galeria' id='galeria-2966'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-1.jpg' alt='TENIS PRETO  - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-2.jpg' alt='TENIS PRETO  - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-3.jpg' alt='TENIS PRETO  - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-4.jpg' alt='TENIS PRETO  - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2966-5.jpg' alt='TENIS PRETO  - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2966", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2966", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2966'>
+            <span class='dot ativo' onclick='irParaSlide("2966", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2966", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2966", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2966", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2966", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>TENIS PRETO </h3>
+        <div class='info'>Tamanho: 40</div>
+        <div class='codigo-item'>Código: 2966</div>
+        <div class='preco'>R$ 79,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2966", "TENIS PRETO ", 79.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -126133,32 +126121,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='vestido vermelho longo regatão tam: gg ref: 2036'>
-        <div class='galeria' id='galeria-2036'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-1.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-2.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-3.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-4.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-5.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("2036", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("2036", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-2036'>
-            <span class='dot ativo' onclick='irParaSlide("2036", 0)'></span>
-            <span class='dot' onclick='irParaSlide("2036", 1)'></span>
-            <span class='dot' onclick='irParaSlide("2036", 2)'></span>
-            <span class='dot' onclick='irParaSlide("2036", 3)'></span>
-            <span class='dot' onclick='irParaSlide("2036", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>VESTIDO VERMELHO LONGO REGATÃO</h3>
-        <div class='info'>Tamanho: GG</div>
-        <div class='codigo-item'>Código: 2036</div>
-        <div class='preco'>R$ 189,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2036", "VESTIDO VERMELHO LONGO REGATÃO", 189.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='vestido vermelho longo regatão tam: g ref: 2037'>
         <div class='galeria' id='galeria-2037'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2037-1.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 1' class='slide ativo'>
@@ -126182,6 +126144,32 @@
         <div class='codigo-item'>Código: 2037</div>
         <div class='preco'>R$ 189,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2037", "VESTIDO VERMELHO LONGO REGATÃO", 189.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='vestido vermelho longo regatão tam: gg ref: 2036'>
+        <div class='galeria' id='galeria-2036'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-1.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-2.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-3.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-4.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/2036-5.jpg' alt='VESTIDO VERMELHO LONGO REGATÃO - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("2036", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("2036", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-2036'>
+            <span class='dot ativo' onclick='irParaSlide("2036", 0)'></span>
+            <span class='dot' onclick='irParaSlide("2036", 1)'></span>
+            <span class='dot' onclick='irParaSlide("2036", 2)'></span>
+            <span class='dot' onclick='irParaSlide("2036", 3)'></span>
+            <span class='dot' onclick='irParaSlide("2036", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>VESTIDO VERMELHO LONGO REGATÃO</h3>
+        <div class='info'>Tamanho: GG</div>
+        <div class='codigo-item'>Código: 2036</div>
+        <div class='preco'>R$ 189,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("2036", "VESTIDO VERMELHO LONGO REGATÃO", 189.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -127405,4 +127393,19 @@
             let dados = window.dadosCompra || {};
 
             // 🔥 RESERVAR TODOS OS ITENS APÓS O PAGAMENTO
-            let pedidoId = dados.pedidoId || String(
+            let pedidoId = dados.pedidoId || String(Date.now());
+            let itensParaReservar = dados.itens || [];
+
+            if (itensParaReservar.length === 0) {
+              alert('⚠️ Nenhum item para reservar.');
+              fecharModalPix();
+              return;
+            }
+
+            let promessas = itensParaReservar.map(item =>
+              fetch(URL_BACKEND + '/api/pagamentos/reservar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  codPeca: item.id,
+                  
