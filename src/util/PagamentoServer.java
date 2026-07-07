@@ -477,6 +477,7 @@ public class PagamentoServer {
             addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(204, -1);
@@ -488,6 +489,8 @@ public class PagamentoServer {
                         new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                         .lines().reduce("", (a, b) -> a + b);
 
+                System.out.println("📥 [RESERVA-LOTE] Body recebido: " + body);
+
                 JsonObject json = gson.fromJson(body, JsonObject.class);
                 String pedidoId = json.get("pedidoId").getAsString();
                 com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
@@ -497,12 +500,16 @@ public class PagamentoServer {
                     codPecas.add(itensArray.get(i).getAsString());
                 }
 
+                System.out.println("📦 [RESERVA-LOTE] Pedido: " + pedidoId);
+                System.out.println("📦 [RESERVA-LOTE] Itens: " + codPecas);
+
                 boolean reservado = reservarLote(codPecas, pedidoId);
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", reservado);
                 response.put("pedidoId", pedidoId);
                 response.put("mensagem", reservado ? "Itens reservados com sucesso!" : "Falha ao reservar itens!");
+                response.put("itens", codPecas);
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
@@ -518,7 +525,7 @@ public class PagamentoServer {
             Connection con = null;
             PreparedStatement stmt = null;
             ResultSet rs = null;
-            boolean reservado = false;
+            List<String> reservados = new ArrayList<>();
 
             try {
                 con = ConnectionDB.getConnectionCloud();
@@ -526,21 +533,21 @@ public class PagamentoServer {
 
                 // 🔥 1. Verifica se TODOS os itens estão disponíveis
                 for (String codPeca : codPecas) {
-                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status IN ('DISPONIVEL') FOR UPDATE";
+                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL' FOR UPDATE";
                     stmt = con.prepareStatement(sqlCheck);
                     stmt.setString(1, codPeca);
                     stmt.setQueryTimeout(10);
                     rs = stmt.executeQuery();
 
                     if (!rs.next()) {
-                        System.out.println("❌ [RESERVA] Item não disponível: " + codPeca);
+                        System.out.println("❌ [RESERVA-LOTE] Item não disponível: " + codPeca);
                         con.rollback();
                         return false;
                     }
 
                     int qtdDisponivel = rs.getInt("quantidade");
                     if (qtdDisponivel < 1) {
-                        System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
+                        System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca);
                         con.rollback();
                         return false;
                     }
@@ -552,10 +559,11 @@ public class PagamentoServer {
                     stmt = con.prepareStatement(sqlUpdate);
                     stmt.setString(1, codPeca);
                     stmt.executeUpdate();
+                    reservados.add(codPeca);
                 }
 
                 // 🔥 3. Insere um único registro na tabela reservas com o array de códigos
-                String codPecasJson = gson.toJson(codPecas); // Converte lista para JSON
+                String codPecasJson = gson.toJson(codPecas);
                 String sqlReserva = "INSERT INTO reservas (pedido_id, cod_pecas, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, pedidoId);
@@ -564,19 +572,19 @@ public class PagamentoServer {
                 stmt.executeUpdate();
 
                 con.commit();
-                reservado = true;
-                System.out.println("✅ [RESERVA] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
+                System.out.println("✅ [RESERVA-LOTE] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
+                System.out.println("   📦 Itens: " + reservados);
+                return true;
 
             } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("❌ [RESERVA] Erro: " + e.getMessage());
+                System.err.println("❌ [RESERVA-LOTE] Erro: " + e.getMessage());
                 try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+                return false;
             } finally {
                 try { if (rs != null) rs.close(); } catch (SQLException e) {}
                 try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
                 try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
             }
-
-            return reservado;
         }
     }
 
