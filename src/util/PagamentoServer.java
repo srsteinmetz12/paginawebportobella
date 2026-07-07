@@ -564,7 +564,7 @@ public class PagamentoServer {
 
                 // 🔥 3. Insere um único registro na tabela reservas com o array de códigos
                 String codPecasJson = gson.toJson(codPecas);
-                String sqlReserva = "INSERT INTO reservas (pedido_id, cod_pecas, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
+                String sqlReserva = "INSERT INTO reservas (pedido_id, cod_peca, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, pedidoId);
                 stmt.setString(2, codPecasJson);

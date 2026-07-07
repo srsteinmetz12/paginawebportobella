@@ -1000,16 +1000,6 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("            let dados = window.dadosCompra || {};");
             writer.println("");
-            writer.println("            // 🔥 RESERVAR TODOS OS ITENS APÓS O PAGAMENTO");
-            writer.println("            let pedidoId = dados.pedidoId || String(Date.now());");
-            writer.println("            let itensParaReservar = dados.itens || [];");
-            writer.println("");
-            writer.println("            if (itensParaReservar.length === 0) {");
-            writer.println("              alert('⚠️ Nenhum item para reservar.');");
-            writer.println("              fecharModalPix();");
-            writer.println("              return;");
-            writer.println("            }");
-            writer.println("");
             writer.println("            // 🔥 RESERVAR LOTE (todos os itens de uma vez)");
             writer.println("            let pedidoId = dados.pedidoId || String(Date.now());");
             writer.println("            let itensParaReservar = dados.itens || [];");
