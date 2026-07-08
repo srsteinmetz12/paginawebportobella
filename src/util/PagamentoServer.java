@@ -1292,34 +1292,45 @@ public class PagamentoServer {
         PreparedStatement stmt = null;
 
         try {
+            System.out.println("🔍 [CONFIRMAR] Iniciando confirmação...");
+            System.out.println("   📦 codPeca: '" + codPeca + "'");
+            System.out.println("   📦 pedidoId: '" + pedidoId + "'");
+
             con = ConnectionDB.getConnectionCloud();
             con.setAutoCommit(false);
 
-            // 🔥 Divide a string de códigos (ex: "19995,19998")
             String[] codigos = codPeca.split(",");
 
             for (String cod : codigos) {
                 cod = cod.trim();
+                System.out.println("   🔄 Processando item: " + cod);
 
                 // Atualiza reserva
                 String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, cod);
                 stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
+                int rowsReserva = stmt.executeUpdate();
+                System.out.println("      ✅ Reserva atualizada: " + rowsReserva + " linha(s)");
 
-                // Atualiza estoque
-                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'RESERVADO'";
+                // 🔥 Atualiza estoque (SEM a condição status)
+                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
                 stmt = con.prepareStatement(sqlEstoque);
                 stmt.setString(1, cod);
-                stmt.executeUpdate();
+                int rowsEstoque = stmt.executeUpdate();
+                System.out.println("      ✅ Estoque atualizado: " + rowsEstoque + " linha(s)");
+
+                if (rowsEstoque == 0) {
+                    System.out.println("      ⚠️ NENHUM registro atualizado no estoque para: " + cod);
+                    System.out.println("      ⚠️ Verifique se o código existe na tabela estoque.");
+                }
             }
 
             con.commit();
-            System.out.println("✅ [RESERVA] Venda confirmada: " + codPeca + " → VENDIDO");
+            System.out.println("✅ [CONFIRMAR] Venda confirmada com sucesso!");
 
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("❌ [RESERVA] Erro ao confirmar: " + e.getMessage());
+            System.err.println("❌ [CONFIRMAR] Erro: " + e.getMessage());
             try { if (con != null) con.rollback(); } catch (SQLException ex) {}
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
