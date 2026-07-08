@@ -25,23 +25,19 @@ import paginaweb.GerarSiteEstoque;
 
 public class PagamentoServer {
 
+    // ==========================================
+    // CONSTANTES
+    // ==========================================
     private static final Gson gson = new Gson();
     private static HttpServer server;
 
-    // ==========================================
-    // CONFIGURAÇÕES DO PIX
-    // ==========================================
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
     private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI";
     private static final String CIDADE = "PORTO ALEGRE";
-
-    // ==========================================
-    // TOKEN DO MERCADO PAGO
-    // ==========================================
     private static final String TOKEN_MP = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128";
 
     // ==========================================
-    // CLASSE NOTIFICACAO (AUXILIAR)
+    // CLASSE AUXILIAR NOTIFICACAO
     // ==========================================
     private static class Notificacao {
         int id;
@@ -106,21 +102,18 @@ public class PagamentoServer {
         server.start();
 
         System.out.println("✅ Servidor de pagamentos rodando em http://localhost:8080");
-        System.out.println("   🔥 PIX: GERADO SEM MERCADO PAGO (chave: " + CHAVE_PIX + ")");
-        System.out.println("   💳 MERCADO PAGO: SOMENTE PARA LINK DE PAGAMENTO");
-        System.out.println("   📦 Frete: Cálculo por CEP (ViaCEP + Fallback)");
+        System.out.println("   🔥 PIX: " + CHAVE_PIX);
+        System.out.println("   💳 MERCADO PAGO: Link de pagamento");
+        System.out.println("   📦 Frete: Cálculo por CEP");
         System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
         System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
         System.out.println("   🔒 Reservar: /api/pagamentos/reservar-lote");
         System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
-        System.out.println("   🔓 Rodando: /api/produtos");
-        System.out.println("   🔓 Rodando: /api/verificar-disponibilidade");
+        System.out.println("   📦 Produtos: /api/produtos");
     }
 
     public static void parar() {
-        if (server != null) {
-            server.stop(0);
-        }
+        if (server != null) server.stop(0);
     }
 
     // ==========================================
@@ -397,7 +390,7 @@ public class PagamentoServer {
             }
         }
     }
-    
+
     // ==========================================
     // HANDLER: VERIFICAR DISPONIBILIDADE
     // ==========================================
@@ -465,6 +458,68 @@ public class PagamentoServer {
             }
 
             return false;
+        }
+    }
+
+    // ==========================================
+    // HANDLER: LISTAR PRODUTOS (API PARA VERCEL)
+    // ==========================================
+    static class ListarProdutosHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                return;
+            }
+
+            Connection con = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+                String sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
+                stmt = con.prepareStatement(sql);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+
+                List<Map<String, Object>> produtos = new ArrayList<>();
+                while (rs.next()) {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("codpeca", rs.getString("codpeca"));
+                    p.put("itemdesc", rs.getString("itemdesc"));
+                    p.put("tamanho", rs.getString("tamanho"));
+                    p.put("precosug", rs.getDouble("precosug"));
+                    p.put("imagem", rs.getString("imagem"));
+                    produtos.add(p);
+                }
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("produtos", produtos);
+                response.put("total", produtos.size());
+
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (ClassNotFoundException | SQLException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
         }
     }
 
@@ -560,13 +615,13 @@ public class PagamentoServer {
                 }
 
                 // 🔥 3. Insere UM registro na tabela reservas com TODOS os códigos
-                String codPecaStr = String.join(",", codPecas); // "19995,19998"
+                String codPecaStr = String.join(",", codPecas);
 
                 String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, codPecaStr);      // 🔥 Array de itens como string
+                stmt.setString(1, codPecaStr);
                 stmt.setString(2, pedidoId);
-                stmt.setInt(3, codPecas.size());    // Quantidade total
+                stmt.setInt(3, codPecas.size());
                 stmt.executeUpdate();
 
                 con.commit();
@@ -1222,7 +1277,7 @@ public class PagamentoServer {
     }
 
     // ==========================================
-    // RESPONDER NOTIFICAÇÃO
+    // PROCESSAR RESPOSTA DA NOTIFICAÇÃO
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
@@ -1285,17 +1340,17 @@ public class PagamentoServer {
     }
 
     // ==========================================
-    // CONFIRMAR RESERVA
+    // ✅ CONFIRMAR RESERVA (VENDIDO)
     // ==========================================
     private static void confirmarReserva(String codPeca, String pedidoId) {
+        System.out.println("🔍 [CONFIRMAR] Iniciando confirmação...");
+        System.out.println("   📦 codPeca: '" + codPeca + "'");
+        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
+
         Connection con = null;
         PreparedStatement stmt = null;
 
         try {
-            System.out.println("🔍 [CONFIRMAR] Iniciando confirmação...");
-            System.out.println("   📦 codPeca: '" + codPeca + "'");
-            System.out.println("   📦 pedidoId: '" + pedidoId + "'");
-
             con = ConnectionDB.getConnectionCloud();
             con.setAutoCommit(false);
 
@@ -1305,29 +1360,35 @@ public class PagamentoServer {
                 cod = cod.trim();
                 System.out.println("   🔄 Processando item: " + cod);
 
-                // Atualiza reserva
+                // 1. Atualizar reserva
                 String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, cod);
                 stmt.setString(2, pedidoId);
-                int rowsReserva = stmt.executeUpdate();
-                System.out.println("      ✅ Reserva atualizada: " + rowsReserva + " linha(s)");
+                stmt.executeUpdate();
 
-                // 🔥 Atualiza estoque (SEM a condição status)
+                // 2. Atualizar estoque para VENDIDO
                 String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
                 stmt = con.prepareStatement(sqlEstoque);
                 stmt.setString(1, cod);
-                int rowsEstoque = stmt.executeUpdate();
-                System.out.println("      ✅ Estoque atualizado: " + rowsEstoque + " linha(s)");
+                int rows = stmt.executeUpdate();
 
-                if (rowsEstoque == 0) {
-                    System.out.println("      ⚠️ NENHUM registro atualizado no estoque para: " + cod);
-                    System.out.println("      ⚠️ Verifique se o código existe na tabela estoque.");
+                if (rows > 0) {
+                    System.out.println("      ✅ Estoque atualizado: " + cod + " → VENDIDO");
+                } else {
+                    System.out.println("      ⚠️ Produto não encontrado: " + cod);
                 }
+
+                // 3. Remover da tabela reservas
+                String sqlDelete = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'CONFIRMADO'";
+                stmt = con.prepareStatement(sqlDelete);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.executeUpdate();
             }
 
             con.commit();
-            System.out.println("✅ [CONFIRMAR] Venda confirmada com sucesso!");
+            System.out.println("✅ [CONFIRMAR] Venda confirmada!");
 
         } catch (ClassNotFoundException | SQLException e) {
             System.err.println("❌ [CONFIRMAR] Erro: " + e.getMessage());
@@ -1339,7 +1400,7 @@ public class PagamentoServer {
     }
 
     // ==========================================
-    // LIBERAR RESERVA
+    // ❌ LIBERAR RESERVA (DISPONIVEL)
     // ==========================================
     private static void liberarReserva(String codPeca, String pedidoId) {
         Connection con = null;
@@ -1379,13 +1440,20 @@ public class PagamentoServer {
                 stmt.setString(1, cod);
                 stmt.setString(2, pedidoId);
                 stmt.executeUpdate();
+
+                // Remover da tabela reservas
+                String sqlDelete = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'CANCELADO'";
+                stmt = con.prepareStatement(sqlDelete);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.executeUpdate();
             }
 
             con.commit();
-            System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " → DISPONIVEL");
+            System.out.println("✅ [LIBERAR] Reserva liberada: " + codPeca + " → DISPONIVEL");
 
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("❌ [RESERVA] Erro ao liberar: " + e.getMessage());
+            System.err.println("❌ [LIBERAR] Erro: " + e.getMessage());
             try { if (con != null) con.rollback(); } catch (SQLException ex) {}
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
@@ -1563,8 +1631,8 @@ public class PagamentoServer {
         return proximoId;
     }
 
-    // ==========================================
-    // REGISTRAR SACOLA
+       // ==========================================
+    // REGISTRAR SACOLA (continuação)
     // ==========================================
     private static void registrarSacola(Connection con, Notificacao notif, int idVenda) {
         PreparedStatement stmt = null;
@@ -1603,24 +1671,19 @@ public class PagamentoServer {
         PreparedStatement stmt = null;
 
         try {
-            String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO";
+            if (notif.retirarLoja) {
+                return;
+            }
 
-            String sql = "INSERT INTO entregas (idvenda, pedido_id, datavenda, nomecli, codpeca, valorfrete, fretepago, entregue, dataentrega, status, tipoentrega, canal) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO entregas (id_venda, pedido_id, endereco, status, data_criacao) " +
+                    "VALUES (?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, idVenda);
             stmt.setString(2, notif.pedidoId);
-            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(4, notif.cliente);
-            stmt.setString(5, notif.codPeca);
-            stmt.setDouble(6, 0.0);
-            stmt.setBoolean(7, false);
-            stmt.setBoolean(8, false);
-            stmt.setNull(9, java.sql.Types.DATE);
-            stmt.setString(10, "EM_SEPARACAO");
-            stmt.setString(11, tipoEntrega);
-            stmt.setString(12, "SITE");
+            stmt.setString(3, notif.endereco);
+            stmt.setString(4, "PENDENTE");
+            stmt.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
 
@@ -1634,78 +1697,130 @@ public class PagamentoServer {
     }
 
     // ==========================================
-    // ATUALIZAR SITE (ASSÍNCRONO)
+    // ATUALIZAR SITE (GERAR PÁGINAS HTML)
     // ==========================================
     private static void atualizarSiteAsync() {
         new Thread(() -> {
             try {
-                Thread.sleep(2000);
-                System.out.println("🔄 [SITE] Atualizando vitrine virtual...");
-
-                GerarSiteEstoque gerador = new GerarSiteEstoque();
-                gerador.gerarSiteEstoque();
-
-                System.out.println("✅ [SITE] Vitrine virtual atualizada!");
-            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
-                System.err.println("❌ [SITE] Erro ao atualizar: " + e.getMessage());
+                System.out.println("   🌐 Atualizando site...");
+                GerarSiteEstoque.main(new String[0]);
+                System.out.println("   ✅ Site atualizado!");
+            } catch (Exception e) {
+                System.err.println("   ❌ Erro ao atualizar site: " + e.getMessage());
             }
         }).start();
     }
 
     // ==========================================
-    // MOSTRAR MENSAGEM NA BANDEJA
+    // MOSTRAR MENSAGEM NA BANDEJA (SYSTEM TRAY)
     // ==========================================
     private static void mostrarMensagemTray(String titulo, String mensagem) {
-        System.out.println("🔔 [" + titulo + "] " + mensagem);
         try {
-            if (SystemTray.isSupported()) {
-                SystemTray tray = SystemTray.getSystemTray();
-                Image image = Toolkit.getDefaultToolkit().createImage("");
-                TrayIcon trayIcon = new TrayIcon(image, "PORTOBELLA");
-                trayIcon.setImageAutoSize(true);
-                tray.add(trayIcon);
-                trayIcon.displayMessage(titulo, mensagem, TrayIcon.MessageType.INFO);
-                new Timer(3000, e -> {
-                    tray.remove(trayIcon);
-                }).start();
+            if (!SystemTray.isSupported()) {
+                System.out.println("   ⚠️ System Tray não suportado");
+                return;
             }
-        } catch (AWTException e) {
-            System.err.println("⚠️ Erro ao mostrar mensagem na bandeja: " + e.getMessage());
+
+            // Verifica se está em ambiente gráfico
+            if (GraphicsEnvironment.isHeadless()) {
+                System.out.println("   ⚠️ Ambiente headless, pulando notificação");
+                return;
+            }
+
+            SystemTray tray = SystemTray.getSystemTray();
+
+            // Carrega ícone da imagem (se existir)
+            Image image = null;
+            try {
+                // Tenta carregar um ícone padrão
+                image = Toolkit.getDefaultToolkit().getImage(
+                        PagamentoServer.class.getResource("/icon/brecho.png"));
+
+                if (image == null) {
+                    // Fallback: cria uma imagem em branco
+                    image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
+                }
+            } catch (Exception e) {
+                // Fallback: cria uma imagem em branco
+                image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
+            }
+
+            TrayIcon trayIcon = new TrayIcon(image, "PortoBella Brechó", null);
+            trayIcon.setImageAutoSize(true);
+
+            // Adiciona à bandeja
+            try {
+                tray.add(trayIcon);
+            } catch (AWTException e) {
+                System.out.println("   ⚠️ Não foi possível adicionar ícone à bandeja: " + e.getMessage());
+                return;
+            }
+
+            // Mostra a notificação
+            trayIcon.displayMessage(titulo, mensagem, TrayIcon.MessageType.INFO);
+
+            // Remove após 5 segundos
+            new Timer(5000, e -> {
+                tray.remove(trayIcon);
+            }).start();
+
+            System.out.println("   🔔 Notificação na bandeja: " + titulo + " - " + mensagem);
+
+        } catch (Exception e) {
+            System.err.println("   ⚠️ Erro ao mostrar notificação: " + e.getMessage());
         }
     }
 
     // ==========================================
-    // MÉTODOS AUXILIARES
+    // PARSE QUERY PARAMS (AUXILIAR)
     // ==========================================
     private static Map<String, String> parseQueryParams(String query) {
         Map<String, String> params = new HashMap<>();
-        if (query != null) {
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=");
-                if (pair.length == 2) {
-                    params.put(pair[0], pair[1]);
+
+        if (query == null || query.isEmpty()) {
+            return params;
+        }
+
+        for (String param : query.split("&")) {
+            String[] keyValue = param.split("=");
+            if (keyValue.length == 2) {
+                try {
+                    params.put(keyValue[0], java.net.URLDecoder.decode(keyValue[1], "UTF-8"));
+                } catch (java.io.UnsupportedEncodingException e) {
+                    params.put(keyValue[0], keyValue[1]);
                 }
             }
         }
+
         return params;
     }
 
+    // ==========================================
+    // SEND RESPONSE (AUXILIAR)
+    // ==========================================
     private static void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
+        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(statusCode, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(response.getBytes());
+            os.write(bytes);
         }
     }
 
     // ==========================================
-    // MAIN
+    // MAIN (INICIAR SERVIDOR)
     // ==========================================
     public static void main(String[] args) {
         try {
             iniciar();
-        } catch (IOException ex) {
-            System.err.println("Erro: " + ex);
+            System.out.println("\n🚀 Servidor de pagamentos iniciado com sucesso!");
+            System.out.println("📌 Pressione ENTER para parar o servidor...");
+            System.in.read();
+            parar();
+            System.out.println("🛑 Servidor parado.");
+        } catch (IOException e) {
+            System.err.println("❌ Erro ao iniciar servidor: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

@@ -1268,104 +1268,104 @@ public class GerarSiteEstoque {
     }
     
     private void enviarParaGitHub(String diretorioDocumentos) {
-        System.out.println("📤 [GIT] ========================================");
-        System.out.println("📤 [GIT] INICIANDO ENVIO PARA O GITHUB");
-        System.out.println("📤 [GIT] ========================================");
-
-        try {
-            File pastaOrigem = new File(diretorioDocumentos);
-            File indexFile = new File(pastaOrigem, "index.html");
-
-            // ==========================================
-            // VERIFICAR SE O ARQUIVO EXISTE
-            // ==========================================
-            if (!indexFile.exists()) {
-                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
-                return;
-            }
-
-            System.out.println("📄 [GIT] Arquivo: " + indexFile.getAbsolutePath());
-            System.out.println("📄 [GIT] Tamanho: " + indexFile.length() + " bytes");
-            System.out.println("📄 [GIT] Modificação: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date(indexFile.lastModified())));
-            System.out.println("📤 [GIT] ========================================");
-
-            // ==========================================
-            // PAUSA INICIAL
-            // ==========================================
-            System.out.println("⏳ [GIT] Aguardando 3 segundos para garantir que o arquivo foi salvo...");
-            Thread.sleep(3000);
-
-            // ==========================================
-            // 1. GIT STATUS ANTES DO ADD
-            // ==========================================
-            System.out.println("📋 [GIT] ========================================");
-            System.out.println("📋 [GIT] PASSO 1: Verificando status ANTES do git add...");
-            System.out.println("📋 [GIT] ========================================");
-            executarGitStatus(pastaOrigem);
-            Thread.sleep(2000);
-
-            // ==========================================
-            // 2. GIT ADD
-            // ==========================================
-            System.out.println("📤 [GIT] ========================================");
-            System.out.println("📤 [GIT] PASSO 2: Executando git add index.html...");
-            System.out.println("📤 [GIT] ========================================");
-            executarComandoGit(pastaOrigem, "git", "add", "index.html");
-            Thread.sleep(3000);
-
-            // ==========================================
-            // 3. GIT STATUS DEPOIS DO ADD
-            // ==========================================
-            System.out.println("📋 [GIT] ========================================");
-            System.out.println("📋 [GIT] PASSO 3: Verificando status DEPOIS do git add...");
-            System.out.println("📋 [GIT] ========================================");
-            executarGitStatus(pastaOrigem);
-            Thread.sleep(2000);
-
-            // ==========================================
-            // 4. GIT COMMIT
-            // ==========================================
-            System.out.println("📤 [GIT] ========================================");
-            System.out.println("📤 [GIT] PASSO 4: Executando git commit...");
-            System.out.println("📤 [GIT] ========================================");
-            String dataHora = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
-            executarComandoGit(pastaOrigem, "git", "commit", "-m", "Atualização automática do estoque - " + dataHora);
-            Thread.sleep(3000);
-
-            // ==========================================
-            // 5. GIT STATUS DEPOIS DO COMMIT
-            // ==========================================
-            System.out.println("📋 [GIT] ========================================");
-            System.out.println("📋 [GIT] PASSO 5: Verificando status DEPOIS do git commit...");
-            System.out.println("📋 [GIT] ========================================");
-            executarGitStatus(pastaOrigem);
-            Thread.sleep(2000);
-
-            // ==========================================
-            // 6. GIT PUSH
-            // ==========================================
-            System.out.println("📤 [GIT] ========================================");
-            System.out.println("📤 [GIT] PASSO 6: Executando git push origin main --force...");
-            System.out.println("📤 [GIT] ========================================");
-            executarComandoGit(pastaOrigem, "git", "push", "origin", "main", "--force");
-            Thread.sleep(5000);
-
-            // ==========================================
-            // 7. GIT STATUS FINAL
-            // ==========================================
-            System.out.println("📋 [GIT] ========================================");
-            System.out.println("📋 [GIT] PASSO 7: Verificando status FINAL...");
-            System.out.println("📋 [GIT] ========================================");
-            executarGitStatus(pastaOrigem);
-            Thread.sleep(2000);
-
-            System.out.println("🚀 [GIT] ========================================");
-            System.out.println("🚀 [GIT] PROCESSO FINALIZADO COM SUCESSO!");
-            System.out.println("🚀 [GIT] ========================================");
-
-        } catch (IOException | InterruptedException e) {
-            System.err.println("❌ [GIT] Erro: " + e.getMessage());
-        }
+//        System.out.println("📤 [GIT] ========================================");
+//        System.out.println("📤 [GIT] INICIANDO ENVIO PARA O GITHUB");
+//        System.out.println("📤 [GIT] ========================================");
+//
+//        try {
+//            File pastaOrigem = new File(diretorioDocumentos);
+//            File indexFile = new File(pastaOrigem, "index.html");
+//
+//            // ==========================================
+//            // VERIFICAR SE O ARQUIVO EXISTE
+//            // ==========================================
+//            if (!indexFile.exists()) {
+//                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
+//                return;
+//            }
+//
+//            System.out.println("📄 [GIT] Arquivo: " + indexFile.getAbsolutePath());
+//            System.out.println("📄 [GIT] Tamanho: " + indexFile.length() + " bytes");
+//            System.out.println("📄 [GIT] Modificação: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date(indexFile.lastModified())));
+//            System.out.println("📤 [GIT] ========================================");
+//
+//            // ==========================================
+//            // PAUSA INICIAL
+//            // ==========================================
+//            System.out.println("⏳ [GIT] Aguardando 3 segundos para garantir que o arquivo foi salvo...");
+//            Thread.sleep(3000);
+//
+//            // ==========================================
+//            // 1. GIT STATUS ANTES DO ADD
+//            // ==========================================
+//            System.out.println("📋 [GIT] ========================================");
+//            System.out.println("📋 [GIT] PASSO 1: Verificando status ANTES do git add...");
+//            System.out.println("📋 [GIT] ========================================");
+//            executarGitStatus(pastaOrigem);
+//            Thread.sleep(2000);
+//
+//            // ==========================================
+//            // 2. GIT ADD
+//            // ==========================================
+//            System.out.println("📤 [GIT] ========================================");
+//            System.out.println("📤 [GIT] PASSO 2: Executando git add index.html...");
+//            System.out.println("📤 [GIT] ========================================");
+//            executarComandoGit(pastaOrigem, "git", "add", "index.html");
+//            Thread.sleep(3000);
+//
+//            // ==========================================
+//            // 3. GIT STATUS DEPOIS DO ADD
+//            // ==========================================
+//            System.out.println("📋 [GIT] ========================================");
+//            System.out.println("📋 [GIT] PASSO 3: Verificando status DEPOIS do git add...");
+//            System.out.println("📋 [GIT] ========================================");
+//            executarGitStatus(pastaOrigem);
+//            Thread.sleep(2000);
+//
+//            // ==========================================
+//            // 4. GIT COMMIT
+//            // ==========================================
+//            System.out.println("📤 [GIT] ========================================");
+//            System.out.println("📤 [GIT] PASSO 4: Executando git commit...");
+//            System.out.println("📤 [GIT] ========================================");
+//            String dataHora = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
+//            executarComandoGit(pastaOrigem, "git", "commit", "-m", "Atualização automática do estoque - " + dataHora);
+//            Thread.sleep(3000);
+//
+//            // ==========================================
+//            // 5. GIT STATUS DEPOIS DO COMMIT
+//            // ==========================================
+//            System.out.println("📋 [GIT] ========================================");
+//            System.out.println("📋 [GIT] PASSO 5: Verificando status DEPOIS do git commit...");
+//            System.out.println("📋 [GIT] ========================================");
+//            executarGitStatus(pastaOrigem);
+//            Thread.sleep(2000);
+//
+//            // ==========================================
+//            // 6. GIT PUSH
+//            // ==========================================
+//            System.out.println("📤 [GIT] ========================================");
+//            System.out.println("📤 [GIT] PASSO 6: Executando git push origin main --force...");
+//            System.out.println("📤 [GIT] ========================================");
+//            executarComandoGit(pastaOrigem, "git", "push", "origin", "main", "--force");
+//            Thread.sleep(5000);
+//
+//            // ==========================================
+//            // 7. GIT STATUS FINAL
+//            // ==========================================
+//            System.out.println("📋 [GIT] ========================================");
+//            System.out.println("📋 [GIT] PASSO 7: Verificando status FINAL...");
+//            System.out.println("📋 [GIT] ========================================");
+//            executarGitStatus(pastaOrigem);
+//            Thread.sleep(2000);
+//
+//            System.out.println("🚀 [GIT] ========================================");
+//            System.out.println("🚀 [GIT] PROCESSO FINALIZADO COM SUCESSO!");
+//            System.out.println("🚀 [GIT] ========================================");
+//
+//        } catch (IOException | InterruptedException e) {
+//            System.err.println("❌ [GIT] Erro: " + e.getMessage());
+//        }
     }
 
     // ==========================================
