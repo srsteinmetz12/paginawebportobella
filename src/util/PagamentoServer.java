@@ -1281,6 +1281,9 @@ public class PagamentoServer {
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
         System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
+        System.out.println("   📦 notif.id: " + notif.id);
+        System.out.println("   📦 notif.codPeca: '" + notif.codPeca + "'");
+        System.out.println("   📦 notif.pedidoId: '" + notif.pedidoId + "'");
 
         Connection con = null;
         PreparedStatement stmt = null;
@@ -1298,35 +1301,71 @@ public class PagamentoServer {
 
             String status = aprovado ? "CONFIRMADO" : "REJEITADO";
 
+            // 1. Atualizar notificação
             String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
             stmt = con.prepareStatement(sql);
             stmt.setString(1, status);
             stmt.setInt(2, notif.id);
             stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
+            System.out.println("   📝 Notificação atualizada: " + rows + " linha(s)");
 
             if (rows > 0) {
                 System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
 
                 if (aprovado) {
-                    moverParaHistorico(con, notif);
-                    int idVenda = registrarVenda(con, notif);
+                    // ✅ APROVADO
+                    System.out.println("   🔄 Processando APROVAÇÃO...");
+                    
+                    // 1. Mover para histórico
+                    moverParaHistoricoCompleto(con, notif, status);
+                    
+                    // 2. Registrar venda
+                    int idVenda = registrarVendaCompleta(con, notif);
+                    System.out.println("   📝 ID Venda: " + idVenda);
 
                     if (idVenda > 0) {
-                        registrarSacola(con, notif, idVenda);
-                        registrarEntrega(con, notif, idVenda);
+                        // 3. Registrar sacola
+                        registrarSacolaCompleta(con, notif, idVenda);
+                        // 4. Registrar entrega (se não for retirar na loja)
+                        registrarEntregaCompleta(con, notif, idVenda);
                     }
 
-                    confirmarReserva(notif.codPeca, notif.pedidoId);
+                    // 5. Confirmar reserva (usando os dados da notificação)
+                    boolean reservaConfirmada = confirmarReservaCompleta(con, notif.codPeca, notif.pedidoId);
+                    System.out.println("   📝 Reserva confirmada: " + reservaConfirmada);
+                    
+                    // 6. Remover notificação pendente
+                    removerNotificacao(con, notif.id);
+                    
+                    // 7. Atualizar site
                     atualizarSiteAsync();
+                    
+                    // 8. Mostrar mensagem
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId);
 
                 } else {
-                    liberarReserva(notif.codPeca, notif.pedidoId);
-                    moverParaHistoricoRejeitado(con, notif);
+                    // ❌ REJEITADO
+                    System.out.println("   🔄 Processando REJEIÇÃO...");
+                    
+                    // 1. Mover para histórico
+                    moverParaHistoricoCompleto(con, notif, status);
+                    
+                    // 2. Liberar reserva (usando os dados da notificação)
+                    boolean reservaLiberada = liberarReservaCompleta(con, notif.codPeca, notif.pedidoId);
+                    System.out.println("   📝 Reserva liberada: " + reservaLiberada);
+                    
+                    // 3. Remover notificação pendente
+                    removerNotificacao(con, notif.id);
+                    
+                    // 4. Atualizar site
                     atualizarSiteAsync();
+                    
+                    // 5. Mostrar mensagem
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId);
                 }
+            } else {
+                System.err.println("❌ Notificação não encontrada: " + notif.id);
             }
 
         } catch (ClassNotFoundException | InterruptedException | SQLException e) {
@@ -1338,140 +1377,187 @@ public class PagamentoServer {
 
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
     }
-
+    
     // ==========================================
-    // ✅ CONFIRMAR RESERVA (VENDIDO)
+    // REMOVER NOTIFICAÇÃO (CORRIGIDO)
     // ==========================================
-    private static void confirmarReserva(String codPeca, String pedidoId) {
-        System.out.println("🔍 [CONFIRMAR] Iniciando confirmação...");
-        System.out.println("   📦 codPeca: '" + codPeca + "'");
-        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
-
-        Connection con = null;
+    private static void removerNotificacao(Connection con, int id) {
         PreparedStatement stmt = null;
 
         try {
-            con = ConnectionDB.getConnectionCloud();
-            con.setAutoCommit(false);
+            String sql = "DELETE FROM notificacoes_pendentes WHERE id = ?";
+            stmt = con.prepareStatement(sql);
+            stmt.setInt(1, id);
+            stmt.setQueryTimeout(10);
+            int rows = stmt.executeUpdate();
+            
+            System.out.println("   ✅ Notificação removida: " + rows + " linha(s)");
 
-            String[] codigos = codPeca.split(",");
-
-            for (String cod : codigos) {
-                cod = cod.trim();
-                System.out.println("   🔄 Processando item: " + cod);
-
-                // 1. Atualizar reserva
-                String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE cod_peca = ? AND pedido_id = ?";
-                stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
-
-                // 2. Atualizar estoque para VENDIDO
-                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
-                stmt = con.prepareStatement(sqlEstoque);
-                stmt.setString(1, cod);
-                int rows = stmt.executeUpdate();
-
-                if (rows > 0) {
-                    System.out.println("      ✅ Estoque atualizado: " + cod + " → VENDIDO");
-                } else {
-                    System.out.println("      ⚠️ Produto não encontrado: " + cod);
-                }
-
-                // 3. Remover da tabela reservas
-                String sqlDelete = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'CONFIRMADO'";
-                stmt = con.prepareStatement(sqlDelete);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
-            }
-
-            con.commit();
-            System.out.println("✅ [CONFIRMAR] Venda confirmada!");
-
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("❌ [CONFIRMAR] Erro: " + e.getMessage());
-            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao remover notificação: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
         }
     }
 
     // ==========================================
-    // ❌ LIBERAR RESERVA (DISPONIVEL)
+    // ✅ CONFIRMAR RESERVA (VENDIDO)
     // ==========================================
-    private static void liberarReserva(String codPeca, String pedidoId) {
-        Connection con = null;
+    private static boolean confirmarReservaCompleta(Connection con, String codPeca, String pedidoId) {
+        System.out.println("🔍 [CONFIRMAR_RESERVA] Iniciando...");
+        System.out.println("   📦 codPeca: '" + codPeca + "'");
+        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
+
         PreparedStatement stmt = null;
+        ResultSet rs = null;
+        boolean sucesso = true;
 
         try {
-            con = ConnectionDB.getConnectionCloud();
-            con.setAutoCommit(false);
-
             String[] codigos = codPeca.split(",");
-
+            
             for (String cod : codigos) {
                 cod = cod.trim();
+                System.out.println("   🔄 Processando item: '" + cod + "'");
 
-                String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
+                // 1. VERIFICAR se existe reserva
+                String sqlCheck = "SELECT id, quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO'";
                 stmt = con.prepareStatement(sqlCheck);
                 stmt.setString(1, cod);
                 stmt.setString(2, pedidoId);
                 stmt.setQueryTimeout(10);
-                ResultSet rs = stmt.executeQuery();
-
+                rs = stmt.executeQuery();
+                
                 if (!rs.next()) {
-                    con.rollback();
-                    return;
+                    System.err.println("   ❌ Reserva não encontrada para: " + cod);
+                    sucesso = false;
+                    continue;
                 }
-
+                
+                int reservaId = rs.getInt("id");
                 int quantidade = rs.getInt("quantidade");
+                System.out.println("   📝 Reserva encontrada: ID=" + reservaId + ", QTD=" + quantidade);
+                
+                try { rs.close(); } catch (SQLException e) {}
 
-                String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
-                stmt = con.prepareStatement(sqlUpdate);
-                stmt.setInt(1, quantidade);
-                stmt.setString(2, cod);
-                stmt.executeUpdate();
+                // 2. ATUALIZAR ESTOQUE para VENDIDO
+                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlEstoque);
+                stmt.setString(1, cod);
+                int rowsEstoque = stmt.executeUpdate();
+                System.out.println("   📝 Estoque atualizado: " + rowsEstoque + " linha(s) -> VENDIDO");
 
-                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+                // 3. ATUALIZAR reserva para CONFIRMADO
+                String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE id = ?";
                 stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
+                stmt.setInt(1, reservaId);
+                int rowsReserva = stmt.executeUpdate();
+                System.out.println("   📝 Reserva atualizada: " + rowsReserva + " linha(s) -> CONFIRMADO");
 
-                // Remover da tabela reservas
-                String sqlDelete = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'CANCELADO'";
+                // 4. REMOVER da tabela reservas
+                String sqlDelete = "DELETE FROM reservas WHERE id = ?";
                 stmt = con.prepareStatement(sqlDelete);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
+                stmt.setInt(1, reservaId);
+                int rowsDelete = stmt.executeUpdate();
+                System.out.println("   📝 Reserva removida: " + rowsDelete + " linha(s)");
             }
 
-            con.commit();
-            System.out.println("✅ [LIBERAR] Reserva liberada: " + codPeca + " → DISPONIVEL");
+            System.out.println("✅ [CONFIRMAR_RESERVA] Finalizado com sucesso=" + sucesso);
+            return sucesso;
 
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("❌ [LIBERAR] Erro: " + e.getMessage());
-            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+        } catch (SQLException e) {
+            System.err.println("❌ [CONFIRMAR_RESERVA] Erro: " + e.getMessage());
+            return false;
         } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+        }
+    }
+
+    // ==========================================
+    // ❌ LIBERAR RESERVA COMPLETA (CORRIGIDO)
+    // ==========================================
+    private static boolean liberarReservaCompleta(Connection con, String codPeca, String pedidoId) {
+        System.out.println("🔍 [LIBERAR_RESERVA] Iniciando...");
+        System.out.println("   📦 codPeca: '" + codPeca + "'");
+        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
+
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        boolean sucesso = true;
+
+        try {
+            String[] codigos = codPeca.split(",");
+            
+            for (String cod : codigos) {
+                cod = cod.trim();
+                System.out.println("   🔄 Processando item: '" + cod + "'");
+
+                // 1. VERIFICAR se existe reserva
+                String sqlCheck = "SELECT id, quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO'";
+                stmt = con.prepareStatement(sqlCheck);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+                
+                if (!rs.next()) {
+                    System.err.println("   ❌ Reserva não encontrada para: " + cod);
+                    sucesso = false;
+                    continue;
+                }
+                
+                int reservaId = rs.getInt("id");
+                int quantidade = rs.getInt("quantidade");
+                System.out.println("   📝 Reserva encontrada: ID=" + reservaId + ", QTD=" + quantidade);
+                
+                try { rs.close(); } catch (SQLException e) {}
+
+                // 2. ATUALIZAR ESTOQUE para DISPONIVEL (+ quantidade)
+                String sqlEstoque = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlEstoque);
+                stmt.setInt(1, quantidade);
+                stmt.setString(2, cod);
+                int rowsEstoque = stmt.executeUpdate();
+                System.out.println("   📝 Estoque atualizado: " + rowsEstoque + " linha(s) -> DISPONIVEL (+" + quantidade + ")");
+
+                // 3. ATUALIZAR reserva para CANCELADO
+                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE id = ?";
+                stmt = con.prepareStatement(sqlReserva);
+                stmt.setInt(1, reservaId);
+                int rowsReserva = stmt.executeUpdate();
+                System.out.println("   📝 Reserva atualizada: " + rowsReserva + " linha(s) -> CANCELADO");
+
+                // 4. REMOVER da tabela reservas
+                String sqlDelete = "DELETE FROM reservas WHERE id = ?";
+                stmt = con.prepareStatement(sqlDelete);
+                stmt.setInt(1, reservaId);
+                int rowsDelete = stmt.executeUpdate();
+                System.out.println("   📝 Reserva removida: " + rowsDelete + " linha(s)");
+            }
+
+            System.out.println("✅ [LIBERAR_RESERVA] Finalizado com sucesso=" + sucesso);
+            return sucesso;
+
+        } catch (SQLException e) {
+            System.err.println("❌ [LIBERAR_RESERVA] Erro: " + e.getMessage());
+            return false;
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
         }
     }
 
     // ==========================================
     // MOVER PARA HISTÓRICO (CONFIRMADO)
     // ==========================================
-    private static void moverParaHistorico(Connection con, Notificacao notif) {
+    private static void moverParaHistoricoCompleto(Connection con, Notificacao notif, String status) {
         PreparedStatement stmt = null;
 
         try {
             String sql = "INSERT INTO notificacoes_historico " +
                     "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao, cod_pecas) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, notif.id);
@@ -1484,14 +1570,14 @@ public class PagamentoServer {
             stmt.setString(8, notif.endereco);
             stmt.setBoolean(9, notif.retirarLoja);
             stmt.setString(10, notif.itens);
-            stmt.setString(11, "CONFIRMADO");
+            stmt.setString(11, status);
             stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
             stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
-
+            stmt.setString(14, notif.codPeca);
             stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-
-            System.out.println("   ✅ Movido para histórico (CONFIRMADO): " + notif.pedidoId);
+            int rows = stmt.executeUpdate();
+            
+            System.out.println("   ✅ Movido para histórico: " + rows + " linha(s) -> " + status);
 
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
@@ -1542,16 +1628,27 @@ public class PagamentoServer {
     // ==========================================
     // REGISTRAR VENDA
     // ==========================================
-    private static int registrarVenda(Connection con, Notificacao notif) {
+    private static int registrarVendaCompleta(Connection con, Notificacao notif) {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         int idVenda = 0;
 
         try {
-            int proximoId = getProximoIdVenda(con);
+            // Buscar próximo ID
+            String sqlMaxId = "SELECT MAX(id) FROM vendas";
+            stmt = con.prepareStatement(sqlMaxId);
+            stmt.setQueryTimeout(10);
+            rs = stmt.executeQuery();
+            
+            int proximoId = 1;
+            if (rs.next()) {
+                proximoId = rs.getInt(1) + 1;
+            }
+            try { rs.close(); } catch (SQLException e) {}
 
+            // Montar observação
             String obsVendas = "Pedido: " + notif.pedidoId;
-            if (notif.endereco != null && !notif.endereco.isEmpty()) {
+            if (notif.endereco != null && !notif.endereco.isEmpty() && !notif.retirarLoja) {
                 String enderecoResumido = notif.endereco;
                 int espacoRestante = 50 - obsVendas.length() - 3;
                 if (espacoRestante > 0 && enderecoResumido.length() > espacoRestante) {
@@ -1569,27 +1666,28 @@ public class PagamentoServer {
 
             String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
 
-            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomedi, obsvendas, entrega, status) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // Inserir venda
+            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
+                    "VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, proximoId);
             stmt.setString(2, notif.pedidoId);
-            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(4, "SITE");
-            stmt.setString(5, notif.meioPagamento);
-            stmt.setString(6, valorFormatado);
-            stmt.setString(7, notif.codPeca);
-            stmt.setString(8, notif.cliente);
-            stmt.setString(9, obsVendas);
-            stmt.setString(10, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
-            stmt.setString(11, "EM_SEPARACAO");
+            stmt.setString(3, "SITE");
+            stmt.setString(4, notif.meioPagamento);
+            stmt.setString(5, valorFormatado);
+            stmt.setString(6, notif.codPeca);
+            stmt.setString(7, notif.cliente);
+            stmt.setString(8, obsVendas);
+            stmt.setString(9, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
+            stmt.setString(10, "EM_SEPARACAO");
             stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-
-            idVenda = proximoId;
-
-            System.out.println("   ✅ Venda registrada (ID: " + idVenda + ", Pedido: " + notif.pedidoId + ")");
+            int rows = stmt.executeUpdate();
+            
+            if (rows > 0) {
+                idVenda = proximoId;
+                System.out.println("   ✅ Venda registrada (ID: " + idVenda + ")");
+            }
 
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
@@ -1631,31 +1729,30 @@ public class PagamentoServer {
         return proximoId;
     }
 
-       // ==========================================
+    // ==========================================
     // REGISTRAR SACOLA (continuação)
     // ==========================================
-    private static void registrarSacola(Connection con, Notificacao notif, int idVenda) {
+    private static void registrarSacolaCompleta(Connection con, Notificacao notif, int idVenda) {
         PreparedStatement stmt = null;
 
         try {
-            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
+            double valorFormatado = Double.parseDouble(String.format("%.2f", notif.valor).replace(",", "."));
 
-            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codepcas, nomecli, tipoentrega) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
+                    "VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, idVenda);
             stmt.setString(2, notif.pedidoId);
-            stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
-            stmt.setString(4, valorFormatado);
-            stmt.setString(5, "EM_SEPARACAO");
-            stmt.setString(6, notif.codPeca);
-            stmt.setString(7, notif.cliente);
-            stmt.setString(8, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+            stmt.setDouble(3, valorFormatado);
+            stmt.setString(4, "EM_SEPARACAO");
+            stmt.setString(5, notif.codPeca);
+            stmt.setString(6, notif.cliente);
+            stmt.setString(7, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
             stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-
-            System.out.println("   ✅ Sacola registrada (ID_Venda: " + idVenda + ")");
+            int rows = stmt.executeUpdate();
+            
+            System.out.println("   ✅ Sacola registrada: " + rows + " linha(s)");
 
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
@@ -1667,7 +1764,7 @@ public class PagamentoServer {
     // ==========================================
     // REGISTRAR ENTREGA
     // ==========================================
-    private static void registrarEntrega(Connection con, Notificacao notif, int idVenda) {
+    private static void registrarEntregaCompleta(Connection con, Notificacao notif, int idVenda) {
         PreparedStatement stmt = null;
 
         try {
@@ -1675,7 +1772,7 @@ public class PagamentoServer {
                 return;
             }
 
-            String sql = "INSERT INTO entregas (id_venda, pedido_id, endereco, status, data_criacao) " +
+            String sql = "INSERT INTO entregas (idvenda, pedido_id, endereco, status, data_criacao) " +
                     "VALUES (?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
@@ -1820,7 +1917,6 @@ public class PagamentoServer {
             System.out.println("🛑 Servidor parado.");
         } catch (IOException e) {
             System.err.println("❌ Erro ao iniciar servidor: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }
