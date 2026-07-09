@@ -1027,7 +1027,9 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("              if (data.success) {");
             writer.println("                console.log('✅ [RESERVA] Itens reservados:', data.itens);");
-            writer.println("                removerItensVitrine(data.itens || []);");
+            writer.println("                setTimeout(() => {");
+            writer.println("                  removerItensVitrine(data.itens || []);");
+            writer.println("                }, 1000);");
             writer.println("");
             writer.println("                // 🔥 NOTIFICAR A LOJA");
             writer.println("                let dadosNotificacao = {");

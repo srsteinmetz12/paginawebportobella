@@ -579,60 +579,71 @@ public class PagamentoServer {
         }
 
         private boolean reservarLote(List<String> codPecas, String pedidoId) {
+            System.out.println("📥 [RESERVA-LOTE] INICIANDO RESERVA..."); // 🔥 LOG 1
             Connection con = null;
             PreparedStatement stmt = null;
             ResultSet rs = null;
 
             try {
+                System.out.println("📥 [RESERVA-LOTE] Tentando conectar ao banco..."); // 🔥 LOG 2
                 con = ConnectionDB.getConnectionCloud();
+                System.out.println("✅ [RESERVA-LOTE] Conectado com sucesso!"); // 🔥 LOG 3
+
                 con.setAutoCommit(false);
+                System.out.println("✅ [RESERVA-LOTE] AutoCommit desabilitado!"); // 🔥 LOG 4
 
                 // 🔥 1. Verifica se todos os itens estão disponíveis
                 for (String codPeca : codPecas) {
-                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL' FOR UPDATE";
+                    System.out.println("🔍 [RESERVA-LOTE] Verificando item: " + codPeca); // 🔥 LOG 5
+                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL'";
                     stmt = con.prepareStatement(sqlCheck);
                     stmt.setString(1, codPeca);
                     rs = stmt.executeQuery();
 
                     if (!rs.next()) {
-                        System.out.println("❌ [RESERVA] Item não disponível: " + codPeca);
+                        System.out.println("❌ [RESERVA-LOTE] Item NÃO DISPONÍVEL: " + codPeca); // 🔥 LOG 6
                         con.rollback();
                         return false;
                     }
 
                     int qtd = rs.getInt("quantidade");
+                    System.out.println("   📝 Quantidade: " + qtd); // 🔥 LOG 7
                     if (qtd < 1) {
-                        System.out.println("❌ [RESERVA] Estoque insuficiente: " + codPeca);
+                        System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca); // 🔥 LOG 8
                         con.rollback();
                         return false;
                     }
                 }
 
-                // 🔥 2. Atualiza estoque para RESERVADO (um por um)
+                // 🔥 2. Atualiza estoque para RESERVADO
                 for (String codPeca : codPecas) {
+                    System.out.println("🔄 [RESERVA-LOTE] Atualizando estoque: " + codPeca); // 🔥 LOG 9
                     String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
                     stmt = con.prepareStatement(sqlUpdate);
                     stmt.setString(1, codPeca);
-                    stmt.executeUpdate();
+                    int rows = stmt.executeUpdate();
+                    System.out.println("   📝 Atualizadas " + rows + " linha(s)"); // 🔥 LOG 10
                 }
 
-                // 🔥 3. Insere UM registro na tabela reservas com TODOS os códigos
+                // 🔥 3. Insere na tabela reservas
                 String codPecaStr = String.join(",", codPecas);
+                System.out.println("📝 [RESERVA-LOTE] Inserindo reserva: " + codPecaStr); // 🔥 LOG 11
 
                 String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, codPecaStr);
                 stmt.setString(2, pedidoId);
                 stmt.setInt(3, codPecas.size());
-                stmt.executeUpdate();
+                int rows = stmt.executeUpdate();
+                System.out.println("   📝 Inseridas " + rows + " linha(s) na reserva"); // 🔥 LOG 12
 
                 con.commit();
-                System.out.println("✅ [RESERVA] Lote reservado: " + codPecas.size() + " itens (Pedido: " + pedidoId + ")");
-                System.out.println("   📦 Itens: " + codPecaStr);
+                System.out.println("✅ [RESERVA-LOTE] Reserva finalizada com sucesso!"); // 🔥 LOG 13
                 return true;
 
             } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("❌ [RESERVA-LOTE] Erro: " + e.getMessage());
+                System.err.println("❌ [RESERVA-LOTE] ERRO: " + e.getMessage());
+                // 🔥 IMPRIME O ERRO COMPLETO
                 try { if (con != null) con.rollback(); } catch (SQLException ex) {}
                 return false;
             } finally {
