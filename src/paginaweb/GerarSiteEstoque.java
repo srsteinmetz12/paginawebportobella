@@ -220,7 +220,8 @@ public class GerarSiteEstoque {
                 // ==========================================
                 // CARD DO PRODUTO
                 // ==========================================
-                writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " tam: " + tamanho.toLowerCase() + " ref: " + codExibicao.toLowerCase() + "'>");
+                String marca = rs.getString("marca") != null ? rs.getString("marca") : "";
+                writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " " + tamanho.toLowerCase() + " " + codExibicao.toLowerCase() + " " + marca.toLowerCase() + "'>");
 
                 // ==========================================
                 // GALERIA DE IMAGENS (CARROSSEL)
@@ -940,7 +941,7 @@ public class GerarSiteEstoque {
             writer.println("    // ========================================");
             writer.println("    function filtrarProdutos() {");
             writer.println("      let input = document.getElementById('inputBusca').value.toLowerCase();");
-            writer.println("      let cards = document.querySelectorAll('.card, .produto-card');");
+            writer.println("      let cards = document.getElementsByClassName('card');");
             writer.println("      for (let i = 0; i < cards.length; i++) {");
             writer.println("        let txtValue = cards[i].getAttribute('data-busca') || '';");
             writer.println("        cards[i].style.display = txtValue.indexOf(input) > -1 ? '' : 'none';");
