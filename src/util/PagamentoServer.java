@@ -1634,19 +1634,17 @@ public class PagamentoServer {
         int idVenda = 0;
 
         try {
-            // Buscar próximo ID
             String sqlMaxId = "SELECT MAX(id) FROM vendas";
             stmt = con.prepareStatement(sqlMaxId);
             stmt.setQueryTimeout(10);
             rs = stmt.executeQuery();
-            
+
             int proximoId = 1;
             if (rs.next()) {
                 proximoId = rs.getInt(1) + 1;
             }
             try { rs.close(); } catch (SQLException e) {}
 
-            // Montar observação
             String obsVendas = "Pedido: " + notif.pedidoId;
             if (notif.endereco != null && !notif.endereco.isEmpty() && !notif.retirarLoja) {
                 String enderecoResumido = notif.endereco;
@@ -1666,24 +1664,26 @@ public class PagamentoServer {
 
             String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
 
-            // Inserir venda
+            // 🔥 CORRIGIDO: USANDO NOW() NO LUGAR DE CURDATE()
             String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
-                    "VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
-            stmt.setInt(1, proximoId);
-            stmt.setString(2, notif.pedidoId);
-            stmt.setString(3, "SITE");
-            stmt.setString(4, notif.meioPagamento);
-            stmt.setString(5, valorFormatado);
-            stmt.setString(6, notif.codPeca);
-            stmt.setString(7, notif.cliente);
-            stmt.setString(8, obsVendas);
-            stmt.setString(9, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA");
-            stmt.setString(10, "EM_SEPARACAO");
+            stmt.setInt(1, proximoId);                    // id
+            stmt.setString(2, notif.pedidoId);            // pedido_id
+            // 🔥 NOW() é o 3º placeholder, não precisa setar
+            stmt.setString(3, "SITE");                    // origemvenda
+            stmt.setString(4, notif.meioPagamento);       // tipopag
+            stmt.setString(5, valorFormatado);            // valorvenda
+            stmt.setString(6, notif.codPeca);             // codpecas
+            stmt.setString(7, notif.cliente);             // nomecli
+            stmt.setString(8, obsVendas);                 // obsvendas
+            stmt.setString(9, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA"); // entrega
+            stmt.setString(10, "EM_SEPARACAO");           // status
+
             stmt.setQueryTimeout(10);
             int rows = stmt.executeUpdate();
-            
+
             if (rows > 0) {
                 idVenda = proximoId;
                 System.out.println("   ✅ Venda registrada (ID: " + idVenda + ")");
@@ -1691,6 +1691,7 @@ public class PagamentoServer {
 
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+            e.printStackTrace();
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
