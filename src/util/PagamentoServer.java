@@ -1910,13 +1910,27 @@ public class PagamentoServer {
     public static void main(String[] args) {
         try {
             iniciar();
+            System.out.println("\n✅ Servidor de pagamentos rodando em http://localhost:8080");
+            System.out.println("   🔥 PIX: " + CHAVE_PIX);
+            System.out.println("   💳 MERCADO PAGO: Link de pagamento");
+            System.out.println("   📦 Frete: Cálculo por CEP");
+            System.out.println("   🔔 Notificações: /api/pagamentos/notificar");
+            System.out.println("   🔍 Consultar: /api/pagamentos/consultar");
+            System.out.println("   🔒 Reservar: /api/pagamentos/reservar-lote");
+            System.out.println("   🔓 Liberar: /api/pagamentos/liberar-reserva");
+            System.out.println("   📦 Produtos: /api/produtos");
+            
             System.out.println("\n🚀 Servidor de pagamentos iniciado com sucesso!");
-            System.out.println("📌 Pressione ENTER para parar o servidor...");
-            System.in.read();
-            parar();
-            System.out.println("🛑 Servidor parado.");
+            System.out.println("📌 Servidor rodando... (Ctrl+C para parar)");
+            
+            // 🔥 Mantém o servidor rodando sem depender de input do usuário
+            Thread.currentThread().join();
+            
         } catch (IOException e) {
             System.err.println("❌ Erro ao iniciar servidor: " + e.getMessage());
+        } catch (InterruptedException e) {
+            System.err.println("⚠️ Servidor interrompido");
+            Thread.currentThread().interrupt();
         }
     }
 }
