@@ -127375,7 +127375,7 @@
     // ========================================
     function filtrarProdutos() {
       let input = document.getElementById('inputBusca').value.toLowerCase();
-      let cards = .querySelectorAll('.card, .produto-card');
+      let cards = document.querySelectorAll('.card, .produto-card');
       for (let i = 0; i < cards.length; i++) {
         let txtValue = cards[i].getAttribute('data-busca') || '';
         cards[i].style.display = txtValue.indexOf(input) > -1 ? '' : 'none';

@@ -940,7 +940,7 @@ public class GerarSiteEstoque {
             writer.println("    // ========================================");
             writer.println("    function filtrarProdutos() {");
             writer.println("      let input = document.getElementById('inputBusca').value.toLowerCase();");
-            writer.println("      let cards = .querySelectorAll('.card, .produto-card');");
+            writer.println("      let cards = document.querySelectorAll('.card, .produto-card');");
             writer.println("      for (let i = 0; i < cards.length; i++) {");
             writer.println("        let txtValue = cards[i].getAttribute('data-busca') || '';");
             writer.println("        cards[i].style.display = txtValue.indexOf(input) > -1 ? '' : 'none';");
