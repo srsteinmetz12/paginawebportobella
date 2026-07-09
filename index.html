@@ -99,7 +99,7 @@
     </div>
   </header>
   <div class='busca-container'>
-    <input type='text' id='inputBusca' onkeyup='filtrarProdutos()' placeholder='Buscar por nome, tamanho ou código...' class='busca-input'>
+    <input type='text' id='inputBusca' onkeyup='filtrarProdutos()' placeholder='Buscar por nome, tamanho, código ou marca...' class='busca-input'>
   </div>
   <div class='container'>
     <div class='vitrine' id='listaVitrine'>
@@ -126938,57 +126938,46 @@
       const vitrine = document.getElementById('listaVitrine');
       
       if (!produtos || produtos.length === 0) {
-        vitrine.innerHTML = '<div style="text-align:center;padding:50px;color:#666;font-size:18px;grid-column:1/-1;">🛍️ Nenhum produto disponível no momento!<br>Volte em breve!</div>';
+        vitrine.innerHTML = '<p style="text-align:center;padding:50px;">Nenhum produto disponível</p>';
         return;
       }
-
+      
       let html = '';
       
       produtos.forEach(produto => {
-        const codPeca = produto.id || '0000';
-        const descricao = produto.nome || 'Produto';
-        const tamanho = produto.tamanho || 'Único';
-        const preco = typeof produto.preco === 'string' ? parseFloat(produto.preco).toFixed(2).replace('.', ',') : (produto.preco || 0).toFixed(2).replace('.', ',');
-        const precoNumero = typeof produto.preco === 'string' ? parseFloat(produto.preco) : (produto.preco || 0);
+        const nome = produto.itemdesc || 'PRODUTO';
+        const codigo = produto.codpeca || '0000';
+        const tamanho = produto.tamanho || 'U';
+        const preco = produto.precosug || 0;
+        const marca = produto.marca || ''; // 🔥 PEGA A MARCA
         
-        let imagens = [];
-        if (produto.foto) {
-          imagens = produto.foto.split(';').filter(img => img.trim());
+        // 🔥 CRIA O data-busca COM NOME, CÓDIGO, TAMANHO E MARCA
+        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();
+        
+        let imagem = '';
+        if (produto.imagem && produto.imagem.length > 0) {
+          imagem = produto.imagem.split(';')[0];
         }
-
-        html += `<div class="card" data-busca="${descricao.toLowerCase()} tam: ${tamanho.toLowerCase()} ref: ${codPeca.toLowerCase()}" data-codigo="${codPeca}">`;
-        html += `  <div class="galeria" id="galeria-${codPeca}">`;
         
-        if (imagens.length > 0) {
-          imagens.forEach((img, i) => {
-            html += `<img src="${img.trim()}" alt="${descricao} - Foto ${i+1}" class="slide${i === 0 ? ' ativo' : ''}">`;
-          });
-          
-          if (imagens.length > 1) {
-            html += `<button class="seta anterior" onclick="mudarSlide('${codPeca}', -1)">❮</button>`;
-            html += `<button class="seta proximo" onclick="mudarSlide('${codPeca}', 1)">❯</button>`;
-            html += `<div class="indicadores" id="indicadores-${codPeca}">`;
-            imagens.forEach((_, i) => {
-              html += `<span class="dot${i === 0 ? ' ativo' : ''}" onclick="irParaSlide('${codPeca}', ${i})"></span>`;
-            });
-            html += `</div>`;
-            html += `<span class="contador-fotos">1/${imagens.length}</span>`;
-          }
+        // 🔥 ADICIONA O ATRIBUTO data-busca NO CARD
+        html += `<div class="produto-card" data-busca="${dadosBusca}">`;
+        html += `  <div class="produto-imagem">`;
+        if (imagem) {
+          html += `    <img src="${imagem}" alt="${nome}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23eee%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22 font-family=%22sans-serif%22%3ESem Foto%3C/text%3E%3C/svg%3E'">`;
         } else {
-          html += `<div class="sem-foto">Sem Foto</div>`;
+          html += `    <div style="background:#eee;height:200px;display:flex;align-items:center;justify-content:center;color:#999;">Sem Foto</div>`;
         }
-        
         html += `  </div>`;
-        html += `  <h3>${descricao}</h3>`;
-        html += `  <div class="info">Tamanho: ${tamanho}</div>`;
-        html += `  <div class="codigo-item">Código: ${codPeca}</div>`;
-        html += `  <div class="preco">R$ ${preco}</div>`;
-        html += `  <button class="btn-add-carrinho" onclick="adicionarAoCarrinho('${codPeca}', '${descricao.replace(/'/g, "\\'")}', ${precoNumero})">`;
-        html += `    🛒 Adicionar ao Carrinho`;
-        html += `  </button>`;
+        html += `  <div class="produto-info">`;
+        html += `    <h3>${nome}</h3>`;
+        html += `    <p>Tamanho: ${tamanho}</p>`;
+        html += `    <p>CÓDIGO: ${codigo}</p>`;
+        html += `    <p class="preco">R$ ${preco.toFixed(2).replace('.', ',')}</p>`;
+        html += `    <button onclick="adicionarAoCarrinho('${codigo}', '${nome.replace(/'/g, "\\'")}', ${preco})">ADICIONAR AO CARRINHO</button>`;
+        html += `  </div>`;
         html += `</div>`;
       });
-
+      
       vitrine.innerHTML = html;
     }
 
