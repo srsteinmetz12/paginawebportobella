@@ -523,7 +523,7 @@ public class GerarSiteEstoque {
             writer.println("        // 🔥 MODIFIQUE ESTA LINHA PARA INCLUIR A MARCA NO data-busca");
             writer.println("        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();");
             writer.println("        ");
-            writer.println("        html += `<div class=\"produto-card\" data-busca=\"${dadosBusca}\">`;");
+            writer.println("        html += `<div class=\"card\" data-busca=\"${dadosBusca}\">`;");
             writer.println("        html += `  <div class=\"produto-imagem\">`;");
             writer.println("        if (imagem) {");
             writer.println("          html += `    <img src=\"${imagem}\" alt=\"${nome}\" loading=\"lazy\" onerror=\"this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23eee%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2216%22 font-family=%22sans-serif%22%3ESem Foto%3C/text%3E%3C/svg%3E'\">`;");
