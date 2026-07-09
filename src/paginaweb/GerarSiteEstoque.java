@@ -1259,12 +1259,12 @@ public class GerarSiteEstoque {
     // MAIN PARA TESTE
     // ==========================================
     public static void main(String[] args) {
-        try {
-            GerarSiteEstoque gerador = new GerarSiteEstoque();
-            gerador.gerarSiteEstoque();
-        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
-            System.err.println("❌ Erro ao gerar site: " + e.getMessage());
-        }
+//        try {
+//            GerarSiteEstoque gerador = new GerarSiteEstoque();
+//            gerador.gerarSiteEstoque();
+//        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+//            System.err.println("❌ Erro ao gerar site: " + e.getMessage());
+//        }
     }
     
     private void enviarParaGitHub(String diretorioDocumentos) {
