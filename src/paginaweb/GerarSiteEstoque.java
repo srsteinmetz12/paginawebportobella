@@ -49,7 +49,7 @@ public class GerarSiteEstoque {
     // ==========================================
     public void gerarSiteEstoque() throws ClassNotFoundException, java.sql.SQLException, InterruptedException {
         con2 = ConnectionDB.getConnectionCloud();
-        sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
+        sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
         System.out.println("Gerando catálogo web premium: " + sql);
 
         String diretorioDocumentos = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
@@ -1199,9 +1199,9 @@ public class GerarSiteEstoque {
             writer.println("      }");
             writer.println("    });");
             writer.println("");
-            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
-            writer.println("      carregarProdutos();");
-            writer.println("    });");
+//            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
+//            writer.println("      carregarProdutos();");
+//            writer.println("    });");
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
             writer.println("      let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];");
