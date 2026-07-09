@@ -126949,17 +126949,16 @@
         const codigo = produto.codpeca || '0000';
         const tamanho = produto.tamanho || 'U';
         const preco = produto.precosug || 0;
-        const marca = produto.marca || ''; // 🔥 PEGA A MARCA
-        
-        // 🔥 CRIA O data-busca COM NOME, CÓDIGO, TAMANHO E MARCA
-        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();
+        const marca = produto.marca || ''; // 🔥 ADICIONE ESTA LINHA
         
         let imagem = '';
         if (produto.imagem && produto.imagem.length > 0) {
           imagem = produto.imagem.split(';')[0];
         }
         
-        // 🔥 ADICIONA O ATRIBUTO data-busca NO CARD
+        // 🔥 MODIFIQUE ESTA LINHA PARA INCLUIR A MARCA NO data-busca
+        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();
+        
         html += `<div class="produto-card" data-busca="${dadosBusca}">`;
         html += `  <div class="produto-imagem">`;
         if (imagem) {
