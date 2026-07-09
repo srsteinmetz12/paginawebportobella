@@ -201,32 +201,34 @@ public class PagamentoServer {
 
         private void registrarVendaCarrinho(String codPeca, double subtotal, double frete, double total,
                                             String endereco, String cep, String meio) {
-            Connection con = null;
-            PreparedStatement stmt = null;
-
-            try {
-                con = ConnectionDB.getConnectionCloud();
-                String sql = "INSERT INTO vendas (datavenda, codpeca, valor_subtotal, valor_frete, valor_total, endereco_entrega, cep, meio_pagamento, status_pagamento) VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'PENDENTE')";
-                stmt = con.prepareStatement(sql);
-                stmt.setString(1, codPeca);
-                stmt.setDouble(2, subtotal);
-                stmt.setDouble(3, frete);
-                stmt.setDouble(4, total);
-                stmt.setString(5, endereco);
-                stmt.setString(6, cep);
-                stmt.setString(7, meio);
-
-                int rows = stmt.executeUpdate();
-                if (rows > 0) {
-                    System.out.println("   ✅ Venda registrada no banco!");
-                }
-
-            } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
-            } finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-                try { if (con != null) con.close(); } catch (SQLException e) {}
-            }
+            
+            System.out.println("   ⚠️ registrarVendaCarrinho desabilitado");
+//            Connection con = null;
+//            PreparedStatement stmt = null;
+//
+//            try {
+//                con = ConnectionDB.getConnectionCloud();
+//                String sql = "INSERT INTO vendas (datavenda, codpeca, valor_subtotal, valor_frete, valor_total, endereco_entrega, cep, meio_pagamento, status_pagamento) VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'PENDENTE')";
+//                stmt = con.prepareStatement(sql);
+//                stmt.setString(1, codPeca);
+//                stmt.setDouble(2, subtotal);
+//                stmt.setDouble(3, frete);
+//                stmt.setDouble(4, total);
+//                stmt.setString(5, endereco);
+//                stmt.setString(6, cep);
+//                stmt.setString(7, meio);
+//
+//                int rows = stmt.executeUpdate();
+//                if (rows > 0) {
+//                    System.out.println("   ✅ Venda registrada no banco!");
+//                }
+//
+//            } catch (ClassNotFoundException | SQLException e) {
+//                System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+//            } finally {
+//                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//                try { if (con != null) con.close(); } catch (SQLException e) {}
+//            }
         }
     }
 
