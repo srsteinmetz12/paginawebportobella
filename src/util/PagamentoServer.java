@@ -1809,17 +1809,63 @@ public class PagamentoServer {
     // ==========================================
     // ATUALIZAR SITE (GERAR PÁGINAS HTML)
     // ==========================================
-    private static void atualizarSiteAsync() {
+        private static void atualizarSiteAsync() {
         new Thread(() -> {
             try {
-                System.out.println("   🌐 Atualizando site...");
-                GerarSiteEstoque.main(new String[0]);
-                System.out.println("   ✅ Site atualizado!");
-            } catch (Exception e) {
+                System.out.println("   🌐 Gerando e publicando site...");
+
+                // 🔥 1. Gerar o HTML
+                GerarSiteEstoque gerador = new GerarSiteEstoque();
+                gerador.gerarSiteEstoque();
+
+                // 🔥 2. Enviar para o GitHub
+                enviarParaGitHub();
+
+                System.out.println("   ✅ Site atualizado e publicado!");
+
+            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
                 System.err.println("   ❌ Erro ao atualizar site: " + e.getMessage());
             }
         }).start();
     }
+        
+        // ==========================================
+        // 🔥 ENVIAR HTML PARA O GITHUB
+        // ==========================================
+        private static void enviarParaGitHub() {
+            try {
+                String diretorio = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+                File pasta = new File(diretorio);
+
+                if (!pasta.exists()) {
+                    System.err.println("   ❌ Diretório não encontrado: " + diretorio);
+                    return;
+                }
+
+                System.out.println("   📤 Enviando para o GitHub...");
+
+                // 🔥 Comandos Git
+                String[] comandos = {
+                    "cmd.exe", "/c", 
+                    "cd /d " + diretorio + " && " +
+                    "git add index.html && " +
+                    "git commit -m \"Atualização automática - Venda confirmada\" && " +
+                    "git push origin main"
+                };
+
+                Process process = Runtime.getRuntime().exec(comandos);
+                int result = process.waitFor();
+
+                if (result == 0) {
+                    System.out.println("   ✅ Site publicado no GitHub!");
+                } else {
+                    System.err.println("   ❌ Erro ao publicar no GitHub. Código: " + result);
+                }
+
+            } catch (IOException | InterruptedException e) {
+                System.err.println("   ❌ Erro ao enviar para GitHub: " + e.getMessage());
+            }
+        }
 
     // ==========================================
     // MOSTRAR MENSAGEM NA BANDEJA (SYSTEM TRAY)
