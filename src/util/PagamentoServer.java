@@ -1704,7 +1704,6 @@ public class PagamentoServer {
 
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
-            e.printStackTrace();
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}

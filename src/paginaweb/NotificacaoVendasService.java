@@ -8,6 +8,10 @@ import connection.ConnectionDB;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -556,7 +560,7 @@ public class NotificacaoVendasService {
                     baixarEstoque(con, notif.itens);
 
                     // ==========================================
-                    // 🔥 6. ATUALIZAR O SITE (REGERAR HTML)
+                    // 6. ATUALIZAR O SITE (REGERAR HTML)
                     // ==========================================
                     atualizarSiteAsync();
 
@@ -565,6 +569,12 @@ public class NotificacaoVendasService {
                     moverParaHistoricoRejeitado(con, notif);
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
+
+                // ==========================================
+                // 🔥 7. ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
+                // ==========================================
+                enviarRespostaParaServidor(notif.id, notif.pedidoId, aprovado);
+
             }
 
         } catch (ClassNotFoundException | InterruptedException | SQLException e) {
@@ -576,6 +586,34 @@ public class NotificacaoVendasService {
         }
 
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
+    }
+    
+    // ==========================================
+    // 🔥 ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
+    // ==========================================
+    private static void enviarRespostaParaServidor(int id, String pedidoId, boolean aprovado) {
+        try {
+            String url = "https://paginawebportobella.onrender.com/api/pagamentos/responder";
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{\"id\":" + id + ",\"pedidoId\":\"" + pedidoId + "\",\"aprovado\":" + aprovado + "}";
+            OutputStream os = conn.getOutputStream();
+            os.write(json.getBytes());
+            os.flush();
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                System.out.println("   ✅ Resposta enviada para o servidor!");
+            } else {
+                System.err.println("   ❌ Servidor respondeu com código: " + responseCode);
+            }
+
+        } catch (IOException e) {
+            System.err.println("   ❌ Erro ao enviar resposta: " + e.getMessage());
+        }
     }
 
     // ==========================================
