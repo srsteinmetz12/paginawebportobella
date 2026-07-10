@@ -1022,7 +1022,6 @@ public class NotificacaoVendasService {
                 
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, codPeca);
-                stmt.setInt(2, quantidade);
                 stmt.setQueryTimeout(10);
                 int rows = stmt.executeUpdate();
                 
