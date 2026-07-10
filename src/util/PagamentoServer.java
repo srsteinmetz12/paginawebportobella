@@ -93,8 +93,8 @@ public class PagamentoServer {
         server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
         server.createContext("/api/pagamentos/consultar", new ConsultarNotificacoesHandler());
         server.createContext("/api/pagamentos/reservar-lote", new ReservarLoteHandler());
-        server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
-        server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
+//        server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
+//        server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
         server.createContext("/api/produtos", new ListarProdutosHandler());
         server.createContext("/api/pagamentos/verificar-disponibilidade", new VerificarDisponibilidadeHandler());
 
@@ -164,7 +164,7 @@ public class PagamentoServer {
                 System.out.println("   Endereço: " + endereco);
                 System.out.println("   Produto: " + nomeProduto);
 
-                registrarVendaCarrinho(codPeca, subtotal, frete, total, endereco, cep, meio);
+//                registrarVendaCarrinho(codPeca, subtotal, frete, total, endereco, cep, meio);
 
                 Map<String, Object> response = new HashMap<>();
 
@@ -199,16 +199,16 @@ public class PagamentoServer {
             }
         }
 
-        private void registrarVendaCarrinho(String codPeca, double subtotal, double frete, double total,
-                                            String endereco, String cep, String meio) {
-            
-            System.out.println("   ⚠️ registrarVendaCarrinho desabilitado");
+//        private void registrarVendaCarrinho(String codPeca, double subtotal, double frete, double total,
+//                                            String endereco, String cep, String meio) {
+//            
+//            System.out.println("   ⚠️ registrarVendaCarrinho desabilitado");
 //            Connection con = null;
 //            PreparedStatement stmt = null;
 //
 //            try {
 //                con = ConnectionDB.getConnectionCloud();
-//                String sql = "INSERT INTO vendas (datavenda, codpeca, valor_subtotal, valor_frete, valor_total, endereco_entrega, cep, meio_pagamento, status_pagamento) VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'PENDENTE')";
+//                String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpeca, nomecli, obsvendas, entrega, status) VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, 'RESERVADO')";
 //                stmt = con.prepareStatement(sql);
 //                stmt.setString(1, codPeca);
 //                stmt.setDouble(2, subtotal);
@@ -229,7 +229,7 @@ public class PagamentoServer {
 //                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
 //                try { if (con != null) con.close(); } catch (SQLException e) {}
 //            }
-        }
+//        }
     }
 
     // ==========================================
@@ -657,91 +657,91 @@ public class PagamentoServer {
     // ==========================================
     // HANDLER: LIBERAR RESERVA (REJEIÇÃO)
     // ==========================================
-    static class LiberarReservaHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+//    static class LiberarReservaHandler implements HttpHandler {
+//        @Override
+//        public void handle(HttpExchange exchange) throws IOException {
+//            addCorsHeaders(exchange);
+//            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+//            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+//
+//            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+//                exchange.sendResponseHeaders(204, -1);
+//                return;
+//            }
+//
+//            try {
+//                String body = new BufferedReader(
+//                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+//                        .lines().reduce("", (a, b) -> a + b);
+//
+//                JsonObject json = gson.fromJson(body, JsonObject.class);
+//                String codPeca = json.get("codPeca").getAsString();
+//                String pedidoId = json.get("pedidoId").getAsString();
+//
+//                boolean liberado = liberarReserva(codPeca, pedidoId);
+//
+//                Map<String, Object> response = new HashMap<>();
+//                response.put("success", liberado);
+//                response.put("mensagem", liberado ? "Reserva liberada! Item disponível novamente." : "Erro ao liberar reserva!");
+//
+//                sendResponse(exchange, 200, gson.toJson(response));
+//
+//            } catch (JsonSyntaxException | IOException e) {
+//                Map<String, Object> error = new HashMap<>();
+//                error.put("success", false);
+//                error.put("error", e.getMessage());
+//                sendResponse(exchange, 500, gson.toJson(error));
+//            }
+//        }
 
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
-                return;
-            }
-
-            try {
-                String body = new BufferedReader(
-                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                        .lines().reduce("", (a, b) -> a + b);
-
-                JsonObject json = gson.fromJson(body, JsonObject.class);
-                String codPeca = json.get("codPeca").getAsString();
-                String pedidoId = json.get("pedidoId").getAsString();
-
-                boolean liberado = liberarReserva(codPeca, pedidoId);
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", liberado);
-                response.put("mensagem", liberado ? "Reserva liberada! Item disponível novamente." : "Erro ao liberar reserva!");
-
-                sendResponse(exchange, 200, gson.toJson(response));
-
-            } catch (JsonSyntaxException | IOException e) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("success", false);
-                error.put("error", e.getMessage());
-                sendResponse(exchange, 500, gson.toJson(error));
-            }
-        }
-
-        private boolean liberarReserva(String codPeca, String pedidoId) {
-            Connection con = null;
-            PreparedStatement stmt = null;
-
-            try {
-                con = ConnectionDB.getConnectionCloud();
-                con.setAutoCommit(false);
-
-                String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
-                stmt = con.prepareStatement(sqlCheck);
-                stmt.setString(1, codPeca);
-                stmt.setString(2, pedidoId);
-                stmt.setQueryTimeout(10);
-                ResultSet rs = stmt.executeQuery();
-
-                if (!rs.next()) {
-                    con.rollback();
-                    return false;
-                }
-
-                int quantidade = rs.getInt("quantidade");
-
-                String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
-                stmt = con.prepareStatement(sqlUpdate);
-                stmt.setInt(1, quantidade);
-                stmt.setString(2, codPeca);
-                stmt.executeUpdate();
-
-                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
-                stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, codPeca);
-                stmt.setString(2, pedidoId);
-                stmt.executeUpdate();
-
-                con.commit();
-                System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " (Pedido: " + pedidoId + ") → DISPONIVEL");
-                return true;
-
-            } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("❌ [RESERVA] Erro ao liberar: " + e.getMessage());
-                try { if (con != null) con.rollback(); } catch (SQLException ex) {}
-                return false;
-            } finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
-            }
-        }
-    }
+//        private boolean liberarReserva(String codPeca, String pedidoId) {
+//            Connection con = null;
+//            PreparedStatement stmt = null;
+//
+//            try {
+//                con = ConnectionDB.getConnectionCloud();
+//                con.setAutoCommit(false);
+//
+//                String sqlCheck = "SELECT quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO' FOR UPDATE";
+//                stmt = con.prepareStatement(sqlCheck);
+//                stmt.setString(1, codPeca);
+//                stmt.setString(2, pedidoId);
+//                stmt.setQueryTimeout(10);
+//                ResultSet rs = stmt.executeQuery();
+//
+//                if (!rs.next()) {
+//                    con.rollback();
+//                    return false;
+//                }
+//
+//                int quantidade = rs.getInt("quantidade");
+//
+//                String sqlUpdate = "UPDATE estoque SET quantidade = quantidade + ?, status = 'DISPONIVEL' WHERE codpeca = ?";
+//                stmt = con.prepareStatement(sqlUpdate);
+//                stmt.setInt(1, quantidade);
+//                stmt.setString(2, codPeca);
+//                stmt.executeUpdate();
+//
+//                String sqlReserva = "UPDATE reservas SET status = 'CANCELADO', data_cancelamento = NOW() WHERE cod_peca = ? AND pedido_id = ?";
+//                stmt = con.prepareStatement(sqlReserva);
+//                stmt.setString(1, codPeca);
+//                stmt.setString(2, pedidoId);
+//                stmt.executeUpdate();
+//
+//                con.commit();
+//                System.out.println("✅ [RESERVA] Reserva liberada: " + codPeca + " (Pedido: " + pedidoId + ") → DISPONIVEL");
+//                return true;
+//
+//            } catch (ClassNotFoundException | SQLException e) {
+//                System.err.println("❌ [RESERVA] Erro ao liberar: " + e.getMessage());
+//                try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+//                return false;
+//            } finally {
+//                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+//            }
+//        }
+//    }
 
     // ==========================================
     // HANDLER: NOTIFICAR SISTEMA DESKTOP
@@ -921,94 +921,94 @@ public class PagamentoServer {
     // ==========================================
     // HANDLER: RESPONDER NOTIFICAÇÃO
     // ==========================================
-    static class ResponderNotificacaoHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
-
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
-                return;
-            }
-
-            try {
-                String body = new BufferedReader(
-                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                        .lines().reduce("", (a, b) -> a + b);
-
-                System.out.println("📥 Resposta recebida: " + body);
-
-                JsonObject json = gson.fromJson(body, JsonObject.class);
-                int id = json.get("id").getAsInt();
-                String pedidoId = json.get("pedidoId").getAsString();
-                boolean aprovado = json.get("aprovado").getAsBoolean();
-
-                Notificacao notif = buscarNotificacaoPorId(id);
-
-                if (notif != null) {
-                    responderNotificacao(notif, aprovado);
-                }
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("mensagem", "Resposta registrada com sucesso!");
-
-                sendResponse(exchange, 200, gson.toJson(response));
-
-            } catch (JsonSyntaxException | IOException e) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("success", false);
-                error.put("error", e.getMessage());
-                sendResponse(exchange, 500, gson.toJson(error));
-            }
-        }
-
-        private Notificacao buscarNotificacaoPorId(int id) {
-            Connection con = null;
-            PreparedStatement stmt = null;
-            ResultSet rs = null;
-
-            try {
-                con = ConnectionDB.getConnectionCloud();
-
-                String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                        "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
-                        "FROM notificacoes_pendentes WHERE id = ?";
-
-                stmt = con.prepareStatement(sql);
-                stmt.setInt(1, id);
-                stmt.setQueryTimeout(10);
-                rs = stmt.executeQuery();
-
-                if (rs.next()) {
-                    return new Notificacao(
-                            rs.getInt("id"),
-                            rs.getString("pedido_id"),
-                            rs.getString("cod_peca"),
-                            rs.getString("cliente"),
-                            rs.getString("telefone"),
-                            rs.getDouble("valor"),
-                            rs.getString("meio_pagamento"),
-                            rs.getBoolean("retirar_loja"),
-                            rs.getString("endereco"),
-                            rs.getString("data_criacao"),
-                            rs.getString("itens")
-                    );
-                }
-
-            } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("❌ Erro ao buscar notificação: " + e.getMessage());
-            } finally {
-                try { if (rs != null) rs.close(); } catch (SQLException e) {}
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-                try { if (con != null) con.close(); } catch (SQLException e) {}
-            }
-
-            return null;
-        }
-    }
+//    static class ResponderNotificacaoHandler implements HttpHandler {
+//        @Override
+//        public void handle(HttpExchange exchange) throws IOException {
+//            addCorsHeaders(exchange);
+//            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+//            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+//
+//            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+//                exchange.sendResponseHeaders(204, -1);
+//                return;
+//            }
+//
+//            try {
+//                String body = new BufferedReader(
+//                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+//                        .lines().reduce("", (a, b) -> a + b);
+//
+//                System.out.println("📥 Resposta recebida: " + body);
+//
+//                JsonObject json = gson.fromJson(body, JsonObject.class);
+//                int id = json.get("id").getAsInt();
+//                String pedidoId = json.get("pedidoId").getAsString();
+//                boolean aprovado = json.get("aprovado").getAsBoolean();
+//
+//                Notificacao notif = buscarNotificacaoPorId(id);
+//
+//                if (notif != null) {
+//                    responderNotificacao(notif, aprovado);
+//                }
+//
+//                Map<String, Object> response = new HashMap<>();
+//                response.put("success", true);
+//                response.put("mensagem", "Resposta registrada com sucesso!");
+//
+//                sendResponse(exchange, 200, gson.toJson(response));
+//
+//            } catch (JsonSyntaxException | IOException e) {
+//                Map<String, Object> error = new HashMap<>();
+//                error.put("success", false);
+//                error.put("error", e.getMessage());
+//                sendResponse(exchange, 500, gson.toJson(error));
+//            }
+//        }
+//
+//        private Notificacao buscarNotificacaoPorId(int id) {
+//            Connection con = null;
+//            PreparedStatement stmt = null;
+//            ResultSet rs = null;
+//
+//            try {
+//                con = ConnectionDB.getConnectionCloud();
+//
+//                String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
+//                        "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
+//                        "FROM notificacoes_pendentes WHERE id = ?";
+//
+//                stmt = con.prepareStatement(sql);
+//                stmt.setInt(1, id);
+//                stmt.setQueryTimeout(10);
+//                rs = stmt.executeQuery();
+//
+//                if (rs.next()) {
+//                    return new Notificacao(
+//                            rs.getInt("id"),
+//                            rs.getString("pedido_id"),
+//                            rs.getString("cod_peca"),
+//                            rs.getString("cliente"),
+//                            rs.getString("telefone"),
+//                            rs.getDouble("valor"),
+//                            rs.getString("meio_pagamento"),
+//                            rs.getBoolean("retirar_loja"),
+//                            rs.getString("endereco"),
+//                            rs.getString("data_criacao"),
+//                            rs.getString("itens")
+//                    );
+//                }
+//
+//            } catch (ClassNotFoundException | SQLException e) {
+//                System.err.println("❌ Erro ao buscar notificação: " + e.getMessage());
+//            } finally {
+//                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+//                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//                try { if (con != null) con.close(); } catch (SQLException e) {}
+//            }
+//
+//            return null;
+//        }
+//    }
 
     // ==========================================
     // HANDLER: CRIAR PAGAMENTO
@@ -1292,7 +1292,7 @@ public class PagamentoServer {
     // ==========================================
     // PROCESSAR RESPOSTA DA NOTIFICAÇÃO
     // ==========================================
-    private static void responderNotificacao(Notificacao notif, boolean aprovado) {
+//    private static void responderNotificacao(Notificacao notif, boolean aprovado) {
 //        System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
 //        System.out.println("   📦 notif.id: " + notif.id);
 //        System.out.println("   📦 notif.codPeca: '" + notif.codPeca + "'");
@@ -1389,102 +1389,102 @@ public class PagamentoServer {
 //        }
 //
 //        System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
-    }
+//    }
     
     // ==========================================
     // REMOVER NOTIFICAÇÃO (CORRIGIDO)
     // ==========================================
-    private static void removerNotificacao(Connection con, int id) {
-        PreparedStatement stmt = null;
-
-        try {
-            String sql = "DELETE FROM notificacoes_pendentes WHERE id = ?";
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, id);
-            stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
-            
-            System.out.println("   ✅ Notificação removida: " + rows + " linha(s)");
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao remover notificação: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static void removerNotificacao(Connection con, int id) {
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            String sql = "DELETE FROM notificacoes_pendentes WHERE id = ?";
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, id);
+//            stmt.setQueryTimeout(10);
+//            int rows = stmt.executeUpdate();
+//            
+//            System.out.println("   ✅ Notificação removida: " + rows + " linha(s)");
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao remover notificação: " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // ✅ CONFIRMAR RESERVA (VENDIDO)
     // ==========================================
-    private static boolean confirmarReservaCompleta(Connection con, String codPeca, String pedidoId) {
-        System.out.println("🔍 [CONFIRMAR_RESERVA] Iniciando...");
-        System.out.println("   📦 codPeca: '" + codPeca + "'");
-        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
-
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        boolean sucesso = true;
-
-        try {
-            String[] codigos = codPeca.split(",");
-            
-            for (String cod : codigos) {
-                cod = cod.trim();
-                System.out.println("   🔄 Processando item: '" + cod + "'");
-
-                // 1. VERIFICAR se existe reserva
-                String sqlCheck = "SELECT id, quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO'";
-                stmt = con.prepareStatement(sqlCheck);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
-                stmt.setQueryTimeout(10);
-                rs = stmt.executeQuery();
-                
-                if (!rs.next()) {
-                    System.err.println("   ❌ Reserva não encontrada para: " + cod);
-                    sucesso = false;
-                    continue;
-                }
-                
-                int reservaId = rs.getInt("id");
-                int quantidade = rs.getInt("quantidade");
-                System.out.println("   📝 Reserva encontrada: ID=" + reservaId + ", QTD=" + quantidade);
-                
-                try { rs.close(); } catch (SQLException e) {}
-
-                // 2. ATUALIZAR ESTOQUE para VENDIDO
-                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
-                stmt = con.prepareStatement(sqlEstoque);
-                stmt.setString(1, cod);
-                int rowsEstoque = stmt.executeUpdate();
-                System.out.println("   📝 Estoque atualizado: " + rowsEstoque + " linha(s) -> VENDIDO");
-
-                // 3. ATUALIZAR reserva para CONFIRMADO
-                String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE id = ?";
-                stmt = con.prepareStatement(sqlReserva);
-                stmt.setInt(1, reservaId);
-                int rowsReserva = stmt.executeUpdate();
-                System.out.println("   📝 Reserva atualizada: " + rowsReserva + " linha(s) -> CONFIRMADO");
-
-                // 4. REMOVER da tabela reservas
-                String sqlDelete = "DELETE FROM reservas WHERE id = ?";
-                stmt = con.prepareStatement(sqlDelete);
-                stmt.setInt(1, reservaId);
-                int rowsDelete = stmt.executeUpdate();
-                System.out.println("   📝 Reserva removida: " + rowsDelete + " linha(s)");
-            }
-
-            System.out.println("✅ [CONFIRMAR_RESERVA] Finalizado com sucesso=" + sucesso);
-            return sucesso;
-
-        } catch (SQLException e) {
-            System.err.println("❌ [CONFIRMAR_RESERVA] Erro: " + e.getMessage());
-            return false;
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException e) {}
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static boolean confirmarReservaCompleta(Connection con, String codPeca, String pedidoId) {
+//        System.out.println("🔍 [CONFIRMAR_RESERVA] Iniciando...");
+//        System.out.println("   📦 codPeca: '" + codPeca + "'");
+//        System.out.println("   📦 pedidoId: '" + pedidoId + "'");
+//
+//        PreparedStatement stmt = null;
+//        ResultSet rs = null;
+//        boolean sucesso = true;
+//
+//        try {
+//            String[] codigos = codPeca.split(",");
+//            
+//            for (String cod : codigos) {
+//                cod = cod.trim();
+//                System.out.println("   🔄 Processando item: '" + cod + "'");
+//
+//                // 1. VERIFICAR se existe reserva
+//                String sqlCheck = "SELECT id, quantidade FROM reservas WHERE cod_peca = ? AND pedido_id = ? AND status = 'RESERVADO'";
+//                stmt = con.prepareStatement(sqlCheck);
+//                stmt.setString(1, cod);
+//                stmt.setString(2, pedidoId);
+//                stmt.setQueryTimeout(10);
+//                rs = stmt.executeQuery();
+//                
+//                if (!rs.next()) {
+//                    System.err.println("   ❌ Reserva não encontrada para: " + cod);
+//                    sucesso = false;
+//                    continue;
+//                }
+//                
+//                int reservaId = rs.getInt("id");
+//                int quantidade = rs.getInt("quantidade");
+//                System.out.println("   📝 Reserva encontrada: ID=" + reservaId + ", QTD=" + quantidade);
+//                
+//                try { rs.close(); } catch (SQLException e) {}
+//
+//                // 2. ATUALIZAR ESTOQUE para VENDIDO
+//                String sqlEstoque = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
+//                stmt = con.prepareStatement(sqlEstoque);
+//                stmt.setString(1, cod);
+//                int rowsEstoque = stmt.executeUpdate();
+//                System.out.println("   📝 Estoque atualizado: " + rowsEstoque + " linha(s) -> VENDIDO");
+//
+//                // 3. ATUALIZAR reserva para CONFIRMADO
+//                String sqlReserva = "UPDATE reservas SET status = 'CONFIRMADO', data_confirmacao = NOW() WHERE id = ?";
+//                stmt = con.prepareStatement(sqlReserva);
+//                stmt.setInt(1, reservaId);
+//                int rowsReserva = stmt.executeUpdate();
+//                System.out.println("   📝 Reserva atualizada: " + rowsReserva + " linha(s) -> CONFIRMADO");
+//
+//                // 4. REMOVER da tabela reservas
+//                String sqlDelete = "DELETE FROM reservas WHERE id = ?";
+//                stmt = con.prepareStatement(sqlDelete);
+//                stmt.setInt(1, reservaId);
+//                int rowsDelete = stmt.executeUpdate();
+//                System.out.println("   📝 Reserva removida: " + rowsDelete + " linha(s)");
+//            }
+//
+//            System.out.println("✅ [CONFIRMAR_RESERVA] Finalizado com sucesso=" + sucesso);
+//            return sucesso;
+//
+//        } catch (SQLException e) {
+//            System.err.println("❌ [CONFIRMAR_RESERVA] Erro: " + e.getMessage());
+//            return false;
+//        } finally {
+//            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // ❌ LIBERAR RESERVA COMPLETA (CORRIGIDO)
@@ -1563,369 +1563,369 @@ public class PagamentoServer {
     // ==========================================
     // MOVER PARA HISTÓRICO (CONFIRMADO)
     // ==========================================
-    private static void moverParaHistoricoCompleto(Connection con, Notificacao notif, String status) {
-        PreparedStatement stmt = null;
-
-        try {
-            String sql = "INSERT INTO notificacoes_historico " +
-                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao, cod_pecas) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, notif.id);
-            stmt.setString(2, notif.pedidoId);
-            stmt.setString(3, notif.codPeca);
-            stmt.setString(4, notif.cliente);
-            stmt.setString(5, notif.telefone);
-            stmt.setDouble(6, notif.valor);
-            stmt.setString(7, notif.meioPagamento);
-            stmt.setString(8, notif.endereco);
-            stmt.setBoolean(9, notif.retirarLoja);
-            stmt.setString(10, notif.itens);
-            stmt.setString(11, status);
-            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
-            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
-            stmt.setString(14, notif.codPeca);
-            stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
-            
-            System.out.println("   ✅ Movido para histórico: " + rows + " linha(s) -> " + status);
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static void moverParaHistoricoCompleto(Connection con, Notificacao notif, String status) {
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            String sql = "INSERT INTO notificacoes_historico " +
+//                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+//                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao, cod_pecas) " +
+//                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, notif.id);
+//            stmt.setString(2, notif.pedidoId);
+//            stmt.setString(3, notif.codPeca);
+//            stmt.setString(4, notif.cliente);
+//            stmt.setString(5, notif.telefone);
+//            stmt.setDouble(6, notif.valor);
+//            stmt.setString(7, notif.meioPagamento);
+//            stmt.setString(8, notif.endereco);
+//            stmt.setBoolean(9, notif.retirarLoja);
+//            stmt.setString(10, notif.itens);
+//            stmt.setString(11, status);
+//            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
+//            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
+//            stmt.setString(14, notif.codPeca);
+//            stmt.setQueryTimeout(10);
+//            int rows = stmt.executeUpdate();
+//            
+//            System.out.println("   ✅ Movido para histórico: " + rows + " linha(s) -> " + status);
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao mover para histórico: " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // MOVER PARA HISTÓRICO (REJEITADO)
     // ==========================================
-    private static void moverParaHistoricoRejeitado(Connection con, Notificacao notif) {
-        PreparedStatement stmt = null;
-
-        try {
-            String sql = "INSERT INTO notificacoes_historico " +
-                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, notif.id);
-            stmt.setString(2, notif.pedidoId);
-            stmt.setString(3, notif.codPeca);
-            stmt.setString(4, notif.cliente);
-            stmt.setString(5, notif.telefone);
-            stmt.setDouble(6, notif.valor);
-            stmt.setString(7, notif.meioPagamento);
-            stmt.setString(8, notif.endereco);
-            stmt.setBoolean(9, notif.retirarLoja);
-            stmt.setString(10, notif.itens);
-            stmt.setString(11, "REJEITADO");
-            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
-            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
-
-            stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-
-            System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static void moverParaHistoricoRejeitado(Connection con, Notificacao notif) {
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            String sql = "INSERT INTO notificacoes_historico " +
+//                    "(notificacao_id, pedido_id, cod_peca, cliente, telefone, valor, " +
+//                    "meio_pagamento, endereco, retirar_loja, itens, status, data_criacao, data_confirmacao) " +
+//                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, notif.id);
+//            stmt.setString(2, notif.pedidoId);
+//            stmt.setString(3, notif.codPeca);
+//            stmt.setString(4, notif.cliente);
+//            stmt.setString(5, notif.telefone);
+//            stmt.setDouble(6, notif.valor);
+//            stmt.setString(7, notif.meioPagamento);
+//            stmt.setString(8, notif.endereco);
+//            stmt.setBoolean(9, notif.retirarLoja);
+//            stmt.setString(10, notif.itens);
+//            stmt.setString(11, "REJEITADO");
+//            stmt.setTimestamp(12, new java.sql.Timestamp(System.currentTimeMillis()));
+//            stmt.setTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis()));
+//
+//            stmt.setQueryTimeout(10);
+//            stmt.executeUpdate();
+//
+//            System.out.println("   ✅ Movido para histórico (REJEITADO): " + notif.pedidoId);
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao mover para histórico (rejeitado): " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // REGISTRAR VENDA
     // ==========================================
-    private static int registrarVendaCompleta(Connection con, Notificacao notif) {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        int idVenda = 0;
-
-        try {
-            String sqlMaxId = "SELECT MAX(id) FROM vendas";
-            stmt = con.prepareStatement(sqlMaxId);
-            stmt.setQueryTimeout(10);
-            rs = stmt.executeQuery();
-
-            int proximoId = 1;
-            if (rs.next()) {
-                proximoId = rs.getInt(1) + 1;
-            }
-            try { rs.close(); } catch (SQLException e) {}
-
-            String obsVendas = "Pedido: " + notif.pedidoId;
-            if (notif.endereco != null && !notif.endereco.isEmpty() && !notif.retirarLoja) {
-                String enderecoResumido = notif.endereco;
-                int espacoRestante = 50 - obsVendas.length() - 3;
-                if (espacoRestante > 0 && enderecoResumido.length() > espacoRestante) {
-                    enderecoResumido = enderecoResumido.substring(0, espacoRestante) + "...";
-                } else if (espacoRestante <= 0) {
-                    enderecoResumido = "";
-                }
-                if (!enderecoResumido.isEmpty()) {
-                    obsVendas += " | " + enderecoResumido;
-                }
-            }
-            if (obsVendas.length() > 50) {
-                obsVendas = obsVendas.substring(0, 47) + "...";
-            }
-
-            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
-
-            // 🔥 CORRIGIDO: USANDO NOW() NO LUGAR DE CURDATE()
-            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
-                    "VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, proximoId);                    // id
-            stmt.setString(2, notif.pedidoId);            // pedido_id
-            // 🔥 NOW() é o 3º placeholder, não precisa setar
-            stmt.setString(3, "SITE");                    // origemvenda
-            stmt.setString(4, notif.meioPagamento);       // tipopag
-            stmt.setString(5, valorFormatado);            // valorvenda
-            stmt.setString(6, notif.codPeca);             // codpecas
-            stmt.setString(7, notif.cliente);             // nomecli
-            stmt.setString(8, obsVendas);                 // obsvendas
-            stmt.setString(9, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA"); // entrega
-            stmt.setString(10, "EM_SEPARACAO");           // status
-
-            stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
-
-            if (rows > 0) {
-                idVenda = proximoId;
-                System.out.println("   ✅ Venda registrada (ID: " + idVenda + ")");
-            }
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException e) {}
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-
-        return idVenda;
-    }
+//    private static int registrarVendaCompleta(Connection con, Notificacao notif) {
+//        PreparedStatement stmt = null;
+//        ResultSet rs = null;
+//        int idVenda = 0;
+//
+//        try {
+//            String sqlMaxId = "SELECT MAX(id) FROM vendas";
+//            stmt = con.prepareStatement(sqlMaxId);
+//            stmt.setQueryTimeout(10);
+//            rs = stmt.executeQuery();
+//
+//            int proximoId = 1;
+//            if (rs.next()) {
+//                proximoId = rs.getInt(1) + 1;
+//            }
+//            try { rs.close(); } catch (SQLException e) {}
+//
+//            String obsVendas = "Pedido: " + notif.pedidoId;
+//            if (notif.endereco != null && !notif.endereco.isEmpty() && !notif.retirarLoja) {
+//                String enderecoResumido = notif.endereco;
+//                int espacoRestante = 50 - obsVendas.length() - 3;
+//                if (espacoRestante > 0 && enderecoResumido.length() > espacoRestante) {
+//                    enderecoResumido = enderecoResumido.substring(0, espacoRestante) + "...";
+//                } else if (espacoRestante <= 0) {
+//                    enderecoResumido = "";
+//                }
+//                if (!enderecoResumido.isEmpty()) {
+//                    obsVendas += " | " + enderecoResumido;
+//                }
+//            }
+//            if (obsVendas.length() > 50) {
+//                obsVendas = obsVendas.substring(0, 47) + "...";
+//            }
+//
+//            String valorFormatado = String.format("%.2f", notif.valor).replace(".", ",");
+//
+//            // 🔥 CORRIGIDO: USANDO NOW() NO LUGAR DE CURDATE()
+//            String sql = "INSERT INTO vendas (id, pedido_id, datavenda, origemvenda, tipopag, valorvenda, codpecas, nomecli, obsvendas, entrega, status) " +
+//                    "VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)";
+//
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, proximoId);                    // id
+//            stmt.setString(2, notif.pedidoId);            // pedido_id
+//            // 🔥 NOW() é o 3º placeholder, não precisa setar
+//            stmt.setString(3, "SITE");                    // origemvenda
+//            stmt.setString(4, notif.meioPagamento);       // tipopag
+//            stmt.setString(5, valorFormatado);            // valorvenda
+//            stmt.setString(6, notif.codPeca);             // codpecas
+//            stmt.setString(7, notif.cliente);             // nomecli
+//            stmt.setString(8, obsVendas);                 // obsvendas
+//            stmt.setString(9, notif.retirarLoja ? "RETIRADA NA LOJA" : "ENTREGA"); // entrega
+//            stmt.setString(10, "EM_SEPARACAO");           // status
+//
+//            stmt.setQueryTimeout(10);
+//            int rows = stmt.executeUpdate();
+//
+//            if (rows > 0) {
+//                idVenda = proximoId;
+//                System.out.println("   ✅ Venda registrada (ID: " + idVenda + ")");
+//            }
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao registrar venda: " + e.getMessage());
+//        } finally {
+//            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//
+//        return idVenda;
+//    }
 
     // ==========================================
     // BUSCAR PRÓXIMO ID DA VENDA
     // ==========================================
-    private static int getProximoIdVenda(Connection con) {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        int proximoId = 1;
-
-        try {
-            String sql = "SELECT MAX(id) FROM vendas";
-            stmt = con.prepareStatement(sql);
-            stmt.setQueryTimeout(10);
-            rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                int maxId = rs.getInt(1);
-                proximoId = maxId + 1;
-            }
-
-        } catch (SQLException e) {
-            System.err.println("⚠️ Erro ao buscar próximo ID: " + e.getMessage());
-            proximoId = (int) (System.currentTimeMillis() / 1000);
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException e) {}
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-
-        return proximoId;
-    }
+//    private static int getProximoIdVenda(Connection con) {
+//        PreparedStatement stmt = null;
+//        ResultSet rs = null;
+//        int proximoId = 1;
+//
+//        try {
+//            String sql = "SELECT MAX(id) FROM vendas";
+//            stmt = con.prepareStatement(sql);
+//            stmt.setQueryTimeout(10);
+//            rs = stmt.executeQuery();
+//
+//            if (rs.next()) {
+//                int maxId = rs.getInt(1);
+//                proximoId = maxId + 1;
+//            }
+//
+//        } catch (SQLException e) {
+//            System.err.println("⚠️ Erro ao buscar próximo ID: " + e.getMessage());
+//            proximoId = (int) (System.currentTimeMillis() / 1000);
+//        } finally {
+//            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//
+//        return proximoId;
+//    }
 
     // ==========================================
     // REGISTRAR SACOLA (continuação)
     // ==========================================
-    private static void registrarSacolaCompleta(Connection con, Notificacao notif, int idVenda) {
-        PreparedStatement stmt = null;
-
-        try {
-            double valorFormatado = Double.parseDouble(String.format("%.2f", notif.valor).replace(",", "."));
-
-            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
-                    "VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?)";
-
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, idVenda);
-            stmt.setString(2, notif.pedidoId);
-            stmt.setDouble(3, valorFormatado);
-            stmt.setString(4, "EM_SEPARACAO");
-            stmt.setString(5, notif.codPeca);
-            stmt.setString(6, notif.cliente);
-            stmt.setString(7, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
-            stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
-            
-            System.out.println("   ✅ Sacola registrada: " + rows + " linha(s)");
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static void registrarSacolaCompleta(Connection con, Notificacao notif, int idVenda) {
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            double valorFormatado = Double.parseDouble(String.format("%.2f", notif.valor).replace(",", "."));
+//
+//            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
+//                    "VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?)";
+//
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, idVenda);
+//            stmt.setString(2, notif.pedidoId);
+//            stmt.setDouble(3, valorFormatado);
+//            stmt.setString(4, "EM_SEPARACAO");
+//            stmt.setString(5, notif.codPeca);
+//            stmt.setString(6, notif.cliente);
+//            stmt.setString(7, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+//            stmt.setQueryTimeout(10);
+//            int rows = stmt.executeUpdate();
+//            
+//            System.out.println("   ✅ Sacola registrada: " + rows + " linha(s)");
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao registrar sacola: " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // REGISTRAR ENTREGA
     // ==========================================
-    private static void registrarEntregaCompleta(Connection con, Notificacao notif, int idVenda) {
-        PreparedStatement stmt = null;
-
-        try {
-            if (notif.retirarLoja) {
-                return;
-            }
-
-            String sql = "INSERT INTO entregas (idvenda, pedido_id, endereco, status, data_criacao) " +
-                    "VALUES (?, ?, ?, ?, ?)";
-
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, idVenda);
-            stmt.setString(2, notif.pedidoId);
-            stmt.setString(3, notif.endereco);
-            stmt.setString(4, "PENDENTE");
-            stmt.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
-            stmt.setQueryTimeout(10);
-            stmt.executeUpdate();
-
-            System.out.println("   ✅ Entrega registrada (ID_Venda: " + idVenda + ")");
-
-        } catch (SQLException e) {
-            System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-        }
-    }
+//    private static void registrarEntregaCompleta(Connection con, Notificacao notif, int idVenda) {
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            if (notif.retirarLoja) {
+//                return;
+//            }
+//
+//            String sql = "INSERT INTO entregas (idvenda, pedido_id, endereco, status, data_criacao) " +
+//                    "VALUES (?, ?, ?, ?, ?)";
+//
+//            stmt = con.prepareStatement(sql);
+//            stmt.setInt(1, idVenda);
+//            stmt.setString(2, notif.pedidoId);
+//            stmt.setString(3, notif.endereco);
+//            stmt.setString(4, "PENDENTE");
+//            stmt.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
+//            stmt.setQueryTimeout(10);
+//            stmt.executeUpdate();
+//
+//            System.out.println("   ✅ Entrega registrada (ID_Venda: " + idVenda + ")");
+//
+//        } catch (SQLException e) {
+//            System.err.println("   ❌ Erro ao registrar entrega: " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//        }
+//    }
 
     // ==========================================
     // ATUALIZAR SITE (GERAR PÁGINAS HTML)
     // ==========================================
-        private static void atualizarSiteAsync() {
-        new Thread(() -> {
-            try {
-                System.out.println("   🌐 Gerando e publicando site...");
-
-                // 🔥 1. Gerar o HTML
-                GerarSiteEstoque gerador = new GerarSiteEstoque();
-                gerador.gerarSiteEstoque();
-
-                // 🔥 2. Enviar para o GitHub
-                enviarParaGitHub();
-
-                System.out.println("   ✅ Site atualizado e publicado!");
-
-            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
-                System.err.println("   ❌ Erro ao atualizar site: " + e.getMessage());
-            }
-        }).start();
-    }
+//    private static void atualizarSiteAsync() {
+//        new Thread(() -> {
+//            try {
+//                System.out.println("   🌐 Gerando e publicando site...");
+//
+//                // 🔥 1. Gerar o HTML
+//                GerarSiteEstoque gerador = new GerarSiteEstoque();
+//                gerador.gerarSiteEstoque();
+//
+//                // 🔥 2. Enviar para o GitHub
+//                enviarParaGitHub();
+//
+//                System.out.println("   ✅ Site atualizado e publicado!");
+//
+//            } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+//                System.err.println("   ❌ Erro ao atualizar site: " + e.getMessage());
+//            }
+//        }).start();
+//    }
         
         // ==========================================
         // 🔥 ENVIAR HTML PARA O GITHUB
         // ==========================================
-        private static void enviarParaGitHub() {
-            try {
-                String diretorio = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
-                File pasta = new File(diretorio);
-
-                if (!pasta.exists()) {
-                    System.err.println("   ❌ Diretório não encontrado: " + diretorio);
-                    return;
-                }
-
-                System.out.println("   📤 Enviando para o GitHub...");
-
-                // 🔥 Comandos Git
-                String[] comandos = {
-                    "cmd.exe", "/c", 
-                    "cd /d " + diretorio + " && " +
-                    "git add index.html && " +
-                    "git commit -m \"Atualização automática - Venda confirmada\" && " +
-                    "git push origin main"
-                };
-
-                Process process = Runtime.getRuntime().exec(comandos);
-                int result = process.waitFor();
-
-                if (result == 0) {
-                    System.out.println("   ✅ Site publicado no GitHub!");
-                } else {
-                    System.err.println("   ❌ Erro ao publicar no GitHub. Código: " + result);
-                }
-
-            } catch (IOException | InterruptedException e) {
-                System.err.println("   ❌ Erro ao enviar para GitHub: " + e.getMessage());
-            }
-        }
+//        private static void enviarParaGitHub() {
+//            try {
+//                String diretorio = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+//                File pasta = new File(diretorio);
+//
+//                if (!pasta.exists()) {
+//                    System.err.println("   ❌ Diretório não encontrado: " + diretorio);
+//                    return;
+//                }
+//
+//                System.out.println("   📤 Enviando para o GitHub...");
+//
+//                // 🔥 Comandos Git
+//                String[] comandos = {
+//                    "cmd.exe", "/c", 
+//                    "cd /d " + diretorio + " && " +
+//                    "git add index.html && " +
+//                    "git commit -m \"Atualização automática - Venda confirmada\" && " +
+//                    "git push origin main"
+//                };
+//
+//                Process process = Runtime.getRuntime().exec(comandos);
+//                int result = process.waitFor();
+//
+//                if (result == 0) {
+//                    System.out.println("   ✅ Site publicado no GitHub!");
+//                } else {
+//                    System.err.println("   ❌ Erro ao publicar no GitHub. Código: " + result);
+//                }
+//
+//            } catch (IOException | InterruptedException e) {
+//                System.err.println("   ❌ Erro ao enviar para GitHub: " + e.getMessage());
+//            }
+//        }
 
     // ==========================================
     // MOSTRAR MENSAGEM NA BANDEJA (SYSTEM TRAY)
     // ==========================================
-    private static void mostrarMensagemTray(String titulo, String mensagem) {
-        try {
-            if (!SystemTray.isSupported()) {
-                System.out.println("   ⚠️ System Tray não suportado");
-                return;
-            }
-
-            // Verifica se está em ambiente gráfico
-            if (GraphicsEnvironment.isHeadless()) {
-                System.out.println("   ⚠️ Ambiente headless, pulando notificação");
-                return;
-            }
-
-            SystemTray tray = SystemTray.getSystemTray();
-
-            // Carrega ícone da imagem (se existir)
-            Image image = null;
-            try {
-                // Tenta carregar um ícone padrão
-                image = Toolkit.getDefaultToolkit().getImage(
-                        PagamentoServer.class.getResource("/icon/brecho.png"));
-
-                if (image == null) {
-                    // Fallback: cria uma imagem em branco
-                    image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
-                }
-            } catch (Exception e) {
-                // Fallback: cria uma imagem em branco
-                image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
-            }
-
-            TrayIcon trayIcon = new TrayIcon(image, "PortoBella Brechó", null);
-            trayIcon.setImageAutoSize(true);
-
-            // Adiciona à bandeja
-            try {
-                tray.add(trayIcon);
-            } catch (AWTException e) {
-                System.out.println("   ⚠️ Não foi possível adicionar ícone à bandeja: " + e.getMessage());
-                return;
-            }
-
-            // Mostra a notificação
-            trayIcon.displayMessage(titulo, mensagem, TrayIcon.MessageType.INFO);
-
-            // Remove após 5 segundos
-            new Timer(5000, e -> {
-                tray.remove(trayIcon);
-            }).start();
-
-            System.out.println("   🔔 Notificação na bandeja: " + titulo + " - " + mensagem);
-
-        } catch (Exception e) {
-            System.err.println("   ⚠️ Erro ao mostrar notificação: " + e.getMessage());
-        }
-    }
+//    private static void mostrarMensagemTray(String titulo, String mensagem) {
+//        try {
+//            if (!SystemTray.isSupported()) {
+//                System.out.println("   ⚠️ System Tray não suportado");
+//                return;
+//            }
+//
+//            // Verifica se está em ambiente gráfico
+//            if (GraphicsEnvironment.isHeadless()) {
+//                System.out.println("   ⚠️ Ambiente headless, pulando notificação");
+//                return;
+//            }
+//
+//            SystemTray tray = SystemTray.getSystemTray();
+//
+//            // Carrega ícone da imagem (se existir)
+//            Image image = null;
+//            try {
+//                // Tenta carregar um ícone padrão
+//                image = Toolkit.getDefaultToolkit().getImage(
+//                        PagamentoServer.class.getResource("/icon/brecho.png"));
+//
+//                if (image == null) {
+//                    // Fallback: cria uma imagem em branco
+//                    image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
+//                }
+//            } catch (Exception e) {
+//                // Fallback: cria uma imagem em branco
+//                image = Toolkit.getDefaultToolkit().createImage(new byte[0]);
+//            }
+//
+//            TrayIcon trayIcon = new TrayIcon(image, "PortoBella Brechó", null);
+//            trayIcon.setImageAutoSize(true);
+//
+//            // Adiciona à bandeja
+//            try {
+//                tray.add(trayIcon);
+//            } catch (AWTException e) {
+//                System.out.println("   ⚠️ Não foi possível adicionar ícone à bandeja: " + e.getMessage());
+//                return;
+//            }
+//
+//            // Mostra a notificação
+//            trayIcon.displayMessage(titulo, mensagem, TrayIcon.MessageType.INFO);
+//
+//            // Remove após 5 segundos
+//            new Timer(5000, e -> {
+//                tray.remove(trayIcon);
+//            }).start();
+//
+//            System.out.println("   🔔 Notificação na bandeja: " + titulo + " - " + mensagem);
+//
+//        } catch (Exception e) {
+//            System.err.println("   ⚠️ Erro ao mostrar notificação: " + e.getMessage());
+//        }
+//    }
 
     // ==========================================
     // PARSE QUERY PARAMS (AUXILIAR)
