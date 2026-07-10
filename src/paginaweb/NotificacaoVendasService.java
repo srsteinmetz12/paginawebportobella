@@ -553,25 +553,45 @@ public class NotificacaoVendasService {
                         registrarEntrega(con, notif, idVenda);
                         System.out.println("   ✅ Todas as tabelas atualizadas com ID_Venda: " + idVenda);
                     }
+                    // ==========================================
+                    // 5. REMOVER RESERVA
+                    // ==========================================                  
+                    removerReserva(con, notif.codPeca, notif.pedidoId);
 
                     // ==========================================
-                    // 5. BAIXAR ESTOQUE
+                    // 6. BAIXAR ESTOQUE
                     // ==========================================
                     baixarEstoque(con, notif.itens);
 
                     // ==========================================
-                    // 6. ATUALIZAR O SITE (REGERAR HTML)
+                    // 7. ATUALIZAR O SITE (REGERAR HTML)
                     // ==========================================
                     atualizarSiteAsync();
 
                     mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.INFO);
                 } else {
+                    // ==========================================
+                    // REJEITADO
+                    // ==========================================
+                    System.out.println("📦 [RESPONDER] Processando REJEIÇÃO...");
+
+                    // 1. MOVER PARA HISTÓRICO REJEITADO
                     moverParaHistoricoRejeitado(con, notif);
+
+                    // 2. 🔥 REMOVER DA TABELA RESERVAS
+                    removerReserva(con, notif.codPeca, notif.pedidoId);
+
+                    // 3. 🔥 LIBERAR ESTOQUE (DISPONIVEL) - ADICIONE ESTA LINHA
+                    liberarEstoque(con, notif.itens);  // 🔥 AQUI!
+
+                    // 4. ATUALIZAR O SITE
+                    atualizarSiteAsync();
+
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
 
                 // ==========================================
-                // 🔥 7. ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
+                // 🔥 8. ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
                 // ==========================================
 //                enviarRespostaParaServidor(notif.id, notif.pedidoId, aprovado);
 
@@ -587,6 +607,42 @@ public class NotificacaoVendasService {
 
         System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
     }
+    
+    // ==========================================
+    // 🔥 REMOVER DA TABELA RESERVAS
+    // ==========================================
+    private static void removerReserva(Connection con, String codPeca, String pedidoId) {
+        PreparedStatement stmt = null;
+
+        try {
+            String[] codigos = codPeca.split(",");
+
+            for (String cod : codigos) {
+                cod = cod.trim();
+
+                String sql = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ?";
+                stmt = con.prepareStatement(sql);
+                stmt.setString(1, cod);
+                stmt.setString(2, pedidoId);
+                stmt.setQueryTimeout(10);
+                int rows = stmt.executeUpdate();
+
+                if (rows > 0) {
+                    System.out.println("   ✅ Reserva removida: " + cod);
+                } else {
+                    System.err.println("   ⚠️ Reserva não encontrada: " + cod);
+                }
+
+                stmt.close();
+            }
+
+        } catch (SQLException e) {
+            System.err.println("   ❌ Erro ao remover reserva: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+    
     
     // ==========================================
     // 🔥 ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
@@ -955,14 +1011,14 @@ public class NotificacaoVendasService {
                 return;
             }
             
-            System.out.println("📦 [ESTOQUE] Baixando " + itensArray.size() + " item(ns)...");
+            System.out.println("📦 [ESTOQUE] Baixando " + itensArray.size() + " item(ns) - CONFIRMADO...");
             
             for (int i = 0; i < itensArray.size(); i++) {
                 JsonObject item = itensArray.get(i).getAsJsonObject();
                 String codPeca = item.get("id").getAsString();
                 int quantidade = item.get("quantidade").getAsInt();
                 
-                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? LIMIT ?";
+                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ?";
                 
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, codPeca);
@@ -981,6 +1037,55 @@ public class NotificacaoVendasService {
 
         } catch (JsonSyntaxException | SQLException e) {
             System.err.println("   ❌ Erro ao baixar estoque: " + e.getMessage());
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+        }
+    }
+       
+    // ==========================================
+    // 7. LIBERAR ESTOQUE
+    // ==========================================
+    private static void liberarEstoque(Connection con, String itensJson) {
+        if (itensJson == null || itensJson.isEmpty()) {
+            return;
+        }
+
+        PreparedStatement stmt = null;
+
+        try {
+            JsonArray itensArray = gson.fromJson(itensJson, JsonArray.class);
+
+            if (itensArray == null || itensArray.size() == 0) {
+                return;
+            }
+
+            System.out.println("📦 [ESTOQUE] Liberando " + itensArray.size() + " item(ns) - REJEITADO...");
+
+            for (int i = 0; i < itensArray.size(); i++) {
+                JsonObject item = itensArray.get(i).getAsJsonObject();
+                String codPeca = item.get("id").getAsString();
+                int quantidade = item.get("quantidade").getAsInt();
+
+                // 🔥 VOLTA PARA DISPONIVEL
+                String sql = "UPDATE estoque SET status = 'DISPONIVEL', quantidade = quantidade + ? WHERE codpeca = ?";
+
+                stmt = con.prepareStatement(sql);
+                stmt.setInt(1, quantidade);
+                stmt.setString(2, codPeca);
+                stmt.setQueryTimeout(10);
+                int rows = stmt.executeUpdate();
+
+                if (rows > 0) {
+                    System.out.println("   ✅ Estoque liberado: " + codPeca + " (" + quantidade + " unidade(s) disponível)");
+                } else {
+                    System.err.println("   ⚠️ Produto não encontrado: " + codPeca);
+                }
+
+                stmt.close();
+            }
+
+        } catch (JsonSyntaxException | SQLException e) {
+            System.err.println("   ❌ Erro ao liberar estoque: " + e.getMessage());
         } finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
         }
