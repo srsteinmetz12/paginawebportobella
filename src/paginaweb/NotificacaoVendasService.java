@@ -962,7 +962,7 @@ public class NotificacaoVendasService {
                 String codPeca = item.get("id").getAsString();
                 int quantidade = item.get("quantidade").getAsInt();
                 
-                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'DISPONIVEL' LIMIT ?";
+                String sql = "UPDATE estoque SET status = 'VENDIDO', datavenda = CURDATE() WHERE codpeca = ? AND status = 'RESERVADO' LIMIT ?";
                 
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, codPeca);
