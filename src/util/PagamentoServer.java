@@ -1293,102 +1293,102 @@ public class PagamentoServer {
     // PROCESSAR RESPOSTA DA NOTIFICAÇÃO
     // ==========================================
     private static void responderNotificacao(Notificacao notif, boolean aprovado) {
-        System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
-        System.out.println("   📦 notif.id: " + notif.id);
-        System.out.println("   📦 notif.codPeca: '" + notif.codPeca + "'");
-        System.out.println("   📦 notif.pedidoId: '" + notif.pedidoId + "'");
-
-        Connection con = null;
-        PreparedStatement stmt = null;
-
-        try {
-            con = ConnectionDB.getConnectionCloud();
-
-            if (con == null || con.isClosed()) {
-                Thread.sleep(2000);
-                con = ConnectionDB.getConnectionCloud();
-                if (con == null) {
-                    throw new SQLException("Não foi possível reconectar ao banco");
-                }
-            }
-
-            String status = aprovado ? "CONFIRMADO" : "REJEITADO";
-
-            // 1. Atualizar notificação
-            String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
-            stmt = con.prepareStatement(sql);
-            stmt.setString(1, status);
-            stmt.setInt(2, notif.id);
-            stmt.setQueryTimeout(10);
-            int rows = stmt.executeUpdate();
-            System.out.println("   📝 Notificação atualizada: " + rows + " linha(s)");
-
-            if (rows > 0) {
-                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
-
-                if (aprovado) {
-                    // ✅ APROVADO
-                    System.out.println("   🔄 Processando APROVAÇÃO...");
-                    
-                    // 1. Mover para histórico
-//                    moverParaHistoricoCompleto(con, notif, status);
-                    
-                    // 2. Registrar venda
-                    int idVenda = registrarVendaCompleta(con, notif);
-                    System.out.println("   📝 ID Venda: " + idVenda);
-
-                    if (idVenda > 0) {
-                        // 3. Registrar sacola
-//                        registrarSacolaCompleta(con, notif, idVenda);
-                        // 4. Registrar entrega (se não for retirar na loja)
-//                        registrarEntregaCompleta(con, notif, idVenda);
-                    }
-
-                    // 5. Confirmar reserva (usando os dados da notificação)
-                    boolean reservaConfirmada = confirmarReservaCompleta(con, notif.codPeca, notif.pedidoId);
-                    System.out.println("   📝 Reserva confirmada: " + reservaConfirmada);
-                    
-                    // 6. Remover notificação pendente
-//                    removerNotificacao(con, notif.id);
-                    
-                    // 7. Atualizar site
-                    atualizarSiteAsync();
-                    
-                    // 8. Mostrar mensagem
-                    mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId);
-
-                } else {
-                    // ❌ REJEITADO
-                    System.out.println("   🔄 Processando REJEIÇÃO...");
-                    
-                    // 1. Mover para histórico
-//                    moverParaHistoricoCompleto(con, notif, status);
-                    
-                    // 2. Liberar reserva (usando os dados da notificação)
-//                    boolean reservaLiberada = liberarReservaCompleta(con, notif.codPeca, notif.pedidoId);
-//                    System.out.println("   📝 Reserva liberada: " + reservaLiberada);
-                    
-//                     3. Remover notificação pendente
-//                    removerNotificacao(con, notif.id);
-                    
-                    // 4. Atualizar site
-                    atualizarSiteAsync();
-                    
-                    // 5. Mostrar mensagem
-                    mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId);
-                }
-            } else {
-                System.err.println("❌ Notificação não encontrada: " + notif.id);
-            }
-
-        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
-            System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
-        } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-            try { if (con != null) con.close(); } catch (SQLException e) {}
-        }
-
-        System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
+//        System.out.println("📤 [RESPONDER] Iniciando: " + notif.pedidoId + " (aprovado=" + aprovado + ")");
+//        System.out.println("   📦 notif.id: " + notif.id);
+//        System.out.println("   📦 notif.codPeca: '" + notif.codPeca + "'");
+//        System.out.println("   📦 notif.pedidoId: '" + notif.pedidoId + "'");
+//
+//        Connection con = null;
+//        PreparedStatement stmt = null;
+//
+//        try {
+//            con = ConnectionDB.getConnectionCloud();
+//
+//            if (con == null || con.isClosed()) {
+//                Thread.sleep(2000);
+//                con = ConnectionDB.getConnectionCloud();
+//                if (con == null) {
+//                    throw new SQLException("Não foi possível reconectar ao banco");
+//                }
+//            }
+//
+//            String status = aprovado ? "CONFIRMADO" : "REJEITADO";
+//
+//            // 1. Atualizar notificação
+//            String sql = "UPDATE notificacoes_pendentes SET status = ?, lida = 1, data_confirmacao = NOW() WHERE id = ?";
+//            stmt = con.prepareStatement(sql);
+//            stmt.setString(1, status);
+//            stmt.setInt(2, notif.id);
+//            stmt.setQueryTimeout(10);
+//            int rows = stmt.executeUpdate();
+//            System.out.println("   📝 Notificação atualizada: " + rows + " linha(s)");
+//
+//            if (rows > 0) {
+//                System.out.println("✅ [RESPONDER] Notificação #" + notif.id + " -> " + status);
+//
+//                if (aprovado) {
+//                    // ✅ APROVADO
+//                    System.out.println("   🔄 Processando APROVAÇÃO...");
+//                    
+//                    // 1. Mover para histórico
+////                    moverParaHistoricoCompleto(con, notif, status);
+//                    
+//                    // 2. Registrar venda
+//                    int idVenda = registrarVendaCompleta(con, notif);
+//                    System.out.println("   📝 ID Venda: " + idVenda);
+//
+//                    if (idVenda > 0) {
+//                        // 3. Registrar sacola
+////                        registrarSacolaCompleta(con, notif, idVenda);
+//                        // 4. Registrar entrega (se não for retirar na loja)
+////                        registrarEntregaCompleta(con, notif, idVenda);
+//                    }
+//
+//                    // 5. Confirmar reserva (usando os dados da notificação)
+//                    boolean reservaConfirmada = confirmarReservaCompleta(con, notif.codPeca, notif.pedidoId);
+//                    System.out.println("   📝 Reserva confirmada: " + reservaConfirmada);
+//                    
+//                    // 6. Remover notificação pendente
+////                    removerNotificacao(con, notif.id);
+//                    
+//                    // 7. Atualizar site
+//                    atualizarSiteAsync();
+//                    
+//                    // 8. Mostrar mensagem
+//                    mostrarMensagemTray("✅ Venda CONFIRMADA!", "Pedido: " + notif.pedidoId);
+//
+//                } else {
+//                    // ❌ REJEITADO
+//                    System.out.println("   🔄 Processando REJEIÇÃO...");
+//                    
+//                    // 1. Mover para histórico
+////                    moverParaHistoricoCompleto(con, notif, status);
+//                    
+//                    // 2. Liberar reserva (usando os dados da notificação)
+////                    boolean reservaLiberada = liberarReservaCompleta(con, notif.codPeca, notif.pedidoId);
+////                    System.out.println("   📝 Reserva liberada: " + reservaLiberada);
+//                    
+////                     3. Remover notificação pendente
+////                    removerNotificacao(con, notif.id);
+//                    
+//                    // 4. Atualizar site
+//                    atualizarSiteAsync();
+//                    
+//                    // 5. Mostrar mensagem
+//                    mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId);
+//                }
+//            } else {
+//                System.err.println("❌ Notificação não encontrada: " + notif.id);
+//            }
+//
+//        } catch (ClassNotFoundException | InterruptedException | SQLException e) {
+//            System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
+//        } finally {
+//            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+//            try { if (con != null) con.close(); } catch (SQLException e) {}
+//        }
+//
+//        System.out.println("📤 [RESPONDER] Finalizado: " + notif.pedidoId);
     }
     
     // ==========================================
