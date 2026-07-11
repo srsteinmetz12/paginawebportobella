@@ -3,8 +3,8 @@ WORKDIR /app
 COPY src/ /app/src/
 COPY lib/ /app/lib/
 
-# 🔥 COMPILA TUDO EXCETO views e desktop
-RUN javac -cp "lib/*" -d classes $(find src -name "*.java" ! -path "src/views/*" ! -path "src/desktop/*")
+# 🔥 COMPILA SÓ OS PACOTES QUE EXISTEM NO SERVIDOR
+RUN javac -cp "lib/*" -d classes $(find src/util src/connection src/paginaweb -name "*.java")
 
 RUN ls -la classes/util/   # Verifica se a classe PagamentoServer.class foi gerada
 RUN ls -la classes/        # Verifica a estrutura geral
