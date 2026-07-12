@@ -77,16 +77,10 @@ public class GerarSiteEstoque {
         sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
         System.out.println("Gerando catálogo web premium: " + sql);
 
-//        String diretorioDocumentos = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
-//        String caminhoArquivo = diretorioDocumentos + "\\index.html";
-
         String subpastaFotosWeb = System.getenv("RENDER") != null ?
         diretorioDocumentos + "/fotos" :
         diretorioDocumentos + "\\fotos";
         new java.io.File(subpastaFotosWeb).mkdirs();
-
-//        String subpastaFotosWeb = diretorioDocumentos + "\\fotos";
-//        new java.io.File(subpastaFotosWeb).mkdirs();
 
         try (java.io.PrintWriter writer = new java.io.PrintWriter(caminhoArquivo, "UTF-8");
              PreparedStatement localStmt2 = con2.prepareStatement(sql)) {
@@ -333,6 +327,17 @@ public class GerarSiteEstoque {
             writer.println("      </div>");
             writer.println("");
             writer.println("      <!-- ========================================== -->");
+            writer.println("      <!-- 🔥 OPÇÃO DE ENTREGA VIA FRETE              -->");
+            writer.println("      <!-- ========================================== -->");
+            writer.println("      <div style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
+            writer.println("        <label style='color:#A0A0A0; font-size:13px; font-weight:bold; display:flex; align-items:center; gap:10px; cursor:pointer;'>");
+            writer.println("          <input type='checkbox' id='chkEntregaFrete' onchange='toggleEntrega()' style='width:18px; height:18px; cursor:pointer;'>");
+            writer.println("          🚚 Entrega via Frete");
+            writer.println("        </label>");
+            writer.println("        <p style='color:#666; font-size:11px; margin-top:5px;'>⚠️ Ao marcar esta opção, o frete será calculado e o endereço será necessário.</p>");
+            writer.println("      </div>");
+            writer.println("");
+            writer.println("      <!-- ========================================== -->");
             writer.println("      <!-- DADOS DE ENTREGA (Destinatário + Endereço) -->");
             writer.println("      <!-- ========================================== -->");
             writer.println("      <div id='divEntrega' style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
@@ -349,6 +354,12 @@ public class GerarSiteEstoque {
             writer.println("        <div style='margin-top:8px;'>");
             writer.println("          <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>📱 Telefone para contato</label>");
             writer.println("          <input type='tel' id='telefoneCliente' placeholder='(00) 00000-0000' style='width:100%; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px; margin-top:3px;'>");
+            writer.println("        </div>");
+            writer.println("        <!-- EMAIL -->");
+            writer.println("        <div style='margin-top:8px;'>");
+            writer.println("          <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>📧 E-mail para confirmação</label>");
+            writer.println("          <input type='email' id='emailCliente' placeholder='cliente@email.com' style='width:100%; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px; margin-top:3px;'>");
+            writer.println("          <small style='color:#666; font-size:11px;'>Enviaremos um e-mail quando o pedido estiver disponível para retirada ou for despachado.</small>");
             writer.println("        </div>");
             writer.println("");
             writer.println("        <!-- ========================================== -->");
@@ -392,6 +403,8 @@ public class GerarSiteEstoque {
             writer.println("          </div>");
             writer.println("        </div>");
             writer.println("      </div>");
+            writer.println("");
+            writer.println("      <input type='hidden' id='enderecoCompleto' value=''>");
             writer.println("");
             writer.println("      <!-- ========================================== -->");
             writer.println("      <!-- BOTÕES DE PAGAMENTO                       -->");
@@ -544,14 +557,13 @@ public class GerarSiteEstoque {
             writer.println("        const codigo = produto.codpeca || '0000';");
             writer.println("        const tamanho = produto.tamanho || 'U';");
             writer.println("        const preco = produto.precosug || 0;");
-            writer.println("        const marca = produto.marca || ''; // 🔥 ADICIONE ESTA LINHA");
+            writer.println("        const marca = produto.marca || '';");
             writer.println("        ");
             writer.println("        let imagem = '';");
             writer.println("        if (produto.imagem && produto.imagem.length > 0) {");
             writer.println("          imagem = produto.imagem.split(';')[0];");
             writer.println("        }");
             writer.println("        ");
-            writer.println("        // 🔥 MODIFIQUE ESTA LINHA PARA INCLUIR A MARCA NO data-busca");
             writer.println("        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();");
             writer.println("        ");
             writer.println("        html += `<div class=\"card\" data-busca=\"${dadosBusca}\">`;");
@@ -781,20 +793,28 @@ public class GerarSiteEstoque {
             writer.println("    // ========================================");
             writer.println("    function toggleEntrega() {");
             writer.println("      let chkRetirar = document.getElementById('chkRetirarLoja');");
+            writer.println("      let chkFrete = document.getElementById('chkEntregaFrete');");
             writer.println("      let divEntrega = document.getElementById('divEntrega');");
             writer.println("      let freteResultado = document.getElementById('freteResultado');");
             writer.println("      let cepInput = document.getElementById('cepCarrinho');");
             writer.println("      let botaoFrete = document.querySelector('#cepCarrinho + button');");
+            writer.println("      let enderecoCampos = document.getElementById('enderecoCampos');");
             writer.println("");
+            writer.println("      // Se marcou Retirar na Loja, desmarca Frete");
             writer.println("      if (chkRetirar.checked) {");
+            writer.println("        chkFrete.checked = false;");
             writer.println("        divEntrega.style.display = 'none';");
             writer.println("        freteResultado.style.display = 'none';");
+            writer.println("        enderecoCampos.style.display = 'none';");
             writer.println("        carrinho.frete = 0;");
             writer.println("        cepInput.disabled = true;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = true;");
             writer.println("        document.getElementById('enderecoCompleto').value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');");
             writer.println("        mostrarNotificacao('✅ Retirada na loja selecionada! Frete zerado.');");
-            writer.println("      } else {");
+            writer.println("      }");
+            writer.println("      // Se marcou Entrega via Frete, desmarca Retirar");
+            writer.println("      else if (chkFrete.checked) {");
+            writer.println("        chkRetirar.checked = false;");
             writer.println("        divEntrega.style.display = 'block';");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
@@ -806,6 +826,14 @@ public class GerarSiteEstoque {
             writer.println("          renderizarCarrinho();");
             writer.println("        }");
             writer.println("        atualizarEnderecoCompleto();");
+            writer.println("      }");
+            writer.println("      // Nenhum marcado - volta ao estado normal");
+            writer.println("      else {");
+            writer.println("        divEntrega.style.display = 'block';");
+            writer.println("        cepInput.disabled = false;");
+            writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
+            writer.println("        carrinho.frete = 0;");
+            writer.println("        renderizarCarrinho();");
             writer.println("      }");
             writer.println("");
             writer.println("      renderizarCarrinho();");
@@ -847,10 +875,26 @@ public class GerarSiteEstoque {
             writer.println("      let retirarLoja = document.getElementById('chkRetirarLoja').checked;");
             writer.println("      let destinatario = document.getElementById('destinatario').value.trim();");
             writer.println("      let telefone = document.getElementById('telefoneCliente').value.trim();");
+            writer.println("      let email = document.getElementById('emailCliente').value.trim();");
             writer.println("");
+            writer.println("      // ✅ VALIDAÇÃO: Destinatário obrigatório");
             writer.println("      if (!destinatario || destinatario === '') {");
             writer.println("        alert('⚠️ Por favor, informe o nome de quem vai receber/retirar o pedido!');");
             writer.println("        document.getElementById('destinatario').focus();");
+            writer.println("        return;");
+            writer.println("      }");
+            writer.println("");
+            writer.println("      // ✅ VALIDAÇÃO: Telefone obrigatório");
+            writer.println("      if (!telefone || telefone === '') {");
+            writer.println("        alert('⚠️ Por favor, informe um telefone para contato!');");
+            writer.println("        document.getElementById('telefoneCliente').focus();");
+            writer.println("        return;");
+            writer.println("      }");
+            writer.println("");
+            writer.println("      // ✅ VALIDAÇÃO: Email obrigatório");
+            writer.println("      if (!email || email === '') {");
+            writer.println("        alert('⚠️ Por favor, informe um e-mail para envio da confirmação!');");
+            writer.println("        document.getElementById('emailCliente').focus();");
             writer.println("        return;");
             writer.println("      }");
             writer.println("");
@@ -865,10 +909,18 @@ public class GerarSiteEstoque {
             writer.println("      let enderecoCompleto = '';");
             writer.println("");
             writer.println("      if (retirarLoja) {");
-            writer.println("        enderecoCompleto = 'RETIRADA NA LOJA - ' + destinatario + ' | Tel: ' + (telefone || 'Não informado') + ' | Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS';");
+            writer.println("        enderecoCompleto = 'RETIRADA NA LOJA - ' + destinatario + ' | Tel: ' + telefone + ' | Email: ' + email + ' | Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS';");
             writer.println("        carrinho.frete = 0;");
             writer.println("        console.log('📦 Retirada na loja para: ' + destinatario);");
             writer.println("      } else {");
+            writer.println("        // Se NÃO marcou retirar, verifica se marcou entrega via frete");
+            writer.println("        let chkFrete = document.getElementById('chkEntregaFrete').checked;");
+            writer.println("        ");
+            writer.println("        if (!chkFrete) {");
+            writer.println("          alert('⚠️ Selecione uma opção de entrega: \"Retirar na Loja\" ou \"Entrega via Frete\"!');");
+            writer.println("          return;");
+            writer.println("        }");
+            writer.println("");
             writer.println("        if(!rua || !numero || !bairro || !cidade || !uf || cep.length !== 8) {");
             writer.println("          alert('⚠️ Por favor, preencha todos os campos do endereço:\\n\\n' +");
             writer.println("            '• Rua\\n' +");
@@ -880,7 +932,7 @@ public class GerarSiteEstoque {
             writer.println("          return;");
             writer.println("        }");
             writer.println("");
-            writer.println("        enderecoCompleto = 'Destinatário: ' + destinatario + ' | Tel: ' + (telefone || 'Não informado') + ' | ';");
+            writer.println("        enderecoCompleto = 'Destinatário: ' + destinatario + ' | Tel: ' + telefone + ' | Email: ' + email + ' | ';");
             writer.println("        enderecoCompleto += rua + ', ' + numero;");
             writer.println("        if(complemento) enderecoCompleto += ' - ' + complemento;");
             writer.println("        enderecoCompleto += ' - ' + bairro + ' - ' + cidade + '/' + uf;");
@@ -919,6 +971,7 @@ public class GerarSiteEstoque {
             writer.println("          endereco: enderecoCompleto,");
             writer.println("          destinatario: destinatario,");
             writer.println("          telefone: telefone || 'Não informado',");
+            writer.println("          email: email || 'Não informado',");
             writer.println("          retirarLoja: retirarLoja,");
             writer.println("          pedidoId: pedidoId");
             writer.println("        })");
@@ -937,6 +990,7 @@ public class GerarSiteEstoque {
             writer.println("              endereco: enderecoCompleto,");
             writer.println("              destinatario: destinatario,");
             writer.println("              telefone: telefone || 'Não informado',");
+            writer.println("              email: email || 'Não informado',");
             writer.println("              retirarLoja: retirarLoja,");
             writer.println("              pedidoId: pedidoId");
             writer.println("            };");
@@ -1079,6 +1133,7 @@ public class GerarSiteEstoque {
             writer.println("                  codPeca: dados.itens.map(item => item.id).join(','),");
             writer.println("                  destinatario: dados.destinatario || 'Cliente',");
             writer.println("                  telefone: dados.telefone || 'Não informado',");
+            writer.println("                  email: dados.email || 'Não informado',");
             writer.println("                  total: valor,");
             writer.println("                  meio: 'pix',");
             writer.println("                  endereco: dados.endereco || 'Não informado',");
@@ -1244,9 +1299,9 @@ public class GerarSiteEstoque {
             writer.println("      }");
             writer.println("    });");
             writer.println("");
-//            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
-//            writer.println("      carregarProdutos();");
-//            writer.println("    });");
+            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
+            writer.println("      carregarProdutos();");
+            writer.println("    });");
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
             writer.println("      let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];");
@@ -1489,4 +1544,3 @@ public class GerarSiteEstoque {
     }
     
 }
-
