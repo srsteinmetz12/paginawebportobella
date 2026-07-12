@@ -1,4 +1,8 @@
 FROM amazoncorretto:17-alpine
+
+# ✅ INSTALA O GIT (SOLUÇÃO DO SEU PROBLEMA)
+RUN apk add --no-cache git
+
 WORKDIR /app
 COPY src/ /app/src/
 COPY lib/ /app/lib/
