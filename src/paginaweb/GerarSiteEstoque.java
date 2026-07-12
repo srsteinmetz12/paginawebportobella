@@ -1074,7 +1074,7 @@ public class GerarSiteEstoque {
             writer.println("                    fecharModalPix();");
             writer.println("                    alert('✅ Pedido enviado para a loja!\\n\\nAguardando confirmação do pagamento.\\nObrigado pela compra!');");
             writer.println("                    window.dadosCompra = null;");
-            writer.println("                    location.reload();");
+//            writer.println("                    location.reload();");
             writer.println("                  }, 3000);");
             writer.println("                })");
             writer.println("                .catch(error => {");
