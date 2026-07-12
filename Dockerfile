@@ -6,7 +6,7 @@ RUN apk add --no-cache git
 WORKDIR /app
 COPY src/ /app/src/
 COPY lib/ /app/lib/
-COPY config.properties /app/config.properties   # 🔥 ADICIONE ESTA LINHA
+# 🔥 NÃO COPIA config.properties - usa variáveis de ambiente
 
 # 🔥 COMPILA SÓ OS PACOTES QUE EXISTEM NO SERVIDOR
 RUN javac -cp "lib/*" -d classes $(find src/util src/connection src/paginaweb -name "*.java")
