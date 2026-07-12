@@ -25,9 +25,19 @@ public class GerarSiteEstoque {
     // ==========================================
     // CONSTANTES
     // ==========================================
-    private static final String DIRETORIO_DOCUMENTOS = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
-    private static final String CAMINHO_ARQUIVO = DIRETORIO_DOCUMENTOS + "\\index.html";
-    private static final String SUBPASTA_FOTOS = DIRETORIO_DOCUMENTOS + "\\fotos";
+
+    private static final String DIRETORIO_LOCAL = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+    private static final String DIRETORIO_RENDER = "/app/estoqueVitrineWeb";
+
+    private static final String DIRETORIO_DOCUMENTOS = 
+        System.getenv("RENDER") != null ? DIRETORIO_RENDER : DIRETORIO_LOCAL;
+
+    private static final String CAMINHO_ARQUIVO = 
+        System.getenv("RENDER") != null ? DIRETORIO_DOCUMENTOS + "/index.html" : DIRETORIO_DOCUMENTOS + "\\index.html";
+
+    private static final String SUBPASTA_FOTOS = 
+        System.getenv("RENDER") != null ? DIRETORIO_DOCUMENTOS + "/fotos" : DIRETORIO_DOCUMENTOS + "\\fotos";
+
     private static final String URL_BACKEND = "https://paginawebportobella-1.onrender.com";
     
     // ==========================================
@@ -48,15 +58,35 @@ public class GerarSiteEstoque {
     // MÉTODO PRINCIPAL - GERAR SITE
     // ==========================================
     public void gerarSiteEstoque() throws ClassNotFoundException, java.sql.SQLException, InterruptedException {
+        // 🔥 DETECTA O AMBIENTE
+        String diretorioDocumentos;
+        if (System.getenv("RENDER") != null) {
+            diretorioDocumentos = DIRETORIO_RENDER;
+            System.out.println("📍 Executando no Render - Diretório: " + diretorioDocumentos);
+        } else {
+            diretorioDocumentos = DIRETORIO_LOCAL;
+            System.out.println("📍 Executando localmente - Diretório: " + diretorioDocumentos);
+        }
+
+        String caminhoArquivo = System.getenv("RENDER") != null ? 
+            diretorioDocumentos + "/index.html" : 
+            diretorioDocumentos + "\\index.html";
+
+        
         con2 = ConnectionDB.getConnectionCloud();
         sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
         System.out.println("Gerando catálogo web premium: " + sql);
 
-        String diretorioDocumentos = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
-        String caminhoArquivo = diretorioDocumentos + "\\index.html";
+//        String diretorioDocumentos = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+//        String caminhoArquivo = diretorioDocumentos + "\\index.html";
 
-        String subpastaFotosWeb = diretorioDocumentos + "\\fotos";
+        String subpastaFotosWeb = System.getenv("RENDER") != null ?
+        diretorioDocumentos + "/fotos" :
+        diretorioDocumentos + "\\fotos";
         new java.io.File(subpastaFotosWeb).mkdirs();
+
+//        String subpastaFotosWeb = diretorioDocumentos + "\\fotos";
+//        new java.io.File(subpastaFotosWeb).mkdirs();
 
         try (java.io.PrintWriter writer = new java.io.PrintWriter(caminhoArquivo, "UTF-8");
              PreparedStatement localStmt2 = con2.prepareStatement(sql)) {
@@ -1280,115 +1310,122 @@ public class GerarSiteEstoque {
             System.err.println("❌ Erro ao gerar site: " + e.getMessage());
         }
     }
-    
+    // ==========================================
+    // MÉTODO PARA ENVIAR PARA O GITHUB
+    // ==========================================
     private void enviarParaGitHub(String diretorioDocumentos) {
-//        System.out.println("📤 [GIT] ========================================");
-//        System.out.println("📤 [GIT] INICIANDO ENVIO PARA O GITHUB");
-//        System.out.println("📤 [GIT] ========================================");
-//
-//        try {
-//            File pastaOrigem = new File(diretorioDocumentos);
-//            File indexFile = new File(pastaOrigem, "index.html");
-//
-//            // ==========================================
-//            // VERIFICAR SE O ARQUIVO EXISTE
-//            // ==========================================
-//            if (!indexFile.exists()) {
-//                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
-//                return;
-//            }
-//
-//            System.out.println("📄 [GIT] Arquivo: " + indexFile.getAbsolutePath());
-//            System.out.println("📄 [GIT] Tamanho: " + indexFile.length() + " bytes");
-//            System.out.println("📄 [GIT] Modificação: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date(indexFile.lastModified())));
-//            System.out.println("📤 [GIT] ========================================");
-//
-//            // ==========================================
-//            // PAUSA INICIAL
-//            // ==========================================
-//            System.out.println("⏳ [GIT] Aguardando 3 segundos para garantir que o arquivo foi salvo...");
-//            Thread.sleep(3000);
-//
-//            // ==========================================
-//            // 1. GIT STATUS ANTES DO ADD
-//            // ==========================================
-//            System.out.println("📋 [GIT] ========================================");
-//            System.out.println("📋 [GIT] PASSO 1: Verificando status ANTES do git add...");
-//            System.out.println("📋 [GIT] ========================================");
-//            executarGitStatus(pastaOrigem);
-//            Thread.sleep(2000);
-//
-//            // ==========================================
-//            // 2. GIT ADD
-//            // ==========================================
-//            System.out.println("📤 [GIT] ========================================");
-//            System.out.println("📤 [GIT] PASSO 2: Executando git add index.html...");
-//            System.out.println("📤 [GIT] ========================================");
-//            executarComandoGit(pastaOrigem, "git", "add", "index.html");
-//            Thread.sleep(3000);
-//
-//            // ==========================================
-//            // 3. GIT STATUS DEPOIS DO ADD
-//            // ==========================================
-//            System.out.println("📋 [GIT] ========================================");
-//            System.out.println("📋 [GIT] PASSO 3: Verificando status DEPOIS do git add...");
-//            System.out.println("📋 [GIT] ========================================");
-//            executarGitStatus(pastaOrigem);
-//            Thread.sleep(2000);
-//
-//            // ==========================================
-//            // 4. GIT COMMIT
-//            // ==========================================
-//            System.out.println("📤 [GIT] ========================================");
-//            System.out.println("📤 [GIT] PASSO 4: Executando git commit...");
-//            System.out.println("📤 [GIT] ========================================");
-//            String dataHora = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
-//            executarComandoGit(pastaOrigem, "git", "commit", "-m", "Atualização automática do estoque - " + dataHora);
-//            Thread.sleep(3000);
-//
-//            // ==========================================
-//            // 5. GIT STATUS DEPOIS DO COMMIT
-//            // ==========================================
-//            System.out.println("📋 [GIT] ========================================");
-//            System.out.println("📋 [GIT] PASSO 5: Verificando status DEPOIS do git commit...");
-//            System.out.println("📋 [GIT] ========================================");
-//            executarGitStatus(pastaOrigem);
-//            Thread.sleep(2000);
-//
-//            // ==========================================
-//            // 6. GIT PUSH
-//            // ==========================================
-//            System.out.println("📤 [GIT] ========================================");
-//            System.out.println("📤 [GIT] PASSO 6: Executando git push origin main --force...");
-//            System.out.println("📤 [GIT] ========================================");
-//            executarComandoGit(pastaOrigem, "git", "push", "origin", "main", "--force");
-//            Thread.sleep(5000);
-//
-//            // ==========================================
-//            // 7. GIT STATUS FINAL
-//            // ==========================================
-//            System.out.println("📋 [GIT] ========================================");
-//            System.out.println("📋 [GIT] PASSO 7: Verificando status FINAL...");
-//            System.out.println("📋 [GIT] ========================================");
-//            executarGitStatus(pastaOrigem);
-//            Thread.sleep(2000);
-//
-//            System.out.println("🚀 [GIT] ========================================");
-//            System.out.println("🚀 [GIT] PROCESSO FINALIZADO COM SUCESSO!");
-//            System.out.println("🚀 [GIT] ========================================");
-//
-//        } catch (IOException | InterruptedException e) {
-//            System.err.println("❌ [GIT] Erro: " + e.getMessage());
-//        }
+        System.out.println("📤 [GIT] ========================================");
+        System.out.println("📤 [GIT] INICIANDO ENVIO PARA O GITHUB");
+        System.out.println("📤 [GIT] ========================================");
+
+        try {
+            File pastaOrigem = new File(diretorioDocumentos);
+            File indexFile = new File(pastaOrigem, "index.html");
+
+            // ==========================================
+            // VERIFICAR SE O ARQUIVO EXISTE
+            // ==========================================
+            if (!indexFile.exists()) {
+                System.err.println("❌ [GIT] Arquivo index.html não encontrado!");
+                return;
+            }
+
+            System.out.println("📄 [GIT] Arquivo: " + indexFile.getAbsolutePath());
+            System.out.println("📄 [GIT] Tamanho: " + indexFile.length() + " bytes");
+            System.out.println("📄 [GIT] Modificação: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date(indexFile.lastModified())));
+            System.out.println("📤 [GIT] ========================================");
+
+            // ==========================================
+            // PAUSA INICIAL
+            // ==========================================
+            System.out.println("⏳ [GIT] Aguardando 3 segundos para garantir que o arquivo foi salvo...");
+            Thread.sleep(3000);
+
+            // ==========================================
+            // DETECTA O SISTEMA OPERACIONAL
+            // ==========================================
+            boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            String gitCmd = isWindows ? "cmd.exe" : "git";
+            String[] cmdAdd, cmdCommit, cmdPush, cmdStatus;
+
+            if (isWindows) {
+                // 🔥 WINDOWS (SEU COMPUTADOR)
+                String cmdPrefix = "cmd.exe /c cd /d " + diretorioDocumentos + " && ";
+                cmdAdd = new String[]{"cmd.exe", "/c", "cd /d " + diretorioDocumentos + " && git add index.html"};
+                cmdCommit = new String[]{"cmd.exe", "/c", "cd /d " + diretorioDocumentos + " && git commit -m \"Atualização automática do estoque - " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()) + "\""};
+                cmdPush = new String[]{"cmd.exe", "/c", "cd /d " + diretorioDocumentos + " && git push origin main --force"};
+                cmdStatus = new String[]{"cmd.exe", "/c", "cd /d " + diretorioDocumentos + " && git status"};
+            } else {
+                // 🔥 LINUX (RENDER)
+                cmdAdd = new String[]{"git", "-C", diretorioDocumentos, "add", "index.html"};
+                cmdCommit = new String[]{"git", "-C", diretorioDocumentos, "commit", "-m", "Atualização automática do estoque - " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date())};
+                cmdPush = new String[]{"git", "-C", diretorioDocumentos, "push", "origin", "main", "--force"};
+                cmdStatus = new String[]{"git", "-C", diretorioDocumentos, "status"};
+            }
+
+            // ==========================================
+            // 1. GIT STATUS ANTES DO ADD
+            // ==========================================
+            System.out.println("📋 [GIT] PASSO 1: Verificando status ANTES do git add...");
+            executarComandoGit(pastaOrigem, cmdStatus);
+            Thread.sleep(2000);
+
+            // ==========================================
+            // 2. GIT ADD
+            // ==========================================
+            System.out.println("📤 [GIT] PASSO 2: Executando git add index.html...");
+            executarComandoGit(pastaOrigem, cmdAdd);
+            Thread.sleep(3000);
+
+            // ==========================================
+            // 3. GIT STATUS DEPOIS DO ADD
+            // ==========================================
+            System.out.println("📋 [GIT] PASSO 3: Verificando status DEPOIS do git add...");
+            executarComandoGit(pastaOrigem, cmdStatus);
+            Thread.sleep(2000);
+
+            // ==========================================
+            // 4. GIT COMMIT
+            // ==========================================
+            System.out.println("📤 [GIT] PASSO 4: Executando git commit...");
+            executarComandoGit(pastaOrigem, cmdCommit);
+            Thread.sleep(3000);
+
+            // ==========================================
+            // 5. GIT STATUS DEPOIS DO COMMIT
+            // ==========================================
+            System.out.println("📋 [GIT] PASSO 5: Verificando status DEPOIS do git commit...");
+            executarComandoGit(pastaOrigem, cmdStatus);
+            Thread.sleep(2000);
+
+            // ==========================================
+            // 6. GIT PUSH
+            // ==========================================
+            System.out.println("📤 [GIT] PASSO 6: Executando git push origin main --force...");
+            executarComandoGit(pastaOrigem, cmdPush);
+            Thread.sleep(5000);
+
+            // ==========================================
+            // 7. GIT STATUS FINAL
+            // ==========================================
+            System.out.println("📋 [GIT] PASSO 7: Verificando status FINAL...");
+            executarComandoGit(pastaOrigem, cmdStatus);
+            Thread.sleep(2000);
+
+            System.out.println("🚀 [GIT] PROCESSO FINALIZADO COM SUCESSO!");
+            System.out.println("📤 [GIT] ========================================");
+
+        } catch (IOException | InterruptedException e) {
+            System.err.println("❌ [GIT] Erro: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // ==========================================
-    // MÉTODO PARA EXECUTAR COMANDO GIT E MOSTRAR SAÍDA
+    // MÉTODO PARA EXECUTAR COMANDO GIT
     // ==========================================
     private void executarComandoGit(File diretorio, String... comando) throws IOException, InterruptedException {
-        String cmdStr = String.join(" ", comando);
-        System.out.println("   🔹 Executando: " + cmdStr);
-        System.out.println("   📁 Diretório: " + diretorio.getAbsolutePath());
+        System.out.println("   🔹 Executando: " + String.join(" ", comando));
 
         Process process = Runtime.getRuntime().exec(comando, null, diretorio);
         int result = process.waitFor();
@@ -1396,32 +1433,23 @@ public class GerarSiteEstoque {
         // Lê a saída padrão
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line;
-        boolean hasOutput = false;
         while ((line = reader.readLine()) != null) {
-            hasOutput = true;
             System.out.println("   ✅ " + line);
         }
         reader.close();
 
         // Lê a saída de erro
         BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        boolean hasError = false;
         while ((line = errorReader.readLine()) != null) {
-            if (!line.contains("nothing to commit") && !line.contains("already up to date")) {
-                hasError = true;
-                System.err.println("   ❌ " + line);
-            } else {
+            if (line.contains("nothing to commit") || line.contains("already up to date")) {
                 System.out.println("   ℹ️ " + line);
+            } else {
+                System.err.println("   ❌ " + line);
             }
         }
         errorReader.close();
 
-        if (!hasOutput && !hasError) {
-            System.out.println("   ℹ️ Comando executado sem saída.");
-        }
-
         System.out.println("   🔹 Resultado: " + (result == 0 ? "SUCESSO ✅" : "FALHA ❌ (código " + result + ")"));
-        System.out.println("");
     }
 
     // ==========================================
