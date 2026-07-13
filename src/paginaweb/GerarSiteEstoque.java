@@ -192,10 +192,19 @@ public class GerarSiteEstoque {
             writer.println("    .carrinho-vazio { color: #A0A0A0; padding: 30px 0; text-align: center; }");
             writer.println("    .notificacao { position: fixed; bottom: 20px; right: 20px; background: #00a650; color: #FFF; padding: 15px 25px; border-radius: 8px; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: slideIn 0.5s ease; }");
             writer.println("    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }");
+            writer.println("    #divEntrega {");
+            writer.println("        transition: opacity 0.3s ease, max-height 0.3s ease;");
+            writer.println("        opacity: 0;");
+            writer.println("        max-height: 0;");
+            writer.println("        overflow: hidden;");
+            writer.println("    }");
+            writer.println("    #divEntrega.visible {");
+            writer.println("        opacity: 1;");
+            writer.println("        max-height: 1000px;");
+            writer.println("    }");
             writer.println("  </style>");
             writer.println("</head>");
             writer.println("<body>");
-
             // ==========================================
             // HEADER COM CARRINHO
             // ==========================================
@@ -346,7 +355,7 @@ public class GerarSiteEstoque {
             writer.println("      <!-- ========================================== -->");
             writer.println("      <!-- DADOS DE ENTREGA (Destinatário + Endereço) -->");
             writer.println("      <!-- ========================================== -->");
-            writer.println("      <div id='divEntrega' style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
+            writer.println("      <div id='divEntrega' style='display: none; margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
             writer.println("        <label style='color:#A0A0A0; font-size:13px; font-weight:bold;'>📦 Opção de Entrega</label>");
             writer.println("");
             writer.println("        <!-- ========================================== -->");
@@ -829,10 +838,9 @@ public class GerarSiteEstoque {
             writer.println("      let botaoFrete = document.querySelector('#cepCarrinho + button');");
             writer.println("      let enderecoCampos = document.getElementById('enderecoCampos');");
             writer.println("");
-            writer.println("      // Se marcou Retirar na Loja, desmarca Frete");
             writer.println("      if (chkRetirar.checked) {");
             writer.println("        chkFrete.checked = false;");
-            writer.println("        divEntrega.style.display = 'none';");
+            writer.println("        divEntrega.classList.add('visible');   // 🔥 MOSTRA");
             writer.println("        freteResultado.style.display = 'none';");
             writer.println("        enderecoCampos.style.display = 'none';");
             writer.println("        carrinho.frete = 0;");
@@ -840,14 +848,11 @@ public class GerarSiteEstoque {
             writer.println("        if (botaoFrete) botaoFrete.disabled = true;");
             writer.println("        document.getElementById('enderecoCompleto').value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');");
             writer.println("        mostrarNotificacao('✅ Retirada na loja selecionada! Frete zerado.');");
-            writer.println("      }");
-            writer.println("      // Se marcou Entrega via Frete, desmarca Retirar");
-            writer.println("      else if (chkFrete.checked) {");
+            writer.println("      } else if (chkFrete.checked) {");
             writer.println("        chkRetirar.checked = false;");
-            writer.println("        divEntrega.style.display = 'block';");
+            writer.println("        divEntrega.classList.add('visible');   // 🔥 MOSTRA");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
-            writer.println("");
             writer.println("        if (cepInput.value.trim().replace(/\\D/g, '').length === 8) {");
             writer.println("          calcularFreteCarrinho();");
             writer.println("        } else {");
@@ -855,16 +860,13 @@ public class GerarSiteEstoque {
             writer.println("          renderizarCarrinho();");
             writer.println("        }");
             writer.println("        atualizarEnderecoCompleto();");
-            writer.println("      }");
-            writer.println("      // Nenhum marcado - volta ao estado normal");
-            writer.println("      else {");
-            writer.println("        divEntrega.style.display = 'block';");
+            writer.println("      } else {");
+            writer.println("        divEntrega.classList.remove('visible'); // 🔥 ESCONDE");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        carrinho.frete = 0;");
             writer.println("        renderizarCarrinho();");
             writer.println("      }");
-            writer.println("");
             writer.println("      renderizarCarrinho();");
             writer.println("    }");
             writer.println("");
@@ -1303,6 +1305,7 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
             writer.println("      carregarProdutos();");
+            writer.println("      toggleEntrega(); // Garante que os campos fiquem no estado inicial");
             writer.println("    });");
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
