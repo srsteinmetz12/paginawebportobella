@@ -362,7 +362,7 @@ public class GerarSiteEstoque {
             writer.println("        <!-- 🔥 CAMPO DESTINATÁRIO                      -->");
             writer.println("        <!-- ========================================== -->");
             writer.println("        <div style='margin-top:8px;'>");
-            writer.println("          <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>👤 Destinatário (quem vai receber)</label>");
+            writer.println("          <label id='labelDestinatario' style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>👤 Destinatário (quem vai receber)</label>");
             writer.println("          <input type='text' id='destinatario' placeholder='Nome completo do destinatário' style='width:100%; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px; margin-top:3px;'>");
             writer.println("        </div>");
             writer.println("        <!-- TELEFONE -->");
@@ -400,7 +400,7 @@ public class GerarSiteEstoque {
             writer.println("        <!-- ENDEREÇO DE ENTREGA                      -->");
             writer.println("        <!-- ========================================== -->");
             writer.println("        <div id='enderecoCampos' style='display:none; margin-top:12px; padding-top:12px; border-top:1px solid #464646;'>");
-            writer.println("          <label style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>");
+            writer.println("          <label id='labelEndereco' style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>");
             writer.println("");
             writer.println("          <div style='display:flex; gap:10px; margin-top:5px;'>");
             writer.println("            <input type='text' id='endRua' placeholder='Rua' style='flex:2; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>");
