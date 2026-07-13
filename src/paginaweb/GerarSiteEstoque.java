@@ -507,7 +507,7 @@ public class GerarSiteEstoque {
             writer.println("    // ========================================");
             writer.println("    // CONFIGURAÇÕES");
             writer.println("    // ========================================");
-            writer.println("    const URL_BACKEND = 'https://paginawebportobella-1.onrender.com';");
+            writer.println("    const URL_BACKEND = 'https://paginawebportobella-1.onrender.com/api/produtos';");
             writer.println("");
             writer.println("    let carrinho = { itens: [], frete: 0, cep: '' };");
             writer.println("");
