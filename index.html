@@ -127143,7 +127143,7 @@
       let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
 
       if(cep.length !== 8) {
-        alert('Digite um CEP válido com 8 dígitos (ex: 90240580)');
+        alert('Digite um CEP válido com 8 dígitos (ex: 90010300)');
         return;
       }
 
@@ -127230,11 +127230,13 @@
       let chkRetirar = document.getElementById('chkRetirarLoja');
       let chkFrete = document.getElementById('chkEntregaFrete');
       let divEntrega = document.getElementById('divEntrega');
-      let freteResultado = document.getElementById('freteResultado');
       let freteContainer = document.getElementById('freteContainer');
+      let freteResultado = document.getElementById('freteResultado');
+      let enderecoCampos = document.getElementById('enderecoCampos');
       let cepInput = document.getElementById('cepCarrinho');
       let botaoFrete = document.querySelector('#cepCarrinho + button');
-      let enderecoCampos = document.getElementById('enderecoCampos');
+      let labelDestinatario = document.getElementById('labelDestinatario');
+      let labelEndereco = document.getElementById('labelEndereco');
 
       if (chkRetirar.checked) {
         chkFrete.checked = false;
@@ -127242,6 +127244,8 @@
         if (freteContainer) freteContainer.style.display = 'none';
         freteResultado.style.display = 'none';
         enderecoCampos.style.display = 'none';
+        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai retirar';
+        if (labelEndereco) labelEndereco.style.display = 'none';
         carrinho.frete = 0;
         cepInput.disabled = true;
         if (botaoFrete) botaoFrete.disabled = true;
@@ -127254,6 +127258,9 @@
         chkRetirar.checked = false;
         divEntrega.classList.add('visible');
         if (freteContainer) freteContainer.style.display = 'block';
+        enderecoCampos.style.display = 'block';
+        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai receber';
+        if (labelEndereco) labelEndereco.style.display = 'block';
         cepInput.disabled = false;
         if (botaoFrete) botaoFrete.disabled = false;
         if (cepInput.value.trim().replace(/\D/g, '').length === 8) {

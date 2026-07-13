@@ -747,7 +747,7 @@ public class GerarSiteEstoque {
             writer.println("      let cep = document.getElementById('cepCarrinho').value.trim().replace(/\\D/g, '');");
             writer.println("");
             writer.println("      if(cep.length !== 8) {");
-            writer.println("        alert('Digite um CEP válido com 8 dígitos (ex: 90240580)');");
+            writer.println("        alert('Digite um CEP válido com 8 dígitos (ex: 90010300)');");
             writer.println("        return;");
             writer.println("      }");
             writer.println("");
@@ -834,11 +834,13 @@ public class GerarSiteEstoque {
             writer.println("      let chkRetirar = document.getElementById('chkRetirarLoja');");
             writer.println("      let chkFrete = document.getElementById('chkEntregaFrete');");
             writer.println("      let divEntrega = document.getElementById('divEntrega');");
-            writer.println("      let freteResultado = document.getElementById('freteResultado');");
             writer.println("      let freteContainer = document.getElementById('freteContainer');");
+            writer.println("      let freteResultado = document.getElementById('freteResultado');");
+            writer.println("      let enderecoCampos = document.getElementById('enderecoCampos');");
             writer.println("      let cepInput = document.getElementById('cepCarrinho');");
             writer.println("      let botaoFrete = document.querySelector('#cepCarrinho + button');");
-            writer.println("      let enderecoCampos = document.getElementById('enderecoCampos');");
+            writer.println("      let labelDestinatario = document.getElementById('labelDestinatario');");
+            writer.println("      let labelEndereco = document.getElementById('labelEndereco');");
             writer.println("");
             writer.println("      if (chkRetirar.checked) {");
             writer.println("        chkFrete.checked = false;");
@@ -846,6 +848,8 @@ public class GerarSiteEstoque {
             writer.println("        if (freteContainer) freteContainer.style.display = 'none';");
             writer.println("        freteResultado.style.display = 'none';");
             writer.println("        enderecoCampos.style.display = 'none';");
+            writer.println("        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai retirar';");
+            writer.println("        if (labelEndereco) labelEndereco.style.display = 'none';");
             writer.println("        carrinho.frete = 0;");
             writer.println("        cepInput.disabled = true;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = true;");
@@ -858,6 +862,9 @@ public class GerarSiteEstoque {
             writer.println("        chkRetirar.checked = false;");
             writer.println("        divEntrega.classList.add('visible');");
             writer.println("        if (freteContainer) freteContainer.style.display = 'block';");
+            writer.println("        enderecoCampos.style.display = 'block';");
+            writer.println("        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai receber';");
+            writer.println("        if (labelEndereco) labelEndereco.style.display = 'block';");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        if (cepInput.value.trim().replace(/\\D/g, '').length === 8) {");
