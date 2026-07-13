@@ -122,16 +122,29 @@ public class PagamentoServer {
     static class RootHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            // 🔥 DETECTA O AMBIENTE
-            String baseDir;
-            if (System.getenv("RENDER") != null) {
-                baseDir = "/app/estoqueVitrineWeb";
-            } else {
-                baseDir = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+            // 🔥 DIRETÓRIO ONDE O index.html DEVE FICAR
+            String baseDir = "/app/estoqueVitrineWeb";
+            File dir = new File(baseDir);
+
+            // 🔥 CRIA O DIRETÓRIO SE NÃO EXISTIR
+            if (!dir.exists()) {
+                dir.mkdirs();
+                System.out.println("📁 Diretório criado: " + baseDir);
             }
 
-            File htmlFile = new File(baseDir, "index.html");
+            File htmlFile = new File(dir, "index.html");
 
+            // 🔥 SE O ARQUIVO NÃO EXISTIR, GERA
+            if (!htmlFile.exists()) {
+                try {
+                    System.out.println("📄 Gerando index.html...");
+                    GerarSiteEstoque.main(new String[0]);
+                } catch (Exception e) {
+                    System.err.println("❌ Erro ao gerar: " + e.getMessage());
+                }
+            }
+
+            // 🔥 SERVE O ARQUIVO
             if (htmlFile.exists()) {
                 byte[] response = java.nio.file.Files.readAllBytes(htmlFile.toPath());
                 exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
@@ -140,10 +153,9 @@ public class PagamentoServer {
                     os.write(response);
                 }
             } else {
-                String msg = "index.html não encontrado em: " + baseDir;
+                String msg = "Erro: index.html não foi gerado";
                 byte[] response = msg.getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
-                exchange.sendResponseHeaders(404, response.length);
+                exchange.sendResponseHeaders(500, response.length);
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response);
                 }
@@ -2016,6 +2028,7 @@ public class PagamentoServer {
     // ==========================================
     public static void main(String[] args) {
         try {
+            GerarSiteEstoque.main(new String[0]);
             iniciar();
             System.out.println("\n✅ Servidor de pagamentos rodando em http://localhost:8080");
             System.out.println("   🔥 PIX: " + CHAVE_PIX);
