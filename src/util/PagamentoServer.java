@@ -84,7 +84,8 @@ public class PagamentoServer {
     // ==========================================
     public static void iniciar() throws IOException {
         server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
-
+        
+        server.createContext("/", new RootHandler());
         server.createContext("/api/pagamentos/criar", new CriarPagamentoHandler());
         server.createContext("/api/pagamentos/status", new StatusPagamentoHandler());
         server.createContext("/api/webhook", new WebhookHandler());
@@ -114,6 +115,25 @@ public class PagamentoServer {
 
     public static void parar() {
         if (server != null) server.stop(0);
+    }
+    // ==========================================
+    // HANDLER: ROOT HANDLER
+    // ==========================================    
+    static class RootHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String html = "<!DOCTYPE html><html><head><title>PORTOBELLA</title></head>" +
+                          "<body><h1>PORTOBELLA Brechó & Outlet</h1>" +
+                          "<p>API disponível em <a href='/api/produtos'>/api/produtos</a></p>" +
+                          "</body></html>";
+
+            byte[] response = html.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        }
     }
 
     // ==========================================
