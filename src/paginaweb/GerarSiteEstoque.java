@@ -355,7 +355,7 @@ public class GerarSiteEstoque {
             writer.println("      <!-- ========================================== -->");
             writer.println("      <!-- DADOS DE ENTREGA (Destinatário + Endereço) -->");
             writer.println("      <!-- ========================================== -->");
-            writer.println("      <div id='divEntrega' style='display: none; margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
+            writer.println("      <div id='divEntrega' style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>");
             writer.println("        <label style='color:#A0A0A0; font-size:13px; font-weight:bold;'>📦 Opção de Entrega</label>");
             writer.println("");
             writer.println("        <!-- ========================================== -->");
@@ -418,6 +418,7 @@ public class GerarSiteEstoque {
             writer.println("          </div>");
             writer.println("        </div>");
             writer.println("      </div>");
+            writer.println("      <input type='hidden' id='enderecoCompleto' value=''>");
             writer.println("");
             writer.println("      <!-- ========================================== -->");
             writer.println("      <!-- BOTÕES DE PAGAMENTO                       -->");
@@ -840,17 +841,20 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("      if (chkRetirar.checked) {");
             writer.println("        chkFrete.checked = false;");
-            writer.println("        divEntrega.classList.add('visible');   // 🔥 MOSTRA");
+            writer.println("        divEntrega.classList.add('visible');");
             writer.println("        freteResultado.style.display = 'none';");
             writer.println("        enderecoCampos.style.display = 'none';");
             writer.println("        carrinho.frete = 0;");
             writer.println("        cepInput.disabled = true;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = true;");
-            writer.println("        document.getElementById('enderecoCompleto').value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');");
+            writer.println("        let enderecoCompleto = document.getElementById('enderecoCompleto');");
+            writer.println("        if (enderecoCompleto) {");
+            writer.println("          enderecoCompleto.value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');");
+            writer.println("        }");
             writer.println("        mostrarNotificacao('✅ Retirada na loja selecionada! Frete zerado.');");
             writer.println("      } else if (chkFrete.checked) {");
             writer.println("        chkRetirar.checked = false;");
-            writer.println("        divEntrega.classList.add('visible');   // 🔥 MOSTRA");
+            writer.println("        divEntrega.classList.add('visible');");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        if (cepInput.value.trim().replace(/\\D/g, '').length === 8) {");
@@ -861,7 +865,7 @@ public class GerarSiteEstoque {
             writer.println("        }");
             writer.println("        atualizarEnderecoCompleto();");
             writer.println("      } else {");
-            writer.println("        divEntrega.classList.remove('visible'); // 🔥 ESCONDE");
+            writer.println("        divEntrega.classList.remove('visible');");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        carrinho.frete = 0;");
@@ -874,6 +878,8 @@ public class GerarSiteEstoque {
             writer.println("    // ATUALIZAR ENDEREÇO COMPLETO (CAMPO OCULTO)");
             writer.println("    // ========================================");
             writer.println("    function atualizarEnderecoCompleto() {");
+            writer.println("      let enderecoCompleto = document.getElementById('enderecoCompleto');");
+            writer.println("      if (!enderecoCompleto) return;");
             writer.println("      let rua = document.getElementById('endRua').value.trim();");
             writer.println("      let numero = document.getElementById('endNumero').value.trim();");
             writer.println("      let complemento = document.getElementById('endComplemento').value.trim();");
@@ -890,8 +896,7 @@ public class GerarSiteEstoque {
             writer.println("      if (cidade) endereco += ' - ' + cidade;");
             writer.println("      if (uf) endereco += '/' + uf;");
             writer.println("      if (cep) endereco += ' | CEP: ' + cep;");
-            writer.println("");
-            writer.println("      document.getElementById('enderecoCompleto').value = endereco;");
+            writer.println("      enderecoCompleto.value = endereco;");
             writer.println("    }");
             writer.println("");
             writer.println("    // ========================================");
