@@ -380,7 +380,7 @@ public class GerarSiteEstoque {
             writer.println("        <!-- ========================================== -->");
             writer.println("        <!-- CALCULAR FRETE                           -->");
             writer.println("        <!-- ========================================== -->");
-            writer.println("        <div style='margin-top:10px;'>");
+            writer.println("        <div id='freteContainer' style='margin-top:10px;'>");
             writer.println("          <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>📦 Calcular Frete</label>");
             writer.println("");
             writer.println("          <div style='display:flex; gap:10px; margin-top:5px;'>");
@@ -835,6 +835,7 @@ public class GerarSiteEstoque {
             writer.println("      let chkFrete = document.getElementById('chkEntregaFrete');");
             writer.println("      let divEntrega = document.getElementById('divEntrega');");
             writer.println("      let freteResultado = document.getElementById('freteResultado');");
+            writer.println("      let freteContainer = document.getElementById('freteContainer');");
             writer.println("      let cepInput = document.getElementById('cepCarrinho');");
             writer.println("      let botaoFrete = document.querySelector('#cepCarrinho + button');");
             writer.println("      let enderecoCampos = document.getElementById('enderecoCampos');");
@@ -842,6 +843,7 @@ public class GerarSiteEstoque {
             writer.println("      if (chkRetirar.checked) {");
             writer.println("        chkFrete.checked = false;");
             writer.println("        divEntrega.classList.add('visible');");
+            writer.println("        if (freteContainer) freteContainer.style.display = 'none';");
             writer.println("        freteResultado.style.display = 'none';");
             writer.println("        enderecoCampos.style.display = 'none';");
             writer.println("        carrinho.frete = 0;");
@@ -855,6 +857,7 @@ public class GerarSiteEstoque {
             writer.println("      } else if (chkFrete.checked) {");
             writer.println("        chkRetirar.checked = false;");
             writer.println("        divEntrega.classList.add('visible');");
+            writer.println("        if (freteContainer) freteContainer.style.display = 'block';");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        if (cepInput.value.trim().replace(/\\D/g, '').length === 8) {");
@@ -866,6 +869,7 @@ public class GerarSiteEstoque {
             writer.println("        atualizarEnderecoCompleto();");
             writer.println("      } else {");
             writer.println("        divEntrega.classList.remove('visible');");
+            writer.println("        if (freteContainer) freteContainer.style.display = 'none';");
             writer.println("        cepInput.disabled = false;");
             writer.println("        if (botaoFrete) botaoFrete.disabled = false;");
             writer.println("        carrinho.frete = 0;");
