@@ -122,16 +122,31 @@ public class PagamentoServer {
     static class RootHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            String html = "<!DOCTYPE html><html><head><title>PORTOBELLA</title></head>" +
-                          "<body><h1>PORTOBELLA Brechó & Outlet</h1>" +
-                          "<p>API disponível em <a href='/api/produtos'>/api/produtos</a></p>" +
-                          "</body></html>";
+            // 🔥 DETECTA O AMBIENTE
+            String baseDir;
+            if (System.getenv("RENDER") != null) {
+                baseDir = "/app/estoqueVitrineWeb";
+            } else {
+                baseDir = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
+            }
 
-            byte[] response = html.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-            exchange.sendResponseHeaders(200, response.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response);
+            File htmlFile = new File(baseDir, "index.html");
+
+            if (htmlFile.exists()) {
+                byte[] response = java.nio.file.Files.readAllBytes(htmlFile.toPath());
+                exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+                exchange.sendResponseHeaders(200, response.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response);
+                }
+            } else {
+                String msg = "index.html não encontrado em: " + baseDir;
+                byte[] response = msg.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+                exchange.sendResponseHeaders(404, response.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response);
+                }
             }
         }
     }
