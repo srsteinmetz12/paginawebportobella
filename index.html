@@ -126789,7 +126789,7 @@
       <!-- ========================================== -->
       <!-- DADOS DE ENTREGA (Destinatário + Endereço) -->
       <!-- ========================================== -->
-      <div id='divEntrega' style='display: none; margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>
+      <div id='divEntrega' style='margin:12px 0; padding:15px; background:#1E1E1E; border-radius:8px; border:1px solid #464646;'>
         <label style='color:#A0A0A0; font-size:13px; font-weight:bold;'>📦 Opção de Entrega</label>
 
         <!-- ========================================== -->
@@ -126852,6 +126852,7 @@
           </div>
         </div>
       </div>
+      <input type='hidden' id='enderecoCompleto' value=''>
 
       <!-- ========================================== -->
       <!-- BOTÕES DE PAGAMENTO                       -->
@@ -127262,17 +127263,20 @@
 
       if (chkRetirar.checked) {
         chkFrete.checked = false;
-        divEntrega.classList.add('visible');   // 🔥 MOSTRA
+        divEntrega.classList.add('visible');
         freteResultado.style.display = 'none';
         enderecoCampos.style.display = 'none';
         carrinho.frete = 0;
         cepInput.disabled = true;
         if (botaoFrete) botaoFrete.disabled = true;
-        document.getElementById('enderecoCompleto').value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');
+        let enderecoCompleto = document.getElementById('enderecoCompleto');
+        if (enderecoCompleto) {
+          enderecoCompleto.value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');
+        }
         mostrarNotificacao('✅ Retirada na loja selecionada! Frete zerado.');
       } else if (chkFrete.checked) {
         chkRetirar.checked = false;
-        divEntrega.classList.add('visible');   // 🔥 MOSTRA
+        divEntrega.classList.add('visible');
         cepInput.disabled = false;
         if (botaoFrete) botaoFrete.disabled = false;
         if (cepInput.value.trim().replace(/\D/g, '').length === 8) {
@@ -127283,7 +127287,7 @@
         }
         atualizarEnderecoCompleto();
       } else {
-        divEntrega.classList.remove('visible'); // 🔥 ESCONDE
+        divEntrega.classList.remove('visible');
         cepInput.disabled = false;
         if (botaoFrete) botaoFrete.disabled = false;
         carrinho.frete = 0;
@@ -127296,6 +127300,8 @@
     // ATUALIZAR ENDEREÇO COMPLETO (CAMPO OCULTO)
     // ========================================
     function atualizarEnderecoCompleto() {
+      let enderecoCompleto = document.getElementById('enderecoCompleto');
+      if (!enderecoCompleto) return;
       let rua = document.getElementById('endRua').value.trim();
       let numero = document.getElementById('endNumero').value.trim();
       let complemento = document.getElementById('endComplemento').value.trim();
@@ -127312,8 +127318,7 @@
       if (cidade) endereco += ' - ' + cidade;
       if (uf) endereco += '/' + uf;
       if (cep) endereco += ' | CEP: ' + cep;
-
-      document.getElementById('enderecoCompleto').value = endereco;
+      enderecoCompleto.value = endereco;
     }
 
     // ========================================
