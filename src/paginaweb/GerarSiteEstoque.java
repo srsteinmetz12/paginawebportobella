@@ -1286,9 +1286,9 @@ public class GerarSiteEstoque {
             writer.println("      }");
             writer.println("    });");
             writer.println("");
-//            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
-//            writer.println("      carregarProdutos();");
-//            writer.println("    });");
+            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
+            writer.println("      carregarProdutos();");
+            writer.println("    });");
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
             writer.println("      let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];");
