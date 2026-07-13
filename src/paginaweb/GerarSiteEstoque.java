@@ -526,7 +526,7 @@ public class GerarSiteEstoque {
             writer.println("      }");
             writer.println("      ");
             writer.println("      try {");
-            writer.println("        const response = await fetch('/api/produtos');");
+            writer.println("        const response = await fetch('https://paginawebportobella-1.onrender.com/api/produtos');");
             writer.println("        ");
             writer.println("        if (!response.ok) {");
             writer.println("          throw new Error(`HTTP ${response.status}`);");
@@ -1286,9 +1286,9 @@ public class GerarSiteEstoque {
             writer.println("      }");
             writer.println("    });");
             writer.println("");
-//            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
-//            writer.println("      carregarProdutos();");
-//            writer.println("    });");
+            writer.println("    document.addEventListener('DOMContentLoaded', function() {");
+            writer.println("      carregarProdutos();");
+            writer.println("    });");
             writer.println("");
             writer.println("    document.addEventListener('DOMContentLoaded', function() {");
             writer.println("      let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];");
