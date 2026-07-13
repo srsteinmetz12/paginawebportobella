@@ -518,12 +518,12 @@ public class GerarSiteEstoque {
             writer.println("      console.log('🔄 [API] Carregando produtos...');");
             writer.println("      const vitrine = document.getElementById('listaVitrine');");
             writer.println("      ");
-            writer.println("      // 🔥 SE JÁ TEM PRODUTOS NO HTML, NÃO FAZ NADA");
-            writer.println("      const cardsExistentes = vitrine.querySelectorAll('.card');");
-            writer.println("      if (cardsExistentes.length > 0) {");
-            writer.println("        console.log('✅ Produtos já estão no HTML. Ignorando API.');");
-            writer.println("        return;");
-            writer.println("      }");
+//            writer.println("      // 🔥 SE JÁ TEM PRODUTOS NO HTML, NÃO FAZ NADA");
+//            writer.println("      const cardsExistentes = vitrine.querySelectorAll('.card');");
+//            writer.println("      if (cardsExistentes.length > 0) {");
+//            writer.println("        console.log('✅ Produtos já estão no HTML. Ignorando API.');");
+//            writer.println("        return;");
+//            writer.println("      }");
             writer.println("      ");
             writer.println("      try {");
             writer.println("        const response = await fetch('https://paginawebportobella-1.onrender.com/api/produtos');");
