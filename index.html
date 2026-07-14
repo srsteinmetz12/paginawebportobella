@@ -85,6 +85,16 @@
     .carrinho-vazio { color: #A0A0A0; padding: 30px 0; text-align: center; }
     .notificacao { position: fixed; bottom: 20px; right: 20px; background: #00a650; color: #FFF; padding: 15px 25px; border-radius: 8px; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: slideIn 0.5s ease; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    #divEntrega {
+        transition: opacity 0.3s ease, max-height 0.3s ease;
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+    #divEntrega.visible {
+        opacity: 1;
+        max-height: 1000px;
+    }
   </style>
 </head>
 <body>
@@ -80537,18 +80547,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='jaqueta azul marinho puffer curta pp 9241 youcom'>
-        <div class='galeria' id='galeria-9241'>
-          <div class='sem-foto'>Sem Foto</div>
-        </div>
-        <h3>JAQUETA AZUL MARINHO PUFFER CURTA</h3>
-        <div class='info'>Tamanho: PP</div>
-        <div class='codigo-item'>Código: 9241</div>
-        <div class='preco'>R$ 6990,00</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("9241", "JAQUETA AZUL MARINHO PUFFER CURTA", 6990.0)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='jaqueta azul petrolio m 6093 cortelle'>
         <div class='galeria' id='galeria-6093'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/6093-1.jpg' alt='JAQUETA AZUL PETROLIO - Foto 1' class='slide ativo'>
@@ -81835,32 +81833,6 @@
           🛒 Adicionar ao Carrinho
         </button>
       </div>
-      <div class='card' data-busca='jaqueta jeans azul p 9164 marfino'>
-        <div class='galeria' id='galeria-9164'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-1.jpg' alt='JAQUETA JEANS AZUL - Foto 1' class='slide ativo'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-2.jpg' alt='JAQUETA JEANS AZUL - Foto 2' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-3.jpg' alt='JAQUETA JEANS AZUL - Foto 3' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-4.jpg' alt='JAQUETA JEANS AZUL - Foto 4' class='slide'>
-          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-5.jpg' alt='JAQUETA JEANS AZUL - Foto 5' class='slide'>
-          <button class='seta anterior' onclick='mudarSlide("9164", -1)'>❮</button>
-          <button class='seta proximo' onclick='mudarSlide("9164", 1)'>❯</button>
-          <div class='indicadores' id='indicadores-9164'>
-            <span class='dot ativo' onclick='irParaSlide("9164", 0)'></span>
-            <span class='dot' onclick='irParaSlide("9164", 1)'></span>
-            <span class='dot' onclick='irParaSlide("9164", 2)'></span>
-            <span class='dot' onclick='irParaSlide("9164", 3)'></span>
-            <span class='dot' onclick='irParaSlide("9164", 4)'></span>
-          </div>
-          <span class='contador-fotos'>1/5</span>
-        </div>
-        <h3>JAQUETA JEANS AZUL</h3>
-        <div class='info'>Tamanho: P</div>
-        <div class='codigo-item'>Código: 9164</div>
-        <div class='preco'>R$ 89,90</div>
-        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("9164", "JAQUETA JEANS AZUL", 89.9)'>
-          🛒 Adicionar ao Carrinho
-        </button>
-      </div>
       <div class='card' data-busca='jaqueta jeans azul p 9203 marfinno'>
         <div class='galeria' id='galeria-9203'>
           <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9203-1.jpg' alt='JAQUETA JEANS AZUL - Foto 1' class='slide ativo'>
@@ -81884,6 +81856,32 @@
         <div class='codigo-item'>Código: 9203</div>
         <div class='preco'>R$ 89,90</div>
         <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("9203", "JAQUETA JEANS AZUL", 89.9)'>
+          🛒 Adicionar ao Carrinho
+        </button>
+      </div>
+      <div class='card' data-busca='jaqueta jeans azul p 9164 marfino'>
+        <div class='galeria' id='galeria-9164'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-1.jpg' alt='JAQUETA JEANS AZUL - Foto 1' class='slide ativo'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-2.jpg' alt='JAQUETA JEANS AZUL - Foto 2' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-3.jpg' alt='JAQUETA JEANS AZUL - Foto 3' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-4.jpg' alt='JAQUETA JEANS AZUL - Foto 4' class='slide'>
+          <img src='https://raw.githubusercontent.com/srsteinmetz12/paginawebportobella/main/fotos/9164-5.jpg' alt='JAQUETA JEANS AZUL - Foto 5' class='slide'>
+          <button class='seta anterior' onclick='mudarSlide("9164", -1)'>❮</button>
+          <button class='seta proximo' onclick='mudarSlide("9164", 1)'>❯</button>
+          <div class='indicadores' id='indicadores-9164'>
+            <span class='dot ativo' onclick='irParaSlide("9164", 0)'></span>
+            <span class='dot' onclick='irParaSlide("9164", 1)'></span>
+            <span class='dot' onclick='irParaSlide("9164", 2)'></span>
+            <span class='dot' onclick='irParaSlide("9164", 3)'></span>
+            <span class='dot' onclick='irParaSlide("9164", 4)'></span>
+          </div>
+          <span class='contador-fotos'>1/5</span>
+        </div>
+        <h3>JAQUETA JEANS AZUL</h3>
+        <div class='info'>Tamanho: P</div>
+        <div class='codigo-item'>Código: 9164</div>
+        <div class='preco'>R$ 89,90</div>
+        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho("9164", "JAQUETA JEANS AZUL", 89.9)'>
           🛒 Adicionar ao Carrinho
         </button>
       </div>
@@ -126784,7 +126782,7 @@
         <!-- 🔥 CAMPO DESTINATÁRIO                      -->
         <!-- ========================================== -->
         <div style='margin-top:8px;'>
-          <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>👤 Destinatário (quem vai receber)</label>
+          <label id='labelDestinatario' style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>👤 Destinatário (quem vai receber)</label>
           <input type='text' id='destinatario' placeholder='Nome completo do destinatário' style='width:100%; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:14px; margin-top:3px;'>
         </div>
         <!-- TELEFONE -->
@@ -126802,7 +126800,7 @@
         <!-- ========================================== -->
         <!-- CALCULAR FRETE                           -->
         <!-- ========================================== -->
-        <div style='margin-top:10px;'>
+        <div id='freteContainer' style='margin-top:10px;'>
           <label style='color:#A0A0A0; font-size:12px; display:block; text-align:left;'>📦 Calcular Frete</label>
 
           <div style='display:flex; gap:10px; margin-top:5px;'>
@@ -126822,7 +126820,7 @@
         <!-- ENDEREÇO DE ENTREGA                      -->
         <!-- ========================================== -->
         <div id='enderecoCampos' style='display:none; margin-top:12px; padding-top:12px; border-top:1px solid #464646;'>
-          <label style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>
+          <label id='labelEndereco' style='color:#A0A0A0; font-size:12px;'>📍 Endereço de Entrega</label>
 
           <div style='display:flex; gap:10px; margin-top:5px;'>
             <input type='text' id='endRua' placeholder='Rua' style='flex:2; padding:10px; background:#2D2D2D; border:1px solid #464646; color:#FFF; border-radius:6px; font-size:13px;'>
@@ -126840,6 +126838,7 @@
           </div>
         </div>
       </div>
+      <input type='hidden' id='enderecoCompleto' value=''>
 
       <!-- ========================================== -->
       <!-- BOTÕES DE PAGAMENTO                       -->
@@ -127156,7 +127155,7 @@
       let cep = document.getElementById('cepCarrinho').value.trim().replace(/\D/g, '');
 
       if(cep.length !== 8) {
-        alert('Digite um CEP válido com 8 dígitos (ex: 90240580)');
+        alert('Digite um CEP válido com 8 dígitos (ex: 90010300)');
         return;
       }
 
@@ -127243,30 +127242,39 @@
       let chkRetirar = document.getElementById('chkRetirarLoja');
       let chkFrete = document.getElementById('chkEntregaFrete');
       let divEntrega = document.getElementById('divEntrega');
+      let freteContainer = document.getElementById('freteContainer');
       let freteResultado = document.getElementById('freteResultado');
+      let enderecoCampos = document.getElementById('enderecoCampos');
       let cepInput = document.getElementById('cepCarrinho');
       let botaoFrete = document.querySelector('#cepCarrinho + button');
-      let enderecoCampos = document.getElementById('enderecoCampos');
+      let labelDestinatario = document.getElementById('labelDestinatario');
+      let labelEndereco = document.getElementById('labelEndereco');
 
-      // Se marcou Retirar na Loja, desmarca Frete
       if (chkRetirar.checked) {
         chkFrete.checked = false;
-        divEntrega.style.display = 'none';
+        divEntrega.classList.add('visible');
+        if (freteContainer) freteContainer.style.display = 'none';
         freteResultado.style.display = 'none';
         enderecoCampos.style.display = 'none';
+        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai retirar';
+        if (labelEndereco) labelEndereco.style.display = 'none';
         carrinho.frete = 0;
         cepInput.disabled = true;
         if (botaoFrete) botaoFrete.disabled = true;
-        document.getElementById('enderecoCompleto').value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');
+        let enderecoCompleto = document.getElementById('enderecoCompleto');
+        if (enderecoCompleto) {
+          enderecoCompleto.value = 'RETIRADA NA LOJA - ' + (document.getElementById('destinatario').value || 'Cliente');
+        }
         mostrarNotificacao('✅ Retirada na loja selecionada! Frete zerado.');
-      }
-      // Se marcou Entrega via Frete, desmarca Retirar
-      else if (chkFrete.checked) {
+      } else if (chkFrete.checked) {
         chkRetirar.checked = false;
-        divEntrega.style.display = 'block';
+        divEntrega.classList.add('visible');
+        if (freteContainer) freteContainer.style.display = 'block';
+        enderecoCampos.style.display = 'block';
+        if (labelDestinatario) labelDestinatario.textContent = '👤 Quem vai receber';
+        if (labelEndereco) labelEndereco.style.display = 'block';
         cepInput.disabled = false;
         if (botaoFrete) botaoFrete.disabled = false;
-
         if (cepInput.value.trim().replace(/\D/g, '').length === 8) {
           calcularFreteCarrinho();
         } else {
@@ -127274,16 +127282,14 @@
           renderizarCarrinho();
         }
         atualizarEnderecoCompleto();
-      }
-      // Nenhum marcado - volta ao estado normal
-      else {
-        divEntrega.style.display = 'block';
+      } else {
+        divEntrega.classList.remove('visible');
+        if (freteContainer) freteContainer.style.display = 'none';
         cepInput.disabled = false;
         if (botaoFrete) botaoFrete.disabled = false;
         carrinho.frete = 0;
         renderizarCarrinho();
       }
-
       renderizarCarrinho();
     }
 
@@ -127291,6 +127297,8 @@
     // ATUALIZAR ENDEREÇO COMPLETO (CAMPO OCULTO)
     // ========================================
     function atualizarEnderecoCompleto() {
+      let enderecoCompleto = document.getElementById('enderecoCompleto');
+      if (!enderecoCompleto) return;
       let rua = document.getElementById('endRua').value.trim();
       let numero = document.getElementById('endNumero').value.trim();
       let complemento = document.getElementById('endComplemento').value.trim();
@@ -127307,8 +127315,7 @@
       if (cidade) endereco += ' - ' + cidade;
       if (uf) endereco += '/' + uf;
       if (cep) endereco += ' | CEP: ' + cep;
-
-      document.getElementById('enderecoCompleto').value = endereco;
+      enderecoCompleto.value = endereco;
     }
 
     // ========================================
@@ -127722,6 +127729,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       carregarProdutos();
+      toggleEntrega(); // Garante que os campos fiquem no estado inicial
     });
 
     document.addEventListener('DOMContentLoaded', function() {
