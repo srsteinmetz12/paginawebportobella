@@ -123,7 +123,7 @@ public class EmailService {
     // CONFIGURAÇÕES SMTP
     // ==========================================
     private static final String SMTP_HOST = "smtp.gmail.com";
-    private static final int SMTP_PORT_TLS = 587;
+    private static final int SMTP_PORT_TLS = 465;
     private static final String EMAIL_REMETENTE = "portobella.brecho@gmail.com";
     private static final String SENHA_REMETENTE = "mpsihqyoyjnmgkty";
 
@@ -142,7 +142,6 @@ public class EmailService {
                 socket = new Socket(SMTP_HOST, SMTP_PORT_TLS);
                 leitor = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                 escritor = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-
                 lerResposta(leitor); // Saudação do servidor
 
                 // 2. EHLO
@@ -150,12 +149,14 @@ public class EmailService {
                 lerResposta(leitor);
 
                 // 3. STARTTLS
-                escritor.println("STARTTLS");
-                lerResposta(leitor);
+//                escritor.println("STARTTLS");
+//                lerResposta(leitor);
 
                 // 4. Upgrade para SSL
                 SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                sslSocket = (SSLSocket) ssf.createSocket(socket, SMTP_HOST, SMTP_PORT_TLS, true);
+//                sslSocket = (SSLSocket) ssf.createSocket(socket, SMTP_HOST, SMTP_PORT_TLS, true);
+                sslSocket = (SSLSocket) ssf.createSocket(SMTP_HOST, 465);
+                sslSocket.setSoTimeout(15000);
                 sslSocket.startHandshake();
 
                 // Atualiza fluxos
