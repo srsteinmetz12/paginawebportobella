@@ -94,8 +94,7 @@ public class PagamentoServer {
         server.createContext("/api/pagamentos/notificar", new NotificarSistemaHandler());
         server.createContext("/api/pagamentos/consultar", new ConsultarNotificacoesHandler());
         server.createContext("/api/pagamentos/reservar-lote", new ReservarLoteHandler());
-//        server.createContext("/api/pagamentos/liberar-reserva", new LiberarReservaHandler());
-//        server.createContext("/api/pagamentos/responder", new ResponderNotificacaoHandler());
+        server.createContext("/api/pedidos/confirmar", new ConfirmarPedidoHandler());
         server.createContext("/api/produtos", new ListarProdutosHandler());
         server.createContext("/api/pagamentos/verificar-disponibilidade", new VerificarDisponibilidadeHandler());
 
@@ -598,6 +597,8 @@ public class PagamentoServer {
                 JsonObject json = gson.fromJson(body, JsonObject.class);
                 String pedidoId = json.get("pedidoId").getAsString();
                 com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
+                
+                String emailCliente = json.has("email") ? json.get("email").getAsString() : "";
 
                 List<String> codPecas = new ArrayList<>();
                 for (int i = 0; i < itensArray.size(); i++) {
@@ -606,8 +607,9 @@ public class PagamentoServer {
 
                 System.out.println("📦 [RESERVA-LOTE] Pedido: " + pedidoId);
                 System.out.println("📦 [RESERVA-LOTE] Itens: " + codPecas);
+                System.out.println("📦 [RESERVA-LOTE] Email: " + emailCliente);
 
-                boolean reservado = reservarLote(codPecas, pedidoId);
+                boolean reservado = reservarLote(codPecas, pedidoId, emailCliente);
                 
                 if (reservado) {
                     // 🔥 GERA O NOVO HTML AUTOMATICAMENTE
@@ -638,7 +640,7 @@ public class PagamentoServer {
             }
         }
 
-        private boolean reservarLote(List<String> codPecas, String pedidoId) {
+        private boolean reservarLote(List<String> codPecas, String pedidoId, String emailCliente) {
             System.out.println("📥 [RESERVA-LOTE] INICIANDO RESERVA..."); // 🔥 LOG 1
             Connection con = null;
             PreparedStatement stmt = null;
@@ -689,11 +691,12 @@ public class PagamentoServer {
                 String codPecaStr = String.join(",", codPecas);
                 System.out.println("📝 [RESERVA-LOTE] Inserindo reserva: " + codPecaStr); // 🔥 LOG 11
 
-                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, quantidade, data_reserva, status) VALUES (?, ?, ?, NOW(), 'RESERVADO')";
+                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, email, quantidade, data_reserva, status) VALUES (?, ?, ?, ?, NOW(), 'RESERVADO')";
                 stmt = con.prepareStatement(sqlReserva);
                 stmt.setString(1, codPecaStr);
                 stmt.setString(2, pedidoId);
-                stmt.setInt(3, codPecas.size());
+                stmt.setString(3, emailCliente);   // 🔥 NOVO
+                stmt.setInt(4, codPecas.size());
                 int rows = stmt.executeUpdate();
                 System.out.println("   📝 Inseridas " + rows + " linha(s) na reserva"); // 🔥 LOG 12
 
@@ -841,16 +844,27 @@ public class PagamentoServer {
                 String pedidoId = json.get("pedidoId").getAsString();
                 String telefone = json.has("telefone") ? json.get("telefone").getAsString() : "Não informado";
                 String itens = json.get("itens").toString();
+                String emailCliente = json.has("email") ? json.get("email").getAsString() : "Não informado"; // 🔥 EXTRAI EMAIL
 
                 System.out.println("📝 Dados da venda:");
                 System.out.println("   Cliente: " + nomeCliente);
                 System.out.println("   Telefone: " + telefone);
+                System.out.println("   Email: " + emailCliente);
                 System.out.println("   Valor: R$ " + valorTotal);
                 System.out.println("   Peça: " + codPeca);
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
-                salvarNotificacaoNoBanco(codPeca, nomeCliente, valorTotal, meioPagamento,
+                // 🔥 PASSA O EMAIL PARA O MÉTODO DE SALVAR
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, valorTotal, meioPagamento,
                         retirarLoja, endereco, pedidoId, telefone, itens);
+
+                // 🔥 Envia e-mail para a loja avisando do novo pedido pago
+                try {
+                    EmailService.enviarNovaVendaParaLoja(pedidoId, nomeCliente, emailCliente, telefone, valorTotal, meioPagamento, retirarLoja, endereco, itens);
+                    System.out.println("   ✅ E-mail enviado para a loja");
+                } catch (Exception e) {
+                    System.err.println("   ❌ Erro ao enviar e-mail para loja: " + e.getMessage());
+                }
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
@@ -867,10 +881,10 @@ public class PagamentoServer {
             }
         }
 
-        private void salvarNotificacaoNoBanco(String codPeca, String cliente, double valor,
-                                              String meioPagamento, boolean retirarLoja,
-                                              String endereco, String pedidoId, String telefone,
-                                              String itens) {
+        private void salvarNotificacaoNoBanco(String codPeca, String cliente, String emailCliente, double valor,
+                                      String meioPagamento, boolean retirarLoja,
+                                      String endereco, String pedidoId, String telefone,
+                                      String itens) {
             Connection con = null;
             PreparedStatement stmt = null;
 
@@ -878,20 +892,21 @@ public class PagamentoServer {
                 con = ConnectionDB.getConnectionCloud();
 
                 String sql = "INSERT INTO notificacoes_pendentes " +
-                        "(pedido_id, cod_peca, cliente, telefone, valor, meio_pagamento, " +
+                        "(pedido_id, cod_peca, cliente, telefone, email, valor, meio_pagamento, " +
                         "endereco, retirar_loja, itens, data_criacao, status, lida) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
 
                 stmt = con.prepareStatement(sql);
                 stmt.setString(1, pedidoId);
                 stmt.setString(2, codPeca);
                 stmt.setString(3, cliente);
                 stmt.setString(4, telefone);
-                stmt.setDouble(5, valor);
-                stmt.setString(6, meioPagamento);
-                stmt.setString(7, endereco);
-                stmt.setBoolean(8, retirarLoja);
-                stmt.setString(9, itens);
+                stmt.setString(5, emailCliente);   // 🔥 NOVO CAMPO
+                stmt.setDouble(6, valor);
+                stmt.setString(7, meioPagamento);
+                stmt.setString(8, endereco);
+                stmt.setBoolean(9, retirarLoja);
+                stmt.setString(10, itens);
 
                 int rows = stmt.executeUpdate();
                 if (rows > 0) {
@@ -975,6 +990,86 @@ public class PagamentoServer {
                 error.put("error", e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
+        }
+    }
+    
+    // ==========================================
+    // HANDLER: CONFIRMAR PEDIDO (LOJA)
+    // ==========================================
+    static class ConfirmarPedidoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                return;
+            }
+
+            try {
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                String pedidoId = json.get("pedidoId").getAsString();
+                String status = json.get("status").getAsString(); // "RETIRADA" ou "DESPACHADO"
+                String emailCliente = json.get("email").getAsString();
+                String nomeCliente = json.get("nome").getAsString();
+
+                // 🔥 Atualiza o status no banco (opcional)
+//                atualizarStatusPedido(pedidoId, status);
+
+                // 🔥 Envia e-mail para o cliente
+                String assunto = "📦 Pedido #" + pedidoId + " - PORTOBELLA";
+                String corpo;
+                if ("RETIRADA".equals(status)) {
+                    corpo = "Olá " + nomeCliente + ",\n\n" +
+                            "✅ Seu pedido está disponível para retirada na loja!\n" +
+                            "📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS\n" +
+                            "🕐 Horário: Segunda a Sexta, 10h às 18h\n\n" +
+                            "Obrigado por comprar na PORTOBELLA! 💛";
+                } else if ("DESPACHADO".equals(status)) {
+                    corpo = "Olá " + nomeCliente + ",\n\n" +
+                            "🚚 Seu pedido foi despachado para o endereço informado!\n" +
+                            "📦 O código de rastreio será enviado em breve.\n\n" +
+                            "Obrigado por comprar na PORTOBELLA! 💛";
+                } else {
+                    corpo = "Olá " + nomeCliente + ",\n\n" +
+                            "Status do seu pedido #" + pedidoId + " foi atualizado para: " + status + ".\n\n" +
+                            "Obrigado por comprar na PORTOBELLA! 💛";
+                }
+
+                EmailService.enviarCupomAssincrono(emailCliente, assunto, corpo);
+                System.out.println("   ✅ E-mail enviado para o cliente: " + emailCliente);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("mensagem", "Pedido confirmado e cliente notificado por e-mail!");
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (JsonSyntaxException | IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+
+        private void atualizarStatusPedido(String pedidoId, String status) {
+            // 🔥 Atualiza a tabela notificacoes_pendentes ou vendas
+            // Exemplo:
+            // UPDATE notificacoes_pendentes SET status_loja = ? WHERE pedido_id = ?
+            System.out.println("📝 Atualizando status do pedido " + pedidoId + " para " + status);
+            // Você pode implementar com ConnectionDB
         }
     }
 
