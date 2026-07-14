@@ -127318,6 +127318,7 @@
       let retirarLoja = document.getElementById('chkRetirarLoja').checked;
       let destinatario = document.getElementById('destinatario').value.trim();
       let telefone = document.getElementById('telefoneCliente').value.trim();
+      let email = document.getElementById('emailCliente').value.trim();
 
       if (!destinatario || destinatario === '') {
         alert('⚠️ Por favor, informe o nome de quem vai receber/retirar o pedido!');
@@ -127533,7 +127534,8 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 pedidoId: pedidoId,
-                itens: codigos
+                itens: codigos,
+                email: dados.email || 'Não informado'
               })
             })
             .then(response => response.json())

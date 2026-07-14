@@ -466,7 +466,7 @@ public class GerarSiteEstoque {
             writer.println("      </button>");
             writer.println("    </div>");
             writer.println("  </div>");
-                        // ==========================================
+            // ==========================================
             // JAVASCRIPT COMPLETO
             // ==========================================
             writer.println("  <script>");
@@ -922,6 +922,7 @@ public class GerarSiteEstoque {
             writer.println("      let retirarLoja = document.getElementById('chkRetirarLoja').checked;");
             writer.println("      let destinatario = document.getElementById('destinatario').value.trim();");
             writer.println("      let telefone = document.getElementById('telefoneCliente').value.trim();");
+            writer.println("      let email = document.getElementById('emailCliente').value.trim();");
             writer.println("");
             writer.println("      if (!destinatario || destinatario === '') {");
             writer.println("        alert('⚠️ Por favor, informe o nome de quem vai receber/retirar o pedido!');");
@@ -1012,6 +1013,7 @@ public class GerarSiteEstoque {
             writer.println("              endereco: enderecoCompleto,");
             writer.println("              destinatario: destinatario,");
             writer.println("              telefone: telefone || 'Não informado',");
+            writer.println("              email: email || 'Não informado',");
             writer.println("              retirarLoja: retirarLoja,");
             writer.println("              pedidoId: pedidoId");
             writer.println("            };");
@@ -1136,7 +1138,8 @@ public class GerarSiteEstoque {
             writer.println("              headers: { 'Content-Type': 'application/json' },");
             writer.println("              body: JSON.stringify({");
             writer.println("                pedidoId: pedidoId,");
-            writer.println("                itens: codigos");
+            writer.println("                itens: codigos,");
+            writer.println("                email: dados.email || 'Não informado'");
             writer.println("              })");
             writer.println("            })");
             writer.println("            .then(response => response.json())");
@@ -1154,6 +1157,7 @@ public class GerarSiteEstoque {
             writer.println("                  codPeca: dados.itens.map(item => item.id).join(','),");
             writer.println("                  destinatario: dados.destinatario || 'Cliente',");
             writer.println("                  telefone: dados.telefone || 'Não informado',");
+            writer.println("                  email: dados.email || 'Não informado',   // 🔥 ADICIONADO");
             writer.println("                  total: valor,");
             writer.println("                  meio: 'pix',");
             writer.println("                  endereco: dados.endereco || 'Não informado',");
