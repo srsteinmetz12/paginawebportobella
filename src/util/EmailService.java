@@ -1,28 +1,28 @@
-//package util;
-//
-//import java.io.BufferedReader;
-//import java.io.IOException;
-//import java.io.InputStreamReader;
-//import java.io.OutputStreamWriter;
-//import java.io.PrintWriter;
-//import java.net.Socket;
-//import java.util.Base64;
-//import javax.net.ssl.SSLSocket;
-//import javax.net.ssl.SSLSocketFactory;
-//
-//public class EmailService {
-//
-//    // ==========================================
-//    // CONFIGURAÇÕES SMTP
-//    // ==========================================
-//    private static final String SMTP_HOST = "smtp.gmail.com";
-//    private static final int SMTP_PORT_TLS = 465;
-//    private static final String EMAIL_REMETENTE = "portobella.brecho@gmail.com";
-//    private static final String SENHA_REMETENTE = "mpsihqyoyjnmgkty";
-//
-//    // ==========================================
-//    // MÉTODO BASE DE ENVIO (COM LOGS)
-//    // ==========================================
+package util;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Base64;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+public class EmailService {
+
+    // ==========================================
+    // CONFIGURAÇÕES SMTP
+    // ==========================================
+    private static final String SMTP_HOST = "smtp.gmail.com";
+    private static final int SMTP_PORT_TLS = 465;
+    private static final String EMAIL_REMETENTE = "portobella.brecho@gmail.com";
+    private static final String SENHA_REMETENTE = "mpsihqyoyjnmgkty";
+
+    // ==========================================
+    // MÉTODO BASE DE ENVIO (COM LOGS)
+    // ==========================================
 //    private static void enviarEmailBase(final String destinatario, final String assunto, final String corpoHtml) {
 //        if (destinatario == null || destinatario.isEmpty() || "Não informado".equals(destinatario)) {
 //            System.err.println("⚠️ [EMAIL] Destinatário inválido. E-mail não enviado.");
@@ -255,4 +255,4 @@
 //        System.out.println("📧 [GENERICO] Enviando para: " + destinatario);
 //        enviarEmailBase(destinatario, assunto, corpoHtml);
 //    }
-//}
+}
