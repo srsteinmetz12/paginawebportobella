@@ -9,10 +9,6 @@ import java.net.URL;
 
 public class EmailServiceSendGrid {
 
-<<<<<<< HEAD
-=======
-    private static final String API_KEY = System.getenv("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");
->>>>>>> parent of 04a6ebf... Criação da classe para envio de email SendGrid
     private static final String EMAIL_REMETENTE = "portobella.brecho@gmail.com";
 
     // ==========================================
