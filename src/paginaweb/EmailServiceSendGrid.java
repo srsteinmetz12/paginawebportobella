@@ -1,7 +1,6 @@
 package paginaweb;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -12,7 +11,7 @@ public class EmailServiceSendGrid {
     private static final String EMAIL_REMETENTE = "portobella.brecho@gmail.com";
 
     // ==========================================
-    // MÉTODO PRINCIPAL (ENVIO VIA SENDGRID)
+    // MÉTODO BASE (HTTP PARA SENDGRID) – SEM SMTP!
     // ==========================================
     private static void enviarEmailSendGrid(final String destinatario, final String assunto, final String corpoHtml) {
         new Thread(() -> {
@@ -49,9 +48,8 @@ public class EmailServiceSendGrid {
 
                 int code = conn.getResponseCode();
                 if (code >= 200 && code < 300) {
-                    System.out.println("✅ E-mail enviado para: " + destinatario);
+                    System.out.println("✅ E-mail SendGrid enviado para: " + destinatario);
                 } else {
-                    // 🔥 LÊ O ERRO
                     StringBuilder sb = new StringBuilder();
                     try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), "UTF-8"))) {
                         String line;
@@ -59,8 +57,8 @@ public class EmailServiceSendGrid {
                     }
                     System.err.println("❌ Erro " + code + ": " + sb.toString());
                 }
-            } catch (IOException e) {
-                System.err.println("❌ Exceção: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("❌ Exceção SendGrid: " + e.getMessage());
             }
         }).start();
     }
