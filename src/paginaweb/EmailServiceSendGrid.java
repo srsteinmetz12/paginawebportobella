@@ -87,4 +87,22 @@ public class EmailServiceSendGrid {
 
         enviarEmailSendGrid("portobella.brecho@gmail.com", assunto, corpoHtml);
     }
+    
+    // ==========================================
+    // E-MAIL PARA CLIENTE - PEDIDO RECEBIDO (AGUARDE CONFIRMAÇÃO)
+    // ==========================================
+    public static void enviarPedidoRecebidoCliente(String emailCliente, String nomeCliente,
+                                                   String pedidoId, double valor, String itens) {
+        String assunto = "📥 Pedido recebido - #" + pedidoId + " - PORTOBELLA";
+
+        String corpoHtml = "<h2>📥 Pedido recebido com sucesso!</h2>" +
+                "<p>Olá " + nomeCliente + ",</p>" +
+                "<p>Seu pedido #" + pedidoId + " foi <strong>recebido</strong> e encaminhado para a loja.</p>" +
+                "<p><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>" +
+                "<p><strong>Itens:</strong> " + itens + "</p>" +
+                "<br><p>Assim que o pagamento for confirmado pela loja, você receberá outro e-mail com o cupom fiscal.</p>" +
+                "<p>Obrigado por comprar na PORTOBELLA! 💛</p>";
+
+        enviarEmailSendGrid(emailCliente, assunto, corpoHtml);
+    }
 }

@@ -737,6 +737,14 @@ public class PagamentoServer {
                 // 🔥 PASSA O EMAIL PARA O MÉTODO DE SALVAR
                 salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, valorTotal, meioPagamento,
                         retirarLoja, endereco, pedidoId, telefone, itens);
+                
+                // 🔥 Envia e-mail para o cliente avisando que o pedido foi recebido
+                try {
+                    EmailServiceSendGrid.enviarPedidoRecebidoCliente(emailCliente, nomeCliente, pedidoId, valorTotal, itens);
+                    System.out.println("   ✅ E-mail de pedido recebido enviado para o cliente: " + emailCliente);
+                } catch (Exception e) {
+                    System.err.println("   ❌ Erro ao enviar e-mail de pedido recebido: " + e.getMessage());
+                }
 
                 // 🔥 Envia e-mail para a loja avisando do novo pedido pago
                 try {
