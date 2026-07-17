@@ -119,31 +119,59 @@ public class EmailService {
         String barra = gerarBarraEvolucao(2); // 🔥 ETAPA 2: Pagamento confirmado
 
         String corpoHtml = 
-            "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;'>" +
-            "  <div style='background-color: #1E1E1E; color: #FFF; padding: 15px; text-align: center; border-radius: 10px 10px 0 0;'>" +
-            "    <h2 style='margin: 0; font-size: 24px; letter-spacing: 2px;'>🛍️ PORTOBELLA</h2>" +
-            "    <p style='margin: 0; font-size: 12px; opacity: 0.8;'>Brechó & Outlet</p>" +
-            "  </div>" +
-            "  <div style='padding: 20px; background-color: #FFF; border-radius: 0 0 10px 10px;'>" +
-            "    <h2 style='color: #1E1E1E;'>✅ Pagamento Confirmado!</h2>" +
-            "    <p style='color: #333;'>Olá <strong>" + nomeCliente + "</strong>,</p>" +
-            "    <p style='color: #333;'>Seu pagamento do pedido <strong>#" + pedidoId + "</strong> foi confirmado.</p>" +
-            "    <p><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>" +
-            "    <p><strong>Itens:</strong></p>" +
-            itensHtml +
-            "    <br>" +
-            // 🔥 BARRA DE EVOLUÇÃO
-            barra +
-            "    <br>" +
-            "    <div style='background-color: #f0f0f0; padding: 15px; border-radius: 8px; text-align: center;'>" +
-            "      <p style='margin: 0; color: #333;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
-            "      <p style='margin: 0; color: #555; font-size: 12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
-            "      <p style='margin: 0; color: #555; font-size: 12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
-            "    </div>" +
-            "    <br>" +
-            "    <p style='text-align: center; color: #888; font-size: 12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
-            "  </div>" +
-            "</div>";
+        "<!DOCTYPE html>" +
+        "<html>" +
+        "<head>" +
+        "  <meta charset='UTF-8'>" +
+        "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+        "  <style>" +
+        "    @media only screen and (max-width: 600px) {" +
+        "      .container { width: 100% !important; padding: 10px !important; }" +
+        "      .header h2 { font-size: 20px !important; }" +
+        "      .content { padding: 15px !important; }" +
+        "      .content h2 { font-size: 18px !important; }" +
+        "      .content p { font-size: 14px !important; }" +
+        "      .barra { padding: 10px !important; }" +
+        "      .barra table { width: 100% !important; }" +
+        "      .barra td { font-size: 10px !important; }" +
+        "      .footer { font-size: 11px !important; padding: 10px !important; }" +
+        "      .itens li { font-size: 13px !important; }" +
+        "    }" +
+        "  </style>" +
+        "</head>" +
+        "<body style='margin: 0; padding: 0; background-color: #f9f9f9; font-family: Arial, sans-serif;'>" +
+        "<table align='center' border='0' cellpadding='0' cellspacing='0' width='100%' style='max-width: 600px; background-color: #ffffff; border-radius: 10px; margin: 20px auto; border-collapse: collapse;'>" +
+        "  <tr>" +
+        "    <td style='background-color: #1E1E1E; color: #FFF; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>" +
+        "      <h2 style='margin: 0; font-size: 24px; letter-spacing: 2px;'>🛍️ PORTOBELLA</h2>" +
+        "      <p style='margin: 0; font-size: 12px; opacity: 0.8;'>Brechó & Outlet</p>" +
+        "    </td>" +
+        "  </tr>" +
+        "  <tr>" +
+        "    <td style='padding: 20px;'>" +
+        "      <h2 style='color: #1E1E1E; font-size: 22px;'>📥 Pedido recebido com sucesso!</h2>" +
+        "      <p style='color: #333; font-size: 16px;'>Olá <strong>" + nomeCliente + "</strong>,</p>" +
+        "      <p style='color: #333; font-size: 16px;'>Seu pedido <strong>#" + pedidoId + "</strong> foi recebido e encaminhado para a loja.</p>" +
+        "      <p style='font-size: 16px;'><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>" +
+        "      <p style='font-size: 16px;'><strong>Itens:</strong></p>" +
+        itensHtml +
+        "      <br>" +
+        "      <div class='barra' style='padding: 10px 0;'>" + barra + "</div>" +
+        "      <br>" +
+        "      <p style='color: #555; font-size: 15px;'>Assim que o pagamento for confirmado, você receberá outro e-mail com o cupom fiscal.</p>" +
+        "      <br>" +
+        "      <div style='background-color: #f0f0f0; padding: 15px; border-radius: 8px; text-align: center;'>" +
+        "        <p style='margin: 0; color: #333; font-size: 14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
+        "        <p style='margin: 0; color: #555; font-size: 12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
+        "        <p style='margin: 0; color: #555; font-size: 12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
+        "      </div>" +
+        "      <br>" +
+        "      <p style='text-align: center; color: #888; font-size: 12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+        "    </td>" +
+        "  </tr>" +
+        "</table>" +
+        "</body>" +
+        "</html>";
 
         enviarEmailBase(emailCliente, assunto, corpoHtml);
     }

@@ -41,9 +41,9 @@ public class EmailTemplateHelper {
         String[] etapas = {"Recebido", "Pagamento confirmado", "Em separação", "Disponível / Despachado"};
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<div style='font-family: Arial, sans-serif; max-width: 500px; margin: 20px auto; padding: 15px; background: #f9f9f9; border-radius: 8px;'>");
+        sb.append("<div style='width: 100%; max-width: 500px; margin: 20px auto; padding: 15px; background: #f9f9f9; border-radius: 8px; font-size: 12px;'>");
         sb.append("<p style='text-align: center; font-weight: bold; color: #1E1E1E; margin: 0 0 15px 0;'>📦 Acompanhe seu pedido</p>");
-        sb.append("<table style='width: 100%; border-collapse: collapse;'>");
+        sb.append("<table style='width: 100%; table-layout: fixed; border-collapse: collapse;'>");
         sb.append("<tr>");
 
         for (int i = 0; i < etapas.length; i++) {
