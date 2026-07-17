@@ -260,6 +260,7 @@ public class GerarSiteEstoque {
                 // CARD DO PRODUTO
                 // ==========================================
                 String marca = rs.getString("marca") != null ? rs.getString("marca") : "";
+                String marcaExibicao = (marca != null && !marca.isEmpty()) ? marca : "Sem marca";
                 writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " " + tamanho.toLowerCase() + " " + codExibicao.toLowerCase() + " " + marca.toLowerCase() + "'>");
 
                 // ==========================================
@@ -299,7 +300,7 @@ public class GerarSiteEstoque {
                 // ==========================================
                 writer.println("        <h3>" + descricao + "</h3>");
                 writer.println("        <div class='info'>Tamanho: " + tamanho + "</div>");
-                writer.println("        <div class='codigo-item'>Código: " + codExibicao + "</div>");
+                writer.println("        <div class='codigo-item'>" + marcaExibicao + "</div>");
                 writer.println("        <div class='preco'>R$ " + String.format("%.2f", preco).replace(".", ",") + "</div>");
                 writer.println("        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho(\"" + codExibicao + "\", \"" + descricao.replace("\"", "\\\"") + "\", " + preco + ")'>");
                 writer.println("          🛒 Adicionar ao Carrinho");
