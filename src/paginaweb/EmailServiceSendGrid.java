@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import util.EmailTemplateHelper;
+import static util.EmailTemplateHelper.gerarBarraEvolucao;
 
 public class EmailServiceSendGrid {
 
@@ -92,16 +94,40 @@ public class EmailServiceSendGrid {
     // E-MAIL PARA CLIENTE - PEDIDO RECEBIDO (AGUARDE CONFIRMAÇÃO)
     // ==========================================
     public static void enviarPedidoRecebidoCliente(String emailCliente, String nomeCliente,
-                                                   String pedidoId, double valor, String itens) {
+                                               String pedidoId, double valor, String itens) {
         String assunto = "📥 Pedido recebido - #" + pedidoId + " - PORTOBELLA";
 
-        String corpoHtml = "<h2>📥 Pedido recebido com sucesso!</h2>" +
-                "<p>Olá " + nomeCliente + ",</p>" +
-                "<p>Seu pedido #" + pedidoId + " foi <strong>recebido</strong> e encaminhado para a loja.</p>" +
-                "<p><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>" +
-                "<p><strong>Itens:</strong> " + itens + "</p>" +
-                "<br><p>Assim que o pagamento for confirmado pela loja, você receberá outro e-mail com o cupom fiscal.</p>" +
-                "<p>Obrigado por comprar na PORTOBELLA! 💛</p>";
+        // 🔥 FORMATA OS ITENS E A BARRA DE EVOLUÇÃO
+        String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
+        String barra = EmailTemplateHelper.gerarBarraEvolucao(1); // Etapa 1: Recebido
+
+        String corpoHtml =
+            "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;'>"
+            + "<div style='background-color: #1E1E1E; color: #FFF; padding: 15px; text-align: center; border-radius: 10px 10px 0 0;'>"
+            + "  <h2 style='margin: 0; font-size: 24px; letter-spacing: 2px;'>🛍️ PORTOBELLA</h2>"
+            + "  <p style='margin: 0; font-size: 12px; opacity: 0.8;'>Brechó & Outlet</p>"
+            + "</div>"
+            + "<div style='padding: 20px; background-color: #FFF; border-radius: 0 0 10px 10px;'>"
+            + "  <h2 style='color: #1E1E1E;'>📥 Pedido recebido com sucesso!</h2>"
+            + "  <p style='color: #333;'>Olá <strong>" + nomeCliente + "</strong>,</p>"
+            + "  <p style='color: #333;'>Seu pedido <strong>#" + pedidoId + "</strong> foi recebido e encaminhado para a loja.</p>"
+            + "  <p><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>"
+            + "  <p><strong>Itens:</strong></p>"
+            + itensHtml
+            + "  <br>"
+            + barra
+            + "  <br>"
+            + "  <p style='color: #555;'>Assim que o pagamento for confirmado, você receberá outro e-mail com o cupom fiscal.</p>"
+            + "  <br>"
+            + "  <div style='background-color: #f0f0f0; padding: 15px; border-radius: 8px; text-align: center;'>"
+            + "    <p style='margin: 0; color: #333;'><strong>PORTOBELLA Brechó & Outlet</strong></p>"
+            + "    <p style='margin: 0; color: #555; font-size: 12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>"
+            + "    <p style='margin: 0; color: #555; font-size: 12px;'>🕐 Segunda a Sexta, 10h às 18h</p>"
+            + "  </div>"
+            + "  <br>"
+            + "  <p style='text-align: center; color: #888; font-size: 12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>"
+            + "</div>"
+            + "</div>";
 
         enviarEmailSendGrid(emailCliente, assunto, corpoHtml);
     }
