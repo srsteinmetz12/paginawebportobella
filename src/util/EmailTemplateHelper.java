@@ -41,37 +41,44 @@ public class EmailTemplateHelper {
         String[] etapas = {"Recebido", "Pagamento confirmado", "Em separação", "Disponível / Despachado"};
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<div style='width: 100%; max-width: 500px; margin: 20px auto; padding: 15px; background: #f9f9f9; border-radius: 8px; font-size: 12px;'>");
-        sb.append("<p style='text-align: center; font-weight: bold; color: #1E1E1E; margin: 0 0 15px 0;'>📦 Acompanhe seu pedido</p>");
-        sb.append("<table style='width: 100%; table-layout: fixed; border-collapse: collapse;'>");
-        sb.append("<tr>");
+        // Container principal com fundo e bordas arredondadas
+        sb.append("<div style='font-family: Arial, sans-serif; max-width: 100%; margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px;'>");
+        sb.append("<p style='text-align: center; font-weight: bold; color: #1E1E1E; margin: 0 0 10px 0; font-size: 14px;'>📦 Acompanhe seu pedido</p>");
+
+        // Usando divs com flex (compatível com a maioria dos clientes de e-mail)
+        sb.append("<div style='display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap;'>");
 
         for (int i = 0; i < etapas.length; i++) {
             boolean concluida = (i < etapaConcluida);
             boolean ativa = (i == etapaConcluida - 1 && etapaConcluida <= 4 && etapaConcluida > 0);
-            String cor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#ccc");
-            String textoCor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#999");
+            String cor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#cccccc");
+            String textoCor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#999999");
 
-            sb.append("<td style='text-align: center; padding: 0 4px; width: 25%;'>");
-            sb.append("<div style='width: 30px; height: 30px; line-height: 30px; border-radius: 50%; background: ").append(cor).append("; color: #fff; font-weight: bold; margin: 0 auto; font-size: 14px;'>");
+            // Item da etapa
+            sb.append("<div style='display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0;'>");
+
+            // Círculo
+            sb.append("<div style='width: 28px; height: 28px; line-height: 28px; border-radius: 50%; background: ").append(cor).append("; color: #fff; font-weight: bold; text-align: center; font-size: 14px; margin: 0 auto;'>");
             if (concluida) sb.append("✓");
             else if (ativa) sb.append("•");
             else sb.append(" ");
             sb.append("</div>");
-            sb.append("<div style='font-size: 11px; color: ").append(textoCor).append("; margin-top: 5px; font-weight: ").append(concluida || ativa ? "bold" : "normal").append(";'>");
+
+            // Texto da etapa (com quebra de linha automática)
+            sb.append("<div style='font-size: 10px; color: ").append(textoCor).append("; margin-top: 4px; font-weight: ").append(concluida || ativa ? "bold" : "normal").append("; text-align: center; word-wrap: break-word; max-width: 80px; line-height: 1.2;'>");
             sb.append(etapas[i]);
             sb.append("</div>");
-            sb.append("</td>");
 
+            sb.append("</div>");
+
+            // Linha de conexão (exceto após a última etapa)
             if (i < etapas.length - 1) {
-                sb.append("<td style='width: 10%; text-align: center; padding: 0;'>");
-                String corLinha = (concluida || (i < etapaConcluida)) ? "#00a650" : "#ccc";
-                sb.append("<div style='height: 2px; background: ").append(corLinha).append("; margin: 15px 0;'></div>");
-                sb.append("</td>");
+                String corLinha = (concluida || (i < etapaConcluida)) ? "#00a650" : "#cccccc";
+                sb.append("<div style='flex: 1; height: 2px; background: ").append(corLinha).append("; margin: 0 2px; min-width: 10px;'></div>");
             }
         }
-        sb.append("</tr>");
-        sb.append("</table>");
+
+        sb.append("</div>");
         sb.append("</div>");
         return sb.toString();
     }
