@@ -41,31 +41,35 @@ public class EmailTemplateHelper {
         String[] etapas = {"Recebido", "Pagamento confirmado", "Em separação", "Disponível / Despachado"};
         StringBuilder sb = new StringBuilder();
 
-        // Container principal com fundo e bordas arredondadas
-        sb.append("<div style='font-family: Arial, sans-serif; max-width: 100%; margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px;'>");
-        sb.append("<p style='text-align: center; font-weight: bold; color: #1E1E1E; margin: 0 0 10px 0; font-size: 14px;'>📦 Acompanhe seu pedido</p>");
+        // Container principal
+        sb.append("<div style='font-family: Arial, sans-serif; max-width: 100%; margin: 15px 0; padding: 10px 5px; background: #f9f9f9; border-radius: 10px; text-align: center;'>");
+        sb.append("<p style='font-size: 13px; font-weight: bold; color: #1E1E1E; margin: 0 0 10px 0;'>📦 Acompanhe seu pedido</p>");
 
-        // Usando divs com flex (compatível com a maioria dos clientes de e-mail)
-        sb.append("<div style='display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap;'>");
+        // Container flexível para os itens (horizontal)
+        sb.append("<div style='display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; padding: 0 5px;'>");
 
         for (int i = 0; i < etapas.length; i++) {
             boolean concluida = (i < etapaConcluida);
             boolean ativa = (i == etapaConcluida - 1 && etapaConcluida <= 4 && etapaConcluida > 0);
-            String cor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#cccccc");
-            String textoCor = concluida ? "#00a650" : (ativa ? "#f39c12" : "#999999");
+            String corFundo = concluida ? "#00a650" : (ativa ? "#f39c12" : "#d3d3d3");
+            String corTexto = concluida ? "#00a650" : (ativa ? "#f39c12" : "#aaaaaa");
 
-            // Item da etapa
+            // Item da etapa (círculo + texto)
             sb.append("<div style='display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0;'>");
 
             // Círculo
-            sb.append("<div style='width: 28px; height: 28px; line-height: 28px; border-radius: 50%; background: ").append(cor).append("; color: #fff; font-weight: bold; text-align: center; font-size: 14px; margin: 0 auto;'>");
+            sb.append("<div style='width: 24px; height: 24px; line-height: 24px; border-radius: 50%; background: ")
+              .append(corFundo)
+              .append("; color: #fff; font-size: 12px; font-weight: bold; text-align: center; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
             if (concluida) sb.append("✓");
             else if (ativa) sb.append("•");
             else sb.append(" ");
             sb.append("</div>");
 
-            // Texto da etapa (com quebra de linha automática)
-            sb.append("<div style='font-size: 10px; color: ").append(textoCor).append("; margin-top: 4px; font-weight: ").append(concluida || ativa ? "bold" : "normal").append("; text-align: center; word-wrap: break-word; max-width: 80px; line-height: 1.2;'>");
+            // Nome da etapa (abaixo do círculo)
+            sb.append("<div style='font-size: 9px; color: ").append(corTexto).append("; margin-top: 4px; font-weight: ")
+              .append(concluida || ativa ? "bold" : "normal")
+              .append("; text-align: center; line-height: 1.2; max-width: 70px; word-wrap: break-word;'>");
             sb.append(etapas[i]);
             sb.append("</div>");
 
@@ -73,13 +77,54 @@ public class EmailTemplateHelper {
 
             // Linha de conexão (exceto após a última etapa)
             if (i < etapas.length - 1) {
-                String corLinha = (concluida || (i < etapaConcluida)) ? "#00a650" : "#cccccc";
-                sb.append("<div style='flex: 1; height: 2px; background: ").append(corLinha).append("; margin: 0 2px; min-width: 10px;'></div>");
+                String corLinha = (i < etapaConcluida) ? "#00a650" : "#d3d3d3";
+                sb.append("<div style='flex: 1; height: 2px; background: ").append(corLinha).append("; margin: 0 2px; min-width: 8px;'></div>");
             }
         }
 
         sb.append("</div>");
         sb.append("</div>");
         return sb.toString();
+    }
+    
+    public static String gerarResumoFinanceiro(double subtotal, double frete, double total) {
+        return "<div style='background: #f5f5f5; padding: 10px; border-radius: 8px; margin: 10px 0;'>" +
+               "  <p style='margin: 5px 0;'><strong>Subtotal:</strong> R$ " + String.format("%.2f", subtotal) + "</p>" +
+               "  <p style='margin: 5px 0;'><strong>Frete:</strong> R$ " + String.format("%.2f", frete) + "</p>" +
+               "  <p style='margin: 5px 0; font-size: 18px; font-weight: bold; color: #00a650;'>" +
+               "    <strong>Total:</strong> R$ " + String.format("%.2f", total) +
+               "  </p>" +
+               "</div>";
+    }
+    
+    public static String gerarCupomFiscal(String pedidoId, String nomeCliente, String itensHtml, double subtotal, double frete, double total) {
+        String data = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String hora = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+
+        return "<div style='border: 2px solid #1E1E1E; border-radius: 10px; padding: 15px; margin: 15px 0; background: #fefefe;'>" +
+               "  <div style='text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 10px;'>" +
+               "    <h3 style='margin: 0; color: #1E1E1E; font-size: 18px;'>🛍️ PORTOBELLA Brechó & Outlet</h3>" +
+               "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>CNPJ: 00.000.000/0001-00</p>" +
+               "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
+               "  </div>" +
+               "  <div style='padding: 10px 0;'>" +
+               "    <p style='margin: 3px 0; font-size: 13px;'><strong>Pedido:</strong> #" + pedidoId + "</p>" +
+               "    <p style='margin: 3px 0; font-size: 13px;'><strong>Cliente:</strong> " + nomeCliente + "</p>" +
+               "    <p style='margin: 3px 0; font-size: 13px;'><strong>Data:</strong> " + data + " – " + hora + "</p>" +
+               "  </div>" +
+               "  <div style='border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 10px 0;'>" +
+               "    <p style='font-weight: bold; margin: 0 0 5px 0; font-size: 14px;'>Itens:</p>" +
+               itensHtml +
+               "  </div>" +
+               "  <div style='padding: 10px 0; text-align: right;'>" +
+               "    <p style='margin: 3px 0; font-size: 13px;'><strong>Subtotal:</strong> R$ " + String.format("%.2f", subtotal) + "</p>" +
+               "    <p style='margin: 3px 0; font-size: 13px;'><strong>Frete:</strong> R$ " + String.format("%.2f", frete) + "</p>" +
+               "    <p style='margin: 3px 0; font-size: 18px; font-weight: bold; color: #00a650;'>Total: R$ " + String.format("%.2f", total) + "</p>" +
+               "  </div>" +
+               "  <div style='text-align: center; border-top: 1px dashed #ccc; padding-top: 10px;'>" +
+               "    <p style='margin: 0; font-size: 11px; color: #888;'>Cupom Não Fiscal – Este documento não é nota fiscal</p>" +
+               "    <p style='margin: 0; font-size: 11px; color: #888;'>Obrigado pela preferência! 💛</p>" +
+               "  </div>" +
+               "</div>";
     }
 }
