@@ -41,11 +41,10 @@ public class EmailTemplateHelper {
         String[] etapas = {"Recebido", "Pagamento confirmado", "Em separação", "Disponível / Despachado"};
         StringBuilder sb = new StringBuilder();
 
-        // Container principal
         sb.append("<div style='font-family: Arial, sans-serif; max-width: 100%; margin: 15px 0; padding: 10px 5px; background: #f9f9f9; border-radius: 10px; text-align: center;'>");
         sb.append("<p style='font-size: 13px; font-weight: bold; color: #1E1E1E; margin: 0 0 10px 0;'>📦 Acompanhe seu pedido</p>");
 
-        // Container flexível para os itens (horizontal)
+        // Container flexível para os itens (círculo + texto abaixo)
         sb.append("<div style='display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; padding: 0 5px;'>");
 
         for (int i = 0; i < etapas.length; i++) {
@@ -54,7 +53,7 @@ public class EmailTemplateHelper {
             String corFundo = concluida ? "#00a650" : (ativa ? "#f39c12" : "#d3d3d3");
             String corTexto = concluida ? "#00a650" : (ativa ? "#f39c12" : "#aaaaaa");
 
-            // Item da etapa (círculo + texto)
+            // Cada etapa: círculo em cima, texto embaixo
             sb.append("<div style='display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0;'>");
 
             // Círculo
