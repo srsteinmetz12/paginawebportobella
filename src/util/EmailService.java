@@ -1,6 +1,7 @@
 package util;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -85,12 +86,11 @@ public class EmailService {
 
             } catch (Exception e) {
                 System.err.println("❌ Erro SMTP para " + destinatario + ": " + e.getMessage());
-                e.printStackTrace();
             } finally {
                 try { if (escritor != null) escritor.close(); } catch (Exception ignore) {}
-                try { if (leitor != null) leitor.close(); } catch (Exception ignore) {}
-                try { if (sslSocket != null) sslSocket.close(); } catch (Exception ignore) {}
-                try { if (socket != null) socket.close(); } catch (Exception ignore) {}
+                try { if (leitor != null) leitor.close(); } catch (IOException ignore) {}
+                try { if (sslSocket != null) sslSocket.close(); } catch (IOException ignore) {}
+                try { if (socket != null) socket.close(); } catch (IOException ignore) {}
             }
         }).start();
     }
@@ -254,7 +254,6 @@ public class EmailService {
                                               String codigoRastreio) {
         String assunto = "🚚 Pedido despachado - #" + pedidoId + " - PORTOBELLA";
         String codigo = (codigoRastreio != null && !codigoRastreio.isEmpty()) ? codigoRastreio : "será enviado em breve";
-
         String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
         String barra = EmailTemplateHelper.gerarBarraEvolucao(4); // Etapa 4: Despachado
         String resumo = EmailTemplateHelper.gerarResumoFinanceiro(subtotal, frete, total);
@@ -295,17 +294,4 @@ public class EmailService {
 
         enviarEmailBase(emailCliente, assunto, corpoHtml);
     }
-
-//    public static void enviarPedidoDespachado(String emailCliente, String nomeCliente,
-//                                              String pedidoId, String codigoRastreio) {
-//        String assunto = "🚚 Pedido despachado - #" + pedidoId;
-//        String codigo = (codigoRastreio != null && !codigoRastreio.isEmpty()) ?
-//                codigoRastreio : "será enviado em breve";
-//        String corpoHtml = "<h2>🚚 Pedido despachado!</h2>" +
-//                "<p>Olá " + nomeCliente + ",</p>" +
-//                "<p>Seu pedido #" + pedidoId + " foi <strong>despachado</strong>.</p>" +
-//                "<p><strong>📦 Código de rastreio:</strong> " + codigo + "</p>" +
-//                "<br><p>Obrigado por comprar na PORTOBELLA! 💛</p>";
-//        enviarEmailBase(emailCliente, assunto, corpoHtml);
-//    }
 }

@@ -11,9 +11,21 @@ public class EmailTemplateHelper {
     // FORMATAR ITENS (JSON -> HTML)
     // ==========================================
     public static String formatarItensHtml(String itensJson) {
-        if (itensJson == null || itensJson.isEmpty()) return "Nenhum item";
+        if (itensJson == null || itensJson.isEmpty()) {
+            return "Nenhum item";
+        }
+
+        // 🔥 VERIFICA SE O CONTEÚDO É UM JSON ARRAY VÁLIDO
+        String trimmed = itensJson.trim();
+        if (!trimmed.startsWith("[")) {
+            System.err.println("⚠️ Itens não é um JSON Array: " + trimmed);
+            return "Itens não disponíveis";
+        }
+
         try {
             JsonArray array = JsonParser.parseString(itensJson).getAsJsonArray();
+            if (array.size() == 0) return "Nenhum item";
+
             StringBuilder sb = new StringBuilder();
             sb.append("<ul style='list-style: none; padding: 0;'>");
             for (int i = 0; i < array.size(); i++) {
@@ -29,8 +41,10 @@ public class EmailTemplateHelper {
             }
             sb.append("</ul>");
             return sb.toString();
+
         } catch (JsonSyntaxException e) {
-            return itensJson; // fallback
+            System.err.println("❌ Erro ao parsear itens: " + e.getMessage());
+            return "Itens não disponíveis";
         }
     }
 
