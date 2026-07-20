@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import util.EmailTemplateHelper;
+import static util.EmailTemplateHelper.formatarItensHtml;
 import static util.EmailTemplateHelper.gerarBarraEvolucao;
 
 public class EmailServiceSendGrid {
@@ -25,7 +25,7 @@ public class EmailServiceSendGrid {
                     return;
                 }
 
-                // 🔥 JSON CORRETO
+                //JSON CORRETO
                 String json = String.format(
                     "{\"personalizations\":[{\"to\":[{\"email\":\"%s\"}]}],\"from\":{\"email\":\"%s\"},\"subject\":\"%s\",\"content\":[{\"type\":\"text/html\",\"value\":\"%s\"}]}",
                     destinatario,
@@ -99,8 +99,8 @@ public class EmailServiceSendGrid {
         String assunto = "📥 Pedido recebido - #" + pedidoId + " - PORTOBELLA";
 
         // 🔥 FORMATA OS ITENS E A BARRA DE EVOLUÇÃO
-        String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
-        String barra = EmailTemplateHelper.gerarBarraEvolucao(1); // Etapa 1: Recebido
+        String itensHtml = formatarItensHtml(itens);
+        String barra = gerarBarraEvolucao(1); // Etapa 1: Recebido
 
         String corpoHtml = 
         "<!DOCTYPE html>" +

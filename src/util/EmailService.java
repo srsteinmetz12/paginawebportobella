@@ -148,7 +148,7 @@ public class EmailService {
             "      <p style='margin:0;color:#555;font-size:12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
             "    </div>" +
             "    <br>" +
-            "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -186,10 +186,10 @@ public class EmailService {
             "      <p style='margin:0;color:#333;font-size:14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
-            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 99999-9999</p>" +
+            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 98233-9066</p>" +
             "    </div>" +
             "    <br>" +
-            "    <p style='text-align:center;color:#888;font-size:12px;'>Equipe PORTOBELLA 💛</p>" +
+            "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Equipe PORTOBELLA 💛</p>" +
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -238,7 +238,7 @@ public class EmailService {
             "      <p style='margin:0;color:#333;font-size:14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
-            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 99999-9999</p>" +
+            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 98233-9066</p>" +
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
