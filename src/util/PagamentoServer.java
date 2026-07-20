@@ -785,9 +785,11 @@ public class PagamentoServer {
                 con = ConnectionDB.getConnectionCloud();
 
                 String sql = "INSERT INTO notificacoes_pendentes " +
-                        "(pedido_id, cod_peca, cliente, telefone, email, valor, meio_pagamento, " +
+                        "(pedido_id, cod_peca, cliente, telefone, email, valor, frete, meio_pagamento, " +
                         "endereco, retirar_loja, itens, data_criacao, status, lida) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
+                
+                stmt = con.prepareStatement(sql);
 
                 stmt.setString(1, pedidoId);
                 stmt.setString(2, codPeca);
