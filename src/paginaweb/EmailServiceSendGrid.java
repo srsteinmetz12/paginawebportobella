@@ -94,8 +94,9 @@ public class EmailServiceSendGrid {
     // ==========================================
     // E-MAIL PARA CLIENTE - PEDIDO RECEBIDO (AGUARDE CONFIRMAÇÃO)
     // ==========================================
-    public static void enviarPedidoRecebidoCliente(String emailCliente, String nomeCliente,
-                                               String pedidoId, double valor, String itens) {
+    public static void enviarPedidoRecebidoCliente(String emailCliente, String nomeCliente, String pedidoId,
+                                               double subtotal, double frete, double total,
+                                               String itens) {
         String assunto = "📥 Pedido recebido - #" + pedidoId + " - PORTOBELLA";
 
         // 🔥 FORMATA OS ITENS E A BARRA DE EVOLUÇÃO
@@ -136,7 +137,7 @@ public class EmailServiceSendGrid {
         "      <h2 style='color: #1E1E1E; font-size: 22px;'>📥 Pedido recebido com sucesso!</h2>" +
         "      <p style='color: #333; font-size: 16px;'>Olá <strong>" + nomeCliente + "</strong>,</p>" +
         "      <p style='color: #333; font-size: 16px;'>Seu pedido <strong>#" + pedidoId + "</strong> foi recebido e encaminhado para a loja.</p>" +
-        "      <p style='font-size: 16px;'><strong>Valor:</strong> R$ " + String.format("%.2f", valor) + "</p>" +
+        "      <p style='font-size: 16px;'><strong>Valor:</strong> R$ " + String.format("%.2f", subtotal) + "</p>" +
         "      <p style='font-size: 16px;'><strong>Itens:</strong></p>" +
         itensHtml +
         "      <br>" +
@@ -150,7 +151,7 @@ public class EmailServiceSendGrid {
         "        <p style='margin: 0; color: #555; font-size: 12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
         "      </div>" +
         "      <br>" +
-        "      <p style='text-align: center; color: #888; font-size: 12px;'>Obrigada por comprar na PORTOBELLA! 💛</p>" +
+        "      <p style='text-align: center; color: #888; font-size: 12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
         "    </td>" +
         "  </tr>" +
         "</table>" +

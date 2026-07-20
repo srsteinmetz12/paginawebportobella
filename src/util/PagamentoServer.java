@@ -725,6 +725,8 @@ public class PagamentoServer {
                 String telefone = json.has("telefone") ? json.get("telefone").getAsString() : "Não informado";
                 String itens = json.get("itens").toString();
                 String emailCliente = json.has("email") ? json.get("email").getAsString() : "Não informado"; // 🔥 EXTRAI EMAIL
+                double frete = json.has("frete") ? json.get("frete").getAsDouble() : 0.0;
+                double subtotal = json.has("subtotal") ? json.get("subtotal").getAsDouble() : (valorTotal - frete);
 
                 System.out.println("📝 Dados da venda:");
                 System.out.println("   Cliente: " + nomeCliente);
@@ -733,14 +735,16 @@ public class PagamentoServer {
                 System.out.println("   Valor: R$ " + valorTotal);
                 System.out.println("   Peça: " + codPeca);
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
+                System.out.println("   Frete: " + frete);
+                System.out.println("   Subtotal: " + subtotal);
 
                 // 🔥 PASSA O EMAIL PARA O MÉTODO DE SALVAR
-                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, valorTotal, meioPagamento,
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, valorTotal, frete, meioPagamento,
                         retirarLoja, endereco, pedidoId, telefone, itens);
                 
                 // 🔥 Envia e-mail para o cliente avisando que o pedido foi recebido
                 try {
-                    EmailServiceSendGrid.enviarPedidoRecebidoCliente(emailCliente, nomeCliente, pedidoId, valorTotal, itens);
+                    EmailServiceSendGrid.enviarPedidoRecebidoCliente(emailCliente, nomeCliente, pedidoId, subtotal, frete, valorTotal, itens);
                     System.out.println("   ✅ E-mail de pedido recebido enviado para o cliente: " + emailCliente);
                 } catch (Exception e) {
                     System.err.println("   ❌ Erro ao enviar e-mail de pedido recebido: " + e.getMessage());
@@ -769,10 +773,7 @@ public class PagamentoServer {
             }
         }
 
-        private void salvarNotificacaoNoBanco(String codPeca, String cliente, String emailCliente, double valor,
-                                      String meioPagamento, boolean retirarLoja,
-                                      String endereco, String pedidoId, String telefone,
-                                      String itens) {
+        private void salvarNotificacaoNoBanco(String codPeca, String cliente, String emailCliente, double valor, double frete, String meioPagamento, boolean retirarLoja, String endereco, String pedidoId, String telefone, String itens) {
             Connection con = null;
             PreparedStatement stmt = null;
 
@@ -784,17 +785,17 @@ public class PagamentoServer {
                         "endereco, retirar_loja, itens, data_criacao, status, lida) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
 
-                stmt = con.prepareStatement(sql);
                 stmt.setString(1, pedidoId);
                 stmt.setString(2, codPeca);
                 stmt.setString(3, cliente);
                 stmt.setString(4, telefone);
-                stmt.setString(5, emailCliente);   // 🔥 NOVO CAMPO
+                stmt.setString(5, emailCliente);
                 stmt.setDouble(6, valor);
-                stmt.setString(7, meioPagamento);
-                stmt.setString(8, endereco);
-                stmt.setBoolean(9, retirarLoja);
-                stmt.setString(10, itens);
+                stmt.setDouble(7, frete);
+                stmt.setString(8, meioPagamento);
+                stmt.setString(9, endereco);
+                stmt.setBoolean(10, retirarLoja);
+                stmt.setString(11, itens);
 
                 int rows = stmt.executeUpdate();
                 if (rows > 0) {

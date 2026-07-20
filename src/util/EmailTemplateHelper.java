@@ -71,9 +71,9 @@ public class EmailTemplateHelper {
             sb.append("<td style='text-align: center; padding: 0 3px; vertical-align: top; width: 25%;'>");
 
             // Círculo com flex para centralizar conteúdo
-            sb.append("<div style='display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: ")
-              .append(corFundo)
-              .append("; color: #fff; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
+            sb.append("<div style='width: 22px; height: 22px; border-radius: 50%; background: ")
+            .append(corFundo)
+            .append("; color: #fff; font-size: 14px; font-weight: bold; text-align: center; line-height: 22px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
             if (concluida) sb.append("✓");
             else if (ativa) sb.append("•");
             else sb.append(" ");
