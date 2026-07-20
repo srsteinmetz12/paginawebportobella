@@ -743,7 +743,7 @@ public class PagamentoServer {
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
 
                 // 🔥 PASSA O EMAIL PARA O MÉTODO DE SALVAR
-                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, total, frete, meioPagamento,
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, subtotal, frete, meioPagamento,
                         retirarLoja, endereco, pedidoId, telefone, itens);
                 
                 // 🔥 Envia e-mail para o cliente avisando que o pedido foi recebido

@@ -1,4 +1,4 @@
-package paginaweb;
+package desktop;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import paginaweb.GerarSiteEstoque;
+import util.EmailService;
 
 public class NotificacaoVendasService {
 
@@ -45,35 +47,39 @@ public class NotificacaoVendasService {
     // CLASSE PARA ARMAZENAR DADOS DA NOTIFICAÇÃO
     // ==========================================
     private static class Notificacao {
-        int id;
-        String pedidoId;
-        String cliente;
-        String telefone;
-        double valor;
-        String codPeca;
-        String meioPagamento;
-        boolean retirarLoja;
-        String endereco;
-        String dataCriacao;
-        String itens;
+    int id;
+    String pedidoId;
+    String cliente;
+    String telefone;
+    String email;          
+    double valor;
+    double frete;
+    String codPeca;
+    String meioPagamento;
+    boolean retirarLoja;
+    String endereco;
+    String dataCriacao;
+    String itens;
 
-        Notificacao(int id, String pedidoId, String cliente, String telefone, 
-                    double valor, String codPeca, String meioPagamento, 
-                    boolean retirarLoja, String endereco, String dataCriacao,
-                    String itens) {
-            this.id = id;
-            this.pedidoId = pedidoId;
-            this.cliente = cliente;
-            this.telefone = telefone;
-            this.valor = valor;
-            this.codPeca = codPeca;
-            this.meioPagamento = meioPagamento;
-            this.retirarLoja = retirarLoja;
-            this.endereco = endereco;
-            this.dataCriacao = dataCriacao;
-            this.itens = itens;
-        }
+    Notificacao(int id, String pedidoId, String cliente, String telefone, String email,
+                double valor, double frete, String codPeca, String meioPagamento,
+                boolean retirarLoja, String endereco, String dataCriacao,
+                String itens) {
+        this.id = id;
+        this.pedidoId = pedidoId;
+        this.cliente = cliente;
+        this.telefone = telefone;
+        this.email = email;   
+        this.valor = valor;
+        this.frete = frete;
+        this.codPeca = codPeca;
+        this.meioPagamento = meioPagamento;
+        this.retirarLoja = retirarLoja;
+        this.endereco = endereco;
+        this.dataCriacao = dataCriacao;
+        this.itens = itens;
     }
+}
 
     public static void iniciar() {
         System.out.println("🔔 ========================================");
@@ -123,14 +129,14 @@ public class NotificacaoVendasService {
         try {
             con = ConnectionDB.getConnectionCloud();
             
-            String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, valor, " +
-                         "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
-                         "FROM notificacoes_pendentes " +
-                         "WHERE status = 'PENDENTE' AND lida = 0 " +
-                         "ORDER BY data_criacao ASC";
+            String sql = "SELECT id, pedido_id, cod_peca, cliente, telefone, email, valor, frete, " +
+                        "meio_pagamento, endereco, retirar_loja, itens, data_criacao " +
+                        "FROM notificacoes_pendentes " +
+                        "WHERE status = 'PENDENTE' AND lida = 0 " +
+                        "ORDER BY data_criacao ASC";
             
             stmt = con.prepareStatement(sql);
-            stmt.setQueryTimeout(10);
+            stmt.setQueryTimeout(30);
             rs = stmt.executeQuery();
 
             synchronized (lockFila) {
@@ -141,18 +147,20 @@ public class NotificacaoVendasService {
                     
                     if (!jaNaFila && !emProcessamento) {
                         Notificacao notif = new Notificacao(
-                            id,
-                            rs.getString("pedido_id"),
-                            rs.getString("cliente"),
-                            rs.getString("telefone"),
-                            rs.getDouble("valor"),
-                            rs.getString("cod_peca"),
-                            rs.getString("meio_pagamento"),
-                            rs.getBoolean("retirar_loja"),
-                            rs.getString("endereco"),
-                            rs.getString("data_criacao"),
-                            rs.getString("itens")
-                        );
+                        id,
+                        rs.getString("pedido_id"),
+                        rs.getString("cliente"),
+                        rs.getString("telefone"),
+                        rs.getString("email"),
+                        rs.getDouble("valor"),
+                        rs.getDouble("frete"),
+                        rs.getString("cod_peca"),
+                        rs.getString("meio_pagamento"),
+                        rs.getBoolean("retirar_loja"),
+                        rs.getString("endereco"),
+                        rs.getString("data_criacao"),
+                        rs.getString("itens")
+                    );
                         filaNotificacoes.add(notif);
                         System.out.println("📥 [BUSCA] Adicionada: " + notif.pedidoId + " (ID: " + id + ")");
                     }
@@ -562,9 +570,52 @@ public class NotificacaoVendasService {
                     // 6. BAIXAR ESTOQUE
                     // ==========================================
                     baixarEstoque(con, notif.itens);
+                    
+                    // ==========================================
+                    // 7. ENVIA E-MAIL DE CONFIRMAÇÃO PARA O CLIENTE (ETAPA 2)
+                    // ==========================================
+                    try {
+                        // 🔥 NOTA: notif.valor é o total. Se você não tiver subtotal e frete separados, passe total como subtotal e 0 como frete.                      
+                        double frete = notif.frete;
+                        double total = notif.valor;
+                        double subtotal = total - frete;
+
+                        EmailService.enviarConfirmacaoParaCliente(
+                            notif.email,
+                            notif.cliente,
+                            notif.pedidoId,
+                            subtotal,
+                            frete,
+                            total,
+                            notif.itens
+                        );
+                        System.out.println("   ✅ E-mail de confirmação (novo) enviado para: " + notif.email);
+                    } catch (Exception e) {
+                        System.err.println("   ❌ Erro ao enviar e-mail de confirmação: " + e.getMessage());
+                    }
+                    
+                    // AGENDAR E-MAIL DE "EM SEPARAÇÃO" (ETAPA 3) APÓS 30 SEGUNDOS
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(30000); // 30 segundos
+                            double frete = notif.frete;
+                            double total = notif.valor;
+                            double subtotal = total - frete;
+
+                            EmailService.enviarPedidoEmSeparacao(
+                                notif.email, notif.cliente, notif.pedidoId,
+                                subtotal, frete, total, notif.itens
+                            );
+                            System.out.println("   ✅ E-mail de em separação (etapa 3) enviado para: " + notif.email);
+                        } catch (InterruptedException e) {
+                            System.err.println("   ❌ Erro no agendamento do e-mail de separação: " + e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("   ❌ Erro ao enviar e-mail de separação: " + e.getMessage());
+                        }
+                    }).start();
 
                     // ==========================================
-                    // 7. ATUALIZAR O SITE (REGERAR HTML)
+                    // 8. ATUALIZAR O SITE (REGERAR HTML)
                     // ==========================================
                     atualizarSiteAsync();
 
@@ -583,20 +634,26 @@ public class NotificacaoVendasService {
 
                     // 3. 🔥 LIBERAR ESTOQUE (DISPONIVEL) - ADICIONE ESTA LINHA
                     liberarEstoque(con, notif.itens);  // 🔥 AQUI!
+                    
+                    // 4. ENVIA E-MAIL DE REJEIÇÃO PARA O CLIENTE (NOVO MÉTODO)
+                    try {
+                        EmailService.enviarRejeicaoParaCliente(
+                            notif.email,
+                            notif.cliente,
+                            notif.pedidoId,
+                            null // motivo (pode passar "Não informado" ou uma string vazia)
+                        );
+                        System.out.println("   ✅ E-mail de rejeição (novo) enviado para: " + notif.email);
+                    } catch (Exception e) {
+                        System.err.println("   ❌ Erro ao enviar e-mail de rejeição: " + e.getMessage());
+                    }
 
-                    // 4. ATUALIZAR O SITE
+                    // 5. ATUALIZAR O SITE
                     atualizarSiteAsync();
 
                     mostrarMensagemTray("❌ Venda REJEITADA!", "Pedido: " + notif.pedidoId, TrayIcon.MessageType.WARNING);
                 }
-
-                // ==========================================
-                // 🔥 8. ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
-                // ==========================================
-//                enviarRespostaParaServidor(notif.id, notif.pedidoId, aprovado);
-
             }
-
         } catch (ClassNotFoundException | InterruptedException | SQLException e) {
             System.err.println("❌ [RESPONDER] Erro: " + e.getMessage());
             mostrarMensagemTray("❌ Erro!", e.getMessage(), TrayIcon.MessageType.ERROR);
@@ -620,17 +677,17 @@ public class NotificacaoVendasService {
             for (String cod : codigos) {
                 cod = cod.trim();
 
-                String sql = "DELETE FROM reservas WHERE cod_peca = ? AND pedido_id = ?";
+                String sql = "DELETE FROM reservas WHERE pedido_id = ?";
                 stmt = con.prepareStatement(sql);
-                stmt.setString(1, cod);
-                stmt.setString(2, pedidoId);
+//                stmt.setString(1, cod);
+                stmt.setString(1, pedidoId);
                 stmt.setQueryTimeout(10);
                 int rows = stmt.executeUpdate();
 
                 if (rows > 0) {
-                    System.out.println("   ✅ Reserva removida: " + cod);
+                    System.out.println("   ✅ Reserva removida: " + codPeca + " (Pedido: " + pedidoId + ")");
                 } else {
-                    System.err.println("   ⚠️ Reserva não encontrada: " + cod);
+                    System.err.println("   ⚠️ Reserva não encontrada para o pedido: " + pedidoId);
                 }
 
                 stmt.close();
@@ -639,11 +696,10 @@ public class NotificacaoVendasService {
         } catch (SQLException e) {
             System.err.println("   ❌ Erro ao remover reserva: " + e.getMessage());
         } finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) {System.err.println("   ❌ Erro: " + e.getMessage());}
         }
     }
-    
-    
+      
     // ==========================================
     // 🔥 ENVIAR RESPOSTA PARA O SERVIDOR (RENDER)
     // ==========================================
@@ -868,7 +924,7 @@ public class NotificacaoVendasService {
             stmt.setString(7, notif.codPeca);
             stmt.setString(8, notif.cliente); // 🔥 nomedi = nome do cliente
             stmt.setString(9, "VITRINE");
-            stmt.setString(10, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+            stmt.setString(10, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO");
             stmt.setString(11, "EM_SEPARACAO");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
@@ -930,8 +986,8 @@ public class NotificacaoVendasService {
             // ==========================================
             // 🔥 NÃO BUSCA ID, USA O ID_VENDA
             // ==========================================
-            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, tipoentrega) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO sacola (id, pedido_id, datavenda, valorvenda, status, codpecas, nomecli, email, tipoentrega) " +
+             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, idVenda);                                     // 🔥 USA O ID DA VENDA
@@ -941,7 +997,8 @@ public class NotificacaoVendasService {
             stmt.setString(5, "EM_SEPARACAO");
             stmt.setString(6, notif.codPeca);                            // codepcas = código da peça
             stmt.setString(7, notif.cliente);
-            stmt.setString(8, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA");
+            stmt.setString(8, notif.email);
+            stmt.setString(9, notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO");
             stmt.setQueryTimeout(10);
             stmt.executeUpdate();
 
@@ -961,7 +1018,7 @@ public class NotificacaoVendasService {
         PreparedStatement stmt = null;
 
         try {
-            String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA";
+            String tipoEntrega = notif.retirarLoja ? "RETIRE_LOJA" : "ENTREGA_ENDERECO";
 
             // ==========================================
             // 🔥 USA O ID_VENDA DIRETAMENTE
@@ -975,7 +1032,7 @@ public class NotificacaoVendasService {
             stmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
             stmt.setString(4, notif.cliente);
             stmt.setString(5, notif.codPeca);
-            stmt.setDouble(6, 0.0);
+            stmt.setDouble(6, notif.frete);
             stmt.setBoolean(7, false);
             stmt.setBoolean(8, false);
             stmt.setNull(9, java.sql.Types.DATE);
