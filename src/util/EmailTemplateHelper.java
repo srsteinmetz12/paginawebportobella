@@ -59,7 +59,6 @@ public class EmailTemplateHelper {
         sb.append("<div style='font-family: Arial, sans-serif; max-width: 100%; margin: 15px 0; padding: 10px 5px; background: #f9f9f9; border-radius: 10px; text-align: center;'>");
         sb.append("<p style='font-size: 13px; font-weight: bold; color: #1E1E1E; margin: 0 0 10px 0;'>📦 Acompanhe seu pedido</p>");
 
-        // Tabela principal (100% largura)
         sb.append("<table align='center' border='0' cellpadding='0' cellspacing='0' width='100%' style='border-collapse: collapse;'>");
         sb.append("<tr>");
 
@@ -69,19 +68,18 @@ public class EmailTemplateHelper {
             String corFundo = concluida ? "#00a650" : (ativa ? "#f39c12" : "#d3d3d3");
             String corTexto = concluida ? "#00a650" : (ativa ? "#f39c12" : "#aaaaaa");
 
-            // Coluna da etapa (círculo + texto abaixo)
             sb.append("<td style='text-align: center; padding: 0 3px; vertical-align: top; width: 25%;'>");
 
-            // Círculo
-            sb.append("<div style='width: 22px; height: 22px; line-height: 22px; border-radius: 50%; background: ")
+            // Círculo com flex para centralizar conteúdo
+            sb.append("<div style='display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: ")
               .append(corFundo)
-              .append("; color: #fff; font-size: 11px; font-weight: bold; text-align: center; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
+              .append("; color: #fff; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
             if (concluida) sb.append("✓");
             else if (ativa) sb.append("•");
             else sb.append(" ");
             sb.append("</div>");
 
-            // Nome da etapa (abaixo do círculo) – com quebra de palavras
+            // Texto abaixo
             sb.append("<div style='font-size: 8px; color: ").append(corTexto).append("; margin-top: 4px; font-weight: ")
               .append(concluida || ativa ? "bold" : "normal")
               .append("; text-align: center; line-height: 1.2; word-wrap: break-word; max-width: 100%; padding: 0 2px;'>");
@@ -90,7 +88,6 @@ public class EmailTemplateHelper {
 
             sb.append("</td>");
 
-            // Linha de conexão (exceto após a última etapa)
             if (i < etapas.length - 1) {
                 String corLinha = (i < etapaConcluida) ? "#00a650" : "#d3d3d3";
                 sb.append("<td style='text-align: center; padding: 0; width: 8%; vertical-align: middle;'>");

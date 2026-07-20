@@ -111,7 +111,10 @@ public class EmailService {
         String assunto = "Seu Cupom Não Fiscal - Venda #" + idVenda + " - PORTOBELLA Brechó & Outlet";
         enviarEmailBase(emailDestino, assunto, corpoHtml);
     }
-
+    
+    // ==========================================
+    // 1. E-MAIL PARA CLIENTE – PEDIDO CONFIRMAÇÃO
+    // ==========================================
     public static void enviarConfirmacaoParaCliente(String emailCliente, String nomeCliente,
                                                 String pedidoId, double subtotal, double frete, double total, String itens) {
         String assunto = "✅ Pagamento Confirmado - Pedido #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
@@ -154,7 +157,10 @@ public class EmailService {
 
         enviarEmailBase(emailCliente, assunto, corpoHtml);
     }
-
+    
+    // ==========================================
+    // 2. E-MAIL PARA CLIENTE – PEDIDO REJEITADO
+    // ==========================================
     public static void enviarRejeicaoParaCliente(String emailCliente, String nomeCliente,
                                              String pedidoId, String motivo) {
         String assunto = "❌ Pagamento Rejeitado - Pedido #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
@@ -190,6 +196,52 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Equipe PORTOBELLA 💛</p>" +
+            "  </td></tr>" +
+            "</table></body></html>";
+
+        enviarEmailBase(emailCliente, assunto, corpoHtml);
+    }
+    
+    // ==========================================
+    // 3. E-MAIL PARA CLIENTE – PEDIDO EM SEPARAÇÃO
+    // ==========================================
+    public static void enviarPedidoEmSeparacao(String emailCliente, String nomeCliente,
+                                               String pedidoId, double subtotal, double frete, double total, String itens) {
+        String assunto = "📦 Pedido em separação - #" + pedidoId + " - PORTOBELLA";
+
+        String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
+        String barra = EmailTemplateHelper.gerarBarraEvolucao(3); // Etapa 3
+        String resumo = EmailTemplateHelper.gerarResumoFinanceiro(subtotal, frete, total);
+
+        String corpoHtml =
+            "<!DOCTYPE html>" +
+            "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+            "<style>@media only screen and (max-width:600px){.container{width:100%!important;padding:10px!important;}.header h2{font-size:20px!important;}.content{padding:15px!important;}}</style>" +
+            "</head><body style='margin:0;padding:0;background:#f9f9f9;font-family:Arial,sans-serif;'>" +
+            "<table align='center' border='0' cellpadding='0' cellspacing='0' width='100%' style='max-width:600px;background:#ffffff;border-radius:10px;margin:20px auto;'>" +
+            "  <tr><td style='background:#1E1E1E;color:#FFF;padding:20px;text-align:center;border-radius:10px 10px 0 0;'>" +
+            "    <h2 style='margin:0;font-size:24px;letter-spacing:2px;'>🛍️ PORTOBELLA</h2>" +
+            "    <p style='margin:0;font-size:12px;opacity:0.8;'>Brechó & Outlet</p>" +
+            "  </td></tr>" +
+            "  <tr><td style='padding:20px;'>" +
+            "    <h2 style='color:#1E1E1E;font-size:22px;'>📦 Pedido em separação</h2>" +
+            "    <p style='color:#333;font-size:16px;'>Olá <strong>" + nomeCliente + "</strong>,</p>" +
+            "    <p style='color:#333;font-size:16px;'>Seu pedido <strong>#" + pedidoId + "</strong> está sendo preparado pela nossa equipe.</p>" +
+            "    <p style='color:#555;font-size:15px;'>Em breve você receberá a confirmação de disponibilidade ou despacho.</p>" +
+            "    <p><strong>Itens:</strong></p>" +
+            itensHtml +
+            "    <br>" +
+            resumo +
+            "    <br>" +
+            barra +
+            "    <br>" +
+            "    <div style='background:#f0f0f0;padding:15px;border-radius:8px;text-align:center;'>" +
+            "      <p style='margin:0;color:#333;font-size:14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
+            "      <p style='margin:0;color:#555;font-size:12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
+            "      <p style='margin:0;color:#555;font-size:12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
+            "    </div>" +
+            "    <br>" +
+            "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
             "  </td></tr>" +
             "</table></body></html>";
 
