@@ -715,36 +715,40 @@ public class PagamentoServer {
 
                 JsonObject json = gson.fromJson(body, JsonObject.class);
 
+                // Extrai os campos básicos
                 String codPeca = json.get("codPeca").getAsString();
                 String nomeCliente = json.get("destinatario").getAsString();
-                double valorTotal = json.get("total").getAsDouble();
                 String meioPagamento = json.get("meio").getAsString();
                 String endereco = json.get("endereco").getAsString();
                 boolean retirarLoja = json.has("retirarLoja") && json.get("retirarLoja").getAsBoolean();
                 String pedidoId = json.get("pedidoId").getAsString();
                 String telefone = json.has("telefone") ? json.get("telefone").getAsString() : "Não informado";
                 String itens = json.get("itens").toString();
-                String emailCliente = json.has("email") ? json.get("email").getAsString() : "Não informado"; // 🔥 EXTRAI EMAIL
-                double frete = json.has("frete") ? json.get("frete").getAsDouble() : 0.0;
-                double subtotal = json.has("subtotal") ? json.get("subtotal").getAsDouble() : (valorTotal - frete);
+                String emailCliente = json.has("email") ? json.get("email").getAsString() : "Não informado";
 
+                // 🔥 Valores monetários – sempre lidos do JSON, com fallback seguro
+                double total = json.get("total").getAsDouble();
+                double frete = json.has("frete") ? json.get("frete").getAsDouble() : 0.0;
+                double subtotal = json.has("subtotal") ? json.get("subtotal").getAsDouble() : (total - frete);
+
+                // 🔥 Logs claros e diretos
                 System.out.println("📝 Dados da venda:");
                 System.out.println("   Cliente: " + nomeCliente);
                 System.out.println("   Telefone: " + telefone);
                 System.out.println("   Email: " + emailCliente);
-                System.out.println("   Valor: R$ " + valorTotal);
+                System.out.println("   Subtotal (itens): R$ " + String.format("%.2f", subtotal));
+                System.out.println("   Frete: R$ " + String.format("%.2f", frete));
+                System.out.println("   Total: R$ " + String.format("%.2f", total));
                 System.out.println("   Peça: " + codPeca);
                 System.out.println("   Retirar na loja: " + (retirarLoja ? "SIM" : "NÃO"));
-                System.out.println("   Frete: " + frete);
-                System.out.println("   Subtotal: " + subtotal);
 
                 // 🔥 PASSA O EMAIL PARA O MÉTODO DE SALVAR
-                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, valorTotal, frete, meioPagamento,
+                salvarNotificacaoNoBanco(codPeca, nomeCliente, emailCliente, total, frete, meioPagamento,
                         retirarLoja, endereco, pedidoId, telefone, itens);
                 
                 // 🔥 Envia e-mail para o cliente avisando que o pedido foi recebido
                 try {
-                    EmailServiceSendGrid.enviarPedidoRecebidoCliente(emailCliente, nomeCliente, pedidoId, subtotal, frete, valorTotal, itens);
+                    EmailServiceSendGrid.enviarPedidoRecebidoCliente(emailCliente, nomeCliente, pedidoId, subtotal, frete, total, itens);
                     System.out.println("   ✅ E-mail de pedido recebido enviado para o cliente: " + emailCliente);
                 } catch (Exception e) {
                     System.err.println("   ❌ Erro ao enviar e-mail de pedido recebido: " + e.getMessage());
@@ -752,7 +756,7 @@ public class PagamentoServer {
 
                 // 🔥 Envia e-mail para a loja avisando do novo pedido pago
                 try {
-                    EmailServiceSendGrid.enviarNovaVendaParaLoja(pedidoId, nomeCliente, emailCliente, telefone, valorTotal, meioPagamento, retirarLoja, endereco, itens);
+                    EmailServiceSendGrid.enviarNovaVendaParaLoja(pedidoId, nomeCliente, emailCliente, telefone, total, meioPagamento, retirarLoja, endereco, itens);
                     System.out.println("   ✅ E-mail enviado para a loja");
                 } catch (Exception e) {
                     System.err.println("   ❌ Erro ao enviar e-mail para loja: " + e.getMessage());
