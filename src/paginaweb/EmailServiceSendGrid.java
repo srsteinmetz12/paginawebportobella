@@ -1,6 +1,7 @@
 package paginaweb;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -59,7 +60,7 @@ public class EmailServiceSendGrid {
                     }
                     System.err.println("❌ Erro " + code + ": " + sb.toString());
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.err.println("❌ Exceção SendGrid: " + e.getMessage());
             }
         }).start();
@@ -149,7 +150,7 @@ public class EmailServiceSendGrid {
         "        <p style='margin: 0; color: #555; font-size: 12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
         "      </div>" +
         "      <br>" +
-        "      <p style='text-align: center; color: #888; font-size: 12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+        "      <p style='text-align: center; color: #888; font-size: 12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
         "    </td>" +
         "  </tr>" +
         "</table>" +

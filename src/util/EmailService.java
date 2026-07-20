@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.util.Base64;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import static util.EmailTemplateHelper.*;
+//import static util.EmailTemplateHelper.*;
 
 public class EmailService {
 
@@ -114,7 +114,7 @@ public class EmailService {
 
     public static void enviarConfirmacaoParaCliente(String emailCliente, String nomeCliente,
                                                 String pedidoId, double subtotal, double frete, double total, String itens) {
-        String assunto = "✅ Pagamento Confirmado - Pedido #" + pedidoId + " - PORTOBELLA";
+        String assunto = "✅ Pagamento Confirmado - Pedido #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
 
         String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
         String barra = EmailTemplateHelper.gerarBarraEvolucao(2);
@@ -136,9 +136,11 @@ public class EmailService {
             "    <p style='color:#333;font-size:16px;'>Olá <strong>" + nomeCliente + "</strong>,</p>" +
             "    <p style='color:#333;font-size:16px;'>Seu pagamento do pedido <strong>#" + pedidoId + "</strong> foi confirmado.</p>" +
             "    <br>" +
-            cupom +  // 🔥 CUPOM FISCAL NO CORPO
+            cupom +                  // 🔥 CUPOM COMPLETO
             "    <br>" +
-            barra +
+            resumo +                 // 🔥 RESUMO FINANCEIRO (SUBTOTAL, FRETE, TOTAL)
+            "    <br>" +
+            barra +                  // 🔥 BARRA DE EVOLUÇÃO
             "    <br>" +
             "    <div style='background:#f0f0f0;padding:15px;border-radius:8px;text-align:center;'>" +
             "      <p style='margin:0;color:#333;font-size:14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
@@ -155,12 +157,12 @@ public class EmailService {
 
     public static void enviarRejeicaoParaCliente(String emailCliente, String nomeCliente,
                                              String pedidoId, String motivo) {
-        String assunto = "❌ Pagamento Rejeitado - Pedido #" + pedidoId + " - PORTOBELLA";
+        String assunto = "❌ Pagamento Rejeitado - Pedido #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
 
         String corpoHtml =
             "<!DOCTYPE html>" +
             "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
-            "<style>@media only screen and (max-width:600px){.container{width:100%!important;padding:10px!important;}.header h2{font-size:20px!important;}.content{padding:15px!important;}}</style>" +
+            "<style>@media only screen and (max-width:600px){.container{width:100%!important;padding:10px!important;}.header h2{font-size:20px!important;}.content{padding:15px!important;}.footer{font-size:11px!important;}}</style>" +
             "</head><body style='margin:0;padding:0;background:#f9f9f9;font-family:Arial,sans-serif;'>" +
             "<table align='center' border='0' cellpadding='0' cellspacing='0' width='100%' style='max-width:600px;background:#ffffff;border-radius:10px;margin:20px auto;'>" +
             "  <tr><td style='background:#1E1E1E;color:#FFF;padding:20px;text-align:center;border-radius:10px 10px 0 0;'>" +
@@ -173,11 +175,11 @@ public class EmailService {
             "    <p style='color:#333;font-size:16px;'>Infelizmente seu pagamento do pedido <strong>#" + pedidoId + "</strong> <strong style='color:#c0392b;'>não foi aprovado</strong>.</p>" +
             "    <p style='font-size:16px;'><strong>Motivo:</strong> " + (motivo != null ? motivo : "Não informado") + "</p>" +
             "    <br>" +
-            "    <div style='background-color: #fef0f0; padding: 15px; border-radius: 8px; border-left: 4px solid #c0392b;'>" +
-            "      <p style='margin: 0; color: #333; font-size: 14px;'><strong>🔍 O que fazer agora?</strong></p>" +
-            "      <p style='margin: 5px 0; color: #555; font-size: 13px;'>• Verifique seus dados de pagamento e tente novamente.</p>" +
-            "      <p style='margin: 5px 0; color: #555; font-size: 13px;'>• Entre em contato conosco para mais informações.</p>" +
-            "      <p style='margin: 5px 0; color: #555; font-size: 13px;'>• O valor do pedido não será cobrado.</p>" +
+            "    <div style='background:#fef0f0;padding:15px;border-radius:8px;border-left:4px solid #c0392b;'>" +
+            "      <p style='margin:0;color:#333;font-size:14px;'><strong>🔍 O que fazer agora?</strong></p>" +
+            "      <p style='margin:5px 0;color:#555;font-size:13px;'>• Verifique os dados do seu cartão ou conta e tente novamente.</p>" +
+            "      <p style='margin:5px 0;color:#555;font-size:13px;'>• Entre em contato conosco para mais informações.</p>" +
+            "      <p style='margin:5px 0;color:#555;font-size:13px;'>• Nenhum valor será cobrado.</p>" +
             "    </div>" +
             "    <br>" +
             "    <div style='background:#f0f0f0;padding:15px;border-radius:8px;text-align:center;'>" +
@@ -199,7 +201,7 @@ public class EmailService {
     // ==========================================
     public static void enviarProntoParaRetirada(String emailCliente, String nomeCliente,
                                                 String pedidoId, double subtotal, double frete, double total, String itens) {
-        String assunto = "📦 Pedido pronto para retirada - #" + pedidoId + " - PORTOBELLA";
+        String assunto = "📦 Pedido pronto para retirada - #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
 
         String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
         String barra = EmailTemplateHelper.gerarBarraEvolucao(4); // Etapa 4: Disponível
@@ -239,7 +241,7 @@ public class EmailService {
             "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 99999-9999</p>" +
             "    </div>" +
             "    <br>" +
-            "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -252,7 +254,7 @@ public class EmailService {
     public static void enviarPedidoDespachado(String emailCliente, String nomeCliente,
                                               String pedidoId, double subtotal, double frete, double total, String itens,
                                               String codigoRastreio) {
-        String assunto = "🚚 Pedido despachado - #" + pedidoId + " - PORTOBELLA";
+        String assunto = "🚚 Pedido despachado - #" + pedidoId + " - PORTOBELLA Brechó & Outlet";
         String codigo = (codigoRastreio != null && !codigoRastreio.isEmpty()) ? codigoRastreio : "será enviado em breve";
         String itensHtml = EmailTemplateHelper.formatarItensHtml(itens);
         String barra = EmailTemplateHelper.gerarBarraEvolucao(4); // Etapa 4: Despachado
@@ -285,10 +287,10 @@ public class EmailService {
             "      <p style='margin:0;color:#333;font-size:14px;'><strong>PORTOBELLA Brechó & Outlet</strong></p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>📍 Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
             "      <p style='margin:0;color:#555;font-size:12px;'>🕐 Segunda a Sexta, 10h às 18h</p>" +
-            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 99999-9999</p>" +
+            "      <p style='margin:0;color:#555;font-size:12px;'>📞 (51) 98233-9066</p>" +
             "    </div>" +
             "    <br>" +
-            "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Obrigada por comprar na PORTOBELLA! 💛</p>" +
             "  </td></tr>" +
             "</table></body></html>";
 

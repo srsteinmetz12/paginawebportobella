@@ -52,6 +52,7 @@ public class EmailTemplateHelper {
     // GERAR BARRA DE EVOLUÇÃO
     // ==========================================
     public static String gerarBarraEvolucao(int etapaConcluida) {
+        System.out.println("🔥 [NOVA VERSÃO] gerarBarraEvolucao chamada com etapa=" + etapaConcluida);
         String[] etapas = {"Recebido", "Pagamento confirmado", "Em separação", "Disponível / Despachado"};
         StringBuilder sb = new StringBuilder();
 
@@ -117,7 +118,7 @@ public class EmailTemplateHelper {
         return "<div style='border: 2px solid #1E1E1E; border-radius: 10px; padding: 15px; margin: 15px 0; background: #fefefe;'>" +
                "  <div style='text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 10px;'>" +
                "    <h3 style='margin: 0; color: #1E1E1E; font-size: 18px;'>🛍️ PORTOBELLA Brechó & Outlet</h3>" +
-               "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>CNPJ: 00.000.000/0001-00</p>" +
+               "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>CNPJ: 47.878.220/0001-86</p>" +
                "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
                "  </div>" +
                "  <div style='padding: 10px 0;'>" +
@@ -136,7 +137,7 @@ public class EmailTemplateHelper {
                "  </div>" +
                "  <div style='text-align: center; border-top: 1px dashed #ccc; padding-top: 10px;'>" +
                "    <p style='margin: 0; font-size: 11px; color: #888;'>Cupom Não Fiscal – Este documento não é nota fiscal</p>" +
-               "    <p style='margin: 0; font-size: 11px; color: #888;'>Obrigado pela preferência! 💛</p>" +
+               "    <p style='margin: 0; font-size: 11px; color: #888;'>💛 Obrigada pela preferência! 💛</p>" +
                "  </div>" +
                "</div>";
     }
