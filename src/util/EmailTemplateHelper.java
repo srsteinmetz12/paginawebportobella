@@ -70,30 +70,30 @@ public class EmailTemplateHelper {
             String corTexto = concluida ? "#00a650" : (ativa ? "#f39c12" : "#aaaaaa");
 
             // Coluna da etapa (círculo + texto abaixo)
-            sb.append("<td style='text-align: center; padding: 0 4px; vertical-align: top; width: 25%;'>");
+            sb.append("<td style='text-align: center; padding: 0 3px; vertical-align: top; width: 25%;'>");
 
             // Círculo
-            sb.append("<div style='width: 24px; height: 24px; line-height: 24px; border-radius: 50%; background: ")
+            sb.append("<div style='width: 22px; height: 22px; line-height: 22px; border-radius: 50%; background: ")
               .append(corFundo)
-              .append("; color: #fff; font-size: 12px; font-weight: bold; text-align: center; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
+              .append("; color: #fff; font-size: 11px; font-weight: bold; text-align: center; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
             if (concluida) sb.append("✓");
             else if (ativa) sb.append("•");
             else sb.append(" ");
             sb.append("</div>");
 
-            // Nome da etapa (abaixo do círculo)
-            sb.append("<div style='font-size: 9px; color: ").append(corTexto).append("; margin-top: 4px; font-weight: ")
+            // Nome da etapa (abaixo do círculo) – com quebra de palavras
+            sb.append("<div style='font-size: 8px; color: ").append(corTexto).append("; margin-top: 4px; font-weight: ")
               .append(concluida || ativa ? "bold" : "normal")
-              .append("; text-align: center; line-height: 1.2; max-width: 70px; word-wrap: break-word; display: block;'>");
+              .append("; text-align: center; line-height: 1.2; word-wrap: break-word; max-width: 100%; padding: 0 2px;'>");
             sb.append(etapas[i]);
             sb.append("</div>");
 
             sb.append("</td>");
 
-            // Coluna da linha de conexão (exceto após a última etapa)
+            // Linha de conexão (exceto após a última etapa)
             if (i < etapas.length - 1) {
                 String corLinha = (i < etapaConcluida) ? "#00a650" : "#d3d3d3";
-                sb.append("<td style='text-align: center; padding: 0; width: 10%; vertical-align: middle;'>");
+                sb.append("<td style='text-align: center; padding: 0; width: 8%; vertical-align: middle;'>");
                 sb.append("<div style='height: 2px; background: ").append(corLinha).append("; width: 100%;'></div>");
                 sb.append("</td>");
             }
