@@ -618,7 +618,7 @@ public class GerarSiteEstoque {
             writer.println("        html += `  </div>`;");
             writer.println("        html += `  <h3>${nome}</h3>`;");
             writer.println("        html += `  <div class=\"info\">Tamanho: ${tamanho}</div>`;");
-            writer.println("        html += `  <div class=\"codigo-item\">${marcaExibicao}</div>`;");
+            writer.println("        html += `  <div class=\"codigo-item\">${marca}</div>`;");
             writer.println("        html += `  <div class=\"preco\">R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}</div>`;");
             writer.println("        html += `  <button class=\"btn-add-carrinho\" onclick=\"adicionarAoCarrinho('${codigo}', '${nome.replace(/'/g, '')}', ${preco})\">🛒 Adicionar ao Carrinho</button>`;");
             writer.println("        html += `</div>`;");
@@ -1400,10 +1400,6 @@ public class GerarSiteEstoque {
             System.out.println("📁 Arquivo: " + caminhoArquivo);
             System.out.println("Total de produtos: " + contador);
 
-            // ==========================================
-            // GIT AUTOMÁTICO
-            // ==========================================
-//            enviarParaGitHub(diretorioDocumentos);
         } catch (java.io.IOException ex) {
             System.err.println("Erro ao escrever arquivo HTML: " + ex.getMessage());
         } finally {
