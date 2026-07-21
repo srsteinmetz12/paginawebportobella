@@ -28,9 +28,10 @@ public class EmailServiceSendGrid {
 
                 //JSON CORRETO
                 String json = String.format(
-                    "{\"personalizations\":[{\"to\":[{\"email\":\"%s\"}]}],\"from\":{\"email\":\"%s\"},\"subject\":\"%s\",\"content\":[{\"type\":\"text/html\",\"value\":\"%s\"}]}",
+                    "{\"personalizations\":[{\"to\":[{\"email\":\"%s\"}]}],\"from\":{\"email\":\"%s\"},\"reply_to\":{\"email\":\"%s\"},\"subject\":\"%s\",\"content\":[{\"type\":\"text/html\",\"value\":\"%s\"}]}",
                     destinatario,
                     EMAIL_REMETENTE,
+                    "naoresponda@portobella.brecho@gmail.com",
                     assunto,
                     corpoHtml.replace("\"", "\\\"").replace("\n", "\\n")
                 );

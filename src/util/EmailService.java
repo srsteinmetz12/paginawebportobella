@@ -70,6 +70,7 @@ public class EmailService {
                 lerResposta(leitor);
 
                 escritor.println("From: PORTOBELLA Brechó <" + EMAIL_REMETENTE + ">");
+                escritor.println("Reply-To: naoresponda@portobella.brecho@gmail.com");
                 escritor.println("To: " + destinatario);
                 escritor.println("Subject: " + assunto);
                 escritor.println("MIME-Version: 1.0");
