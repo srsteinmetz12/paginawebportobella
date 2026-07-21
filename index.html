@@ -127137,33 +127137,26 @@
     // ========================================
     function renderizarProdutos(produtos) {
       const vitrine = document.getElementById('listaVitrine');
-      
       if (!produtos || produtos.length === 0) {
         vitrine.innerHTML = '<p style="text-align:center;padding:50px;">Nenhum produto disponível</p>';
         return;
       }
-      
       let html = '';
-      
       produtos.forEach(produto => {
         const nome = produto.itemdesc || 'PRODUTO';
         const codigo = produto.codpeca || '0000';
         const tamanho = produto.tamanho || 'U';
         const preco = produto.precosug || 0;
-        const marca = produto.marca || '';
-        const marcaExibicao = marca || 'Sem marca';
+        // 🔥 FORÇA A MARCA: se vier vazia, exibe 'Sem marca'
+        const marca = (produto.marca && produto.marca.trim() !== '') ? produto.marca : 'Sem marca';
         
         let imagens = [];
         if (produto.imagem && produto.imagem.length > 0) {
           imagens = produto.imagem.split(';').map(img => img.trim());
         }
-        
         const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();
-        
-        // 🔥 ESTRUTURA IDÊNTICA AO HTML GERADO PELO JAVA
         html += `<div class="card" data-busca="${dadosBusca}">`;
         html += `  <div class="galeria" id="galeria-${codigo}">`;
-
         if (imagens.length === 0 || (imagens.length === 1 && imagens[0] === '')) {
           html += `    <div class="sem-foto">Sem Foto</div>`;
         } else {
@@ -127184,16 +127177,15 @@
             html += `    <span class="contador-fotos">1/${total}</span>`;
           }
         }
-
         html += `  </div>`;
         html += `  <h3>${nome}</h3>`;
         html += `  <div class="info">Tamanho: ${tamanho}</div>`;
+        // 🔥 AQUI EXIBE A MARCA (E NUNCA O CÓDIGO)
         html += `  <div class="codigo-item">${marca}</div>`;
         html += `  <div class="preco">R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}</div>`;
         html += `  <button class="btn-add-carrinho" onclick="adicionarAoCarrinho('${codigo}', '${nome.replace(/'/g, '')}', ${preco})">🛒 Adicionar ao Carrinho</button>`;
         html += `</div>`;
       });
-      
       vitrine.innerHTML = html;
     }
 
