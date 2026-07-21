@@ -118,7 +118,7 @@ public class EmailTemplateHelper {
 
         return "<div style='border: 2px solid #1E1E1E; border-radius: 10px; padding: 15px; margin: 15px 0; background: #fefefe;'>" +
                "  <div style='text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 10px;'>" +
-               "    <h3 style='margin: 0; color: #1E1E1E; font-size: 18px;'>🛍️ PORTOBELLA Brechó & Outlet</h3>" +
+               "    <h3 style='margin: 0; color: #1E1E1E; font-size: 18px;'>PORTOBELLA Brechó & Outlet</h3>" +
                "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>CNPJ: 47.878.220/0001-86</p>" +
                "    <p style='margin: 2px 0; font-size: 12px; color: #555;'>Av. Cristóvão Colombo, 2149 - Loja 15 - Moinhos de Vento - Porto Alegre/RS</p>" +
                "  </div>" +

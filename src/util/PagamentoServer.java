@@ -756,7 +756,7 @@ public class PagamentoServer {
 
                 // 🔥 Envia e-mail para a loja avisando do novo pedido pago
                 try {
-                    EmailServiceSendGrid.enviarNovaVendaParaLoja(pedidoId, nomeCliente, emailCliente, telefone, total, meioPagamento, retirarLoja, endereco, itens);
+                    EmailServiceSendGrid.enviarNovaVendaParaLoja(pedidoId, nomeCliente, emailCliente, telefone, total, frete, meioPagamento, retirarLoja, endereco, itens);
                     System.out.println("   ✅ E-mail enviado para a loja");
                 } catch (Exception e) {
                     System.err.println("   ❌ Erro ao enviar e-mail para loja: " + e.getMessage());

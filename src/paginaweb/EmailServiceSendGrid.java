@@ -70,16 +70,21 @@ public class EmailServiceSendGrid {
     // MÉTODO EXCLUSIVO PARA NOTIFICAR A LOJA
     // ==========================================
     public static void enviarNovaVendaParaLoja(String pedidoId, String cliente, String emailCliente,
-                                               String telefone, double valorTotal, String meioPagamento,
-                                               boolean retirarLoja, String endereco, String itens) {
+                                           String telefone, double valorTotal, double frete,
+                                           String meioPagamento, boolean retirarLoja,
+                                           String endereco, String itens) {
         String tipoEntrega = retirarLoja ? "📍 Retirada na Loja" : "🚚 Entrega via Frete";
         String assunto = "🛍️ NOVA VENDA CONFIRMADA - Pedido #" + pedidoId;
+
+        double subtotal = valorTotal - frete;
 
         String corpoHtml = "<h2>🛍️ NOVA VENDA CONFIRMADA - SITE</h2>" +
                 "<p><strong>Pedido:</strong> #" + pedidoId + "</p>" +
                 "<p><strong>Cliente:</strong> " + cliente + "</p>" +
                 "<p><strong>E-mail:</strong> " + emailCliente + "</p>" +
                 "<p><strong>Telefone:</strong> " + telefone + "</p>" +
+                "<p><strong>Subtotal:</strong> R$ " + String.format("%.2f", subtotal) + "</p>" +
+                "<p><strong>Frete:</strong> R$ " + String.format("%.2f", frete) + "</p>" +
                 "<p><strong>Total:</strong> R$ " + String.format("%.2f", valorTotal) + "</p>" +
                 "<p><strong>Meio de pagamento:</strong> " + meioPagamento + "</p>" +
                 "<p><strong>Tipo de entrega:</strong> " + tipoEntrega + "</p>" +
