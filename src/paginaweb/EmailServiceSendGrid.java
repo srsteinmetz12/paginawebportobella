@@ -28,10 +28,9 @@ public class EmailServiceSendGrid {
 
                 //JSON CORRETO
                 String json = String.format(
-                    "{\"personalizations\":[{\"to\":[{\"email\":\"%s\"}]}],\"from\":{\"email\":\"%s\"},\"reply_to\":{\"email\":\"%s\"},\"subject\":\"%s\",\"content\":[{\"type\":\"text/html\",\"value\":\"%s\"}]}",
+                    "{\"personalizations\":[{\"to\":[{\"email\":\"%s\"}]}],\"from\":{\"email\":\"%s\"},\"subject\":\"%s\",\"content\":[{\"type\":\"text/html\",\"value\":\"%s\"}]}",
                     destinatario,
                     EMAIL_REMETENTE,
-                    "naoresponda@portobella.brecho@gmail.com",
                     assunto,
                     corpoHtml.replace("\"", "\\\"").replace("\n", "\\n")
                 );
@@ -139,6 +138,7 @@ public class EmailServiceSendGrid {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +    
             "  </td></tr>" +
             "</table></body></html>";
 

@@ -70,7 +70,6 @@ public class EmailService {
                 lerResposta(leitor);
 
                 escritor.println("From: PORTOBELLA Brechó <" + EMAIL_REMETENTE + ">");
-                escritor.println("Reply-To: naoresponda@portobella.brecho@gmail.com");
                 escritor.println("To: " + destinatario);
                 escritor.println("Subject: " + assunto);
                 escritor.println("MIME-Version: 1.0");
@@ -153,6 +152,7 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigada por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +   
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -197,6 +197,7 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>💛 Equipe PORTOBELLA 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +    
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -243,6 +244,7 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigado por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +    
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -295,6 +297,7 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigada por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +    
             "  </td></tr>" +
             "</table></body></html>";
 
@@ -344,6 +347,7 @@ public class EmailService {
             "    </div>" +
             "    <br>" +
             "    <p style='text-align:center;color:#888;font-size:12px;'>Obrigada por comprar na PORTOBELLA! 💛</p>" +
+            "    <p style='text-align: center; color: #888; font-size: 11px;'>Mensagem automática – não responda este e-mail.</p>" +    
             "  </td></tr>" +
             "</table></body></html>";
 
