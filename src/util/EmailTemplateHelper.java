@@ -70,13 +70,17 @@ public class EmailTemplateHelper {
 
             sb.append("<td style='text-align: center; padding: 0 3px; vertical-align: top; width: 25%;'>");
 
-            // Círculo com flex para centralizar conteúdo
+            // Círculo com flexbox para centralizar conteúdo
             sb.append("<div style='width: 22px; height: 22px; border-radius: 50%; background: ")
-            .append(corFundo)
-            .append("; color: #fff; font-size: 14px; font-weight: bold; text-align: center; line-height: 22px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
-            if (concluida) sb.append("✓");
-            else if (ativa) sb.append("•");
-            else sb.append(" ");
+              .append(corFundo)
+              .append("; color: #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>");
+            if (concluida) {
+                sb.append("<span style='line-height: 1; transform: translateY(-1px);'>✓</span>");
+            } else if (ativa) {
+                sb.append("<span style='line-height: 1;'>•</span>");
+            } else {
+                sb.append("<span style='line-height: 1;'>&nbsp;</span>");
+            }
             sb.append("</div>");
 
             // Texto abaixo
