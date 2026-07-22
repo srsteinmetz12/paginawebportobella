@@ -29198,6 +29198,14 @@
         document.getElementById('modalPix').style.display = 'flex';
         return;
       }
+      // 🔥 Salva a compra pendente no sessionStorage
+      sessionStorage.setItem('compraPendente', JSON.stringify({
+        payload: payload,
+        valor: valor,
+        nome: nome,
+        dados: window.dadosCompra,
+        timestamp: Date.now()
+      }));
 
       try {
         if (typeof QRCode === 'undefined') {
@@ -29425,20 +29433,53 @@
     document.addEventListener('DOMContentLoaded', function() {
       console.log('📱 Página carregada.');
       console.log('QRCode.js disponível:', typeof QRCode !== 'undefined' ? '✅ SIM' : '❌ NÃO');
-
       if (typeof QRCode === 'undefined') {
         console.log('🔄 Carregando QRCode.js...');
         carregarQRCodeLib(function() {
           console.log('✅ QRCode.js carregado com sucesso!');
         });
       }
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-      toggleEntrega(); // Garante que os campos fiquem no estado inicial
-    });
+      // Inicializa a interface
+      toggleEntrega();
 
-    document.addEventListener('DOMContentLoaded', function() {
+      // 🔥 Verifica se há compra pendente no sessionStorage (para mobile)
+      try {
+        const pendente = sessionStorage.getItem('compraPendente');
+        if (pendente) {
+          const dados = JSON.parse(pendente);
+          // Se o modal não estiver visível, restaura
+          if (document.getElementById('modalPix').style.display !== 'flex') {
+            console.log('🔄 Restaurando compra pendente...');
+            window.dadosCompra = dados.dados;
+            exibirModalPix(dados.payload, dados.valor, dados.nome);
+          }
+        }
+      } catch(e) {
+        console.warn('⚠️ Erro ao restaurar compra pendente:', e);
+        sessionStorage.removeItem('compraPendente');
+      }
+
+      // 🔥 Ao retornar à aba, reexibe o modal se houver compra pendente
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          try {
+            const pendente = sessionStorage.getItem('compraPendente');
+            if (pendente) {
+              const dados = JSON.parse(pendente);
+              if (document.getElementById('modalPix').style.display !== 'flex') {
+                console.log('🔄 Reexibindo modal após retorno...');
+                window.dadosCompra = dados.dados;
+                exibirModalPix(dados.payload, dados.valor, dados.nome);
+              }
+            }
+          } catch(e) {
+            console.warn('⚠️ Erro ao reexibir modal:', e);
+          }
+        }
+      });
+
+      // Configura listeners para atualizar endereço
       let campos = ['endRua', 'endNumero', 'endComplemento', 'endBairro', 'endCidade', 'endUf', 'cepCarrinho'];
       campos.forEach(id => {
         let el = document.getElementById(id);
