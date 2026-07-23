@@ -1146,21 +1146,19 @@ public class PagamentoServer {
         private void finalizarPedido(String paymentId) {
             // Consulta o pagamento e extrai o external_reference
             String pedidoId = buscarExternalReference(paymentId);
-            // Agora você sabe qual pedido foi pago
-            // Busca os dados do pedido no banco e finaliza
-            // 1. Buscar o pedido associado a este paymentId (usando external_reference)
-            // 2. Reservar os itens (chamar o método reservarLote)
-            // 3. Notificar a loja (chamar o método notificarSistema)
-            // 4. Atualizar status no banco
+            if (pedidoId == null) {
+                System.err.println("   ❌ Não foi possível obter o pedidoId para paymentId: " + paymentId);
+                return;
+            }
+            System.out.println("   🆔 Pedido ID: " + pedidoId);
 
             System.out.println("   🚀 Finalizando pedido com paymentId: " + paymentId);
 
-            // Exemplo de como você pode buscar o pedido:
-            // String pedidoId = buscarPedidoPorPaymentId(paymentId);
-            // if (pedidoId != null) {
-            //     reservarLote(itens, pedidoId, email);
-            //     notificarSistema(...);
-            // }
+            // Agora você pode usar o pedidoId para:
+            // 1. Buscar os dados do pedido no banco (itens, cliente, etc.)
+            // 2. Chamar reservarLote
+            // 3. Notificar a loja
+            // 4. Atualizar status
         }
     }
 
