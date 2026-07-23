@@ -169,7 +169,7 @@ public class PagamentoServer {
     static class FinalizarCompraHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-
+            System.out.println("Método recebido: " + exchange.getRequestMethod());
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
                 sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
