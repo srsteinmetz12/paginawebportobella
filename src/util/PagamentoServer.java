@@ -998,7 +998,7 @@ public class PagamentoServer {
                 }
 
                 sendResponse(exchange, 200, gson.toJson(response));
-                addCorsHeaders(exchange);
+//                addCorsHeaders(exchange);
             } catch (IOException | NumberFormatException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
