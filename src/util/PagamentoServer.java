@@ -35,7 +35,7 @@ public class PagamentoServer {
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
     private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI";
     private static final String CIDADE = "PORTO ALEGRE";
-    private static final String TOKEN_MP = "APP_USR-3014844290064894-072221-cdc55b4a7b650f02e5c869d88fda9f5d-3562162374";
+    private static String TOKEN_MP = System.getenv("MP_ACCESS_TOKEN");
 
     // ==========================================
     // CLASSE AUXILIAR NOTIFICACAO
@@ -1398,6 +1398,16 @@ public class PagamentoServer {
     // ==========================================
     public static void main(String[] args) {
         try {
+             // 🔥 VALIDAÇÃO DA VARIÁVEL DE AMBIENTE
+            String token = System.getenv("MP_ACCESS_TOKEN");
+            if (token == null || token.isEmpty()) {
+                System.err.println("❌ ERRO: MP_ACCESS_TOKEN não definido!");
+                System.err.println("   Configure a variável de ambiente no Render.");
+                System.err.println("   Exemplo: MP_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxx");
+                System.exit(1); // Encerra a aplicação
+            }
+            // Atualiza a constante (se você estiver usando uma variável estática)
+            TOKEN_MP = token; // Se TOKEN_MP for static, pode ser atribuído aqui
             GerarSiteEstoque.main(new String[0]);
             iniciar();
             System.out.println("\n✅ Servidor de pagamentos rodando em http://localhost:8080");
