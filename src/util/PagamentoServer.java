@@ -1072,52 +1072,76 @@ public class PagamentoServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
-            String method = exchange.getRequestMethod();
-
             try {
-                // 🔥 Aceita GET (teste do MP) e POST (notificações reais)
-                if ("GET".equals(method)) {
-                    // Retorna 200 OK para o teste do Mercado Pago
-                    String query = exchange.getRequestURI().getQuery();
-                    System.out.println("📢 Webhook GET (teste): " + query);
+                String method = exchange.getRequestMethod();
+                String query = exchange.getRequestURI().getQuery();
+
+                // 🔥 1. Se for GET (teste do MP), processa os parâmetros da URL
+                if ("GET".equalsIgnoreCase(method)) {
+                    System.out.println("📢 Webhook GET recebido: " + query);
+                    Map<String, String> params = parseQueryParams(query);
+                    String topic = params.get("topic");
+                    String paymentId = params.get("id");
+
+                    if ("payment".equals(topic) && paymentId != null) {
+                        System.out.println("   🔍 Teste de webhook para paymentId: " + paymentId);
+                        // Consulta o status para confirmar que está funcionando
+                        String status = consultarStatusPagamento(paymentId);
+                        System.out.println("   📊 Status retornado: " + status);
+                    }
+
+                    // Sempre retorna 200 OK para o teste do MP
                     sendResponse(exchange, 200, "{\"status\":\"ok\"}");
                     return;
                 }
 
-                if (!"POST".equals(method)) {
-                    sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                // 🔥 2. Se for POST, processa o corpo JSON
+                if ("POST".equalsIgnoreCase(method)) {
+                    String body = new BufferedReader(
+                            new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                            .lines().reduce("", (a, b) -> a + b);
+
+                    System.out.println("📢 Webhook POST recebido: " + body);
+
+                    // Se o corpo estiver vazio, retorna 200 (pode ser heartbeat)
+                    if (body == null || body.trim().isEmpty()) {
+                        sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+                        return;
+                    }
+
+                    JsonObject notification = gson.fromJson(body, JsonObject.class);
+                    String type = notification.get("type").getAsString();
+
+                    if ("payment".equals(type)) {
+                        String paymentId = notification.get("data").getAsJsonObject().get("id").getAsString();
+                        System.out.println("   🔍 Payment ID: " + paymentId);
+
+                        String status = consultarStatusPagamento(paymentId);
+                        System.out.println("   📊 Status: " + status);
+
+                        if ("approved".equals(status)) {
+                            System.out.println("   ✅ Pagamento aprovado! Finalizando pedido...");
+                            finalizarPedido(paymentId);
+                        } else {
+                            System.out.println("   ⚠️ Pagamento com status: " + status + " (não processado)");
+                        }
+                    } else {
+                        System.out.println("   ℹ️ Notificação ignorada (tipo: " + type + ")");
+                    }
+
+                    sendResponse(exchange, 200, "{\"status\":\"ok\"}");
                     return;
                 }
 
-                // POST - processa a notificação
-                String body = new BufferedReader(
-                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                        .lines().reduce("", (a, b) -> a + b);
+                // Se não for GET nem POST, retorna 405 (Method Not Allowed)
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
 
-                System.out.println("📢 Webhook POST recebido: " + body);
-
-                // Processa a notificação (já implementado)
-                JsonObject notification = gson.fromJson(body, JsonObject.class);
-                String type = notification.get("type").getAsString();
-
-                if ("payment".equals(type)) {
-                    String paymentId = notification.get("data").getAsJsonObject().get("id").getAsString();
-                    System.out.println("   🔍 Payment ID: " + paymentId);
-
-                    String status = consultarStatusPagamento(paymentId);
-                    System.out.println("   📊 Status: " + status);
-
-                    if ("approved".equals(status)) {
-                        System.out.println("   ✅ Pagamento aprovado! Finalizando pedido...");
-                        finalizarPedido(paymentId);
-                    }
-                }
-
+            } catch (JsonSyntaxException e) {
+                System.err.println("❌ Erro ao parsear JSON: " + e.getMessage());
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
-
-            } catch (JsonSyntaxException | IOException e) {
+            } catch (IOException e) {
                 System.err.println("❌ Erro no webhook: " + e.getMessage());
-                sendResponse(exchange, 200, "{\"status\":\"ok\"}"); // sempre 200
+                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
             }
         }
 
