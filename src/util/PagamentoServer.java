@@ -197,6 +197,9 @@ public class PagamentoServer {
                 double total = json.get("total").getAsDouble();
                 String cep = json.get("cep").getAsString();
                 String endereco = json.get("endereco").getAsString();
+                String email = json.get("email").getAsString();
+                String destinatario = json.get("destinatario").getAsString();
+                String telefone = json.get("telefone").getAsString();
 
                 com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
                 String codPeca = itensArray.get(0).getAsJsonObject().get("id").getAsString();
@@ -211,8 +214,6 @@ public class PagamentoServer {
                 System.out.println("   Endereço: " + endereco);
                 System.out.println("   Produto: " + nomeProduto);
 
-//                registrarVendaCarrinho(codPeca, subtotal, frete, total, endereco, cep, meio);
-
                 Map<String, Object> response = new HashMap<>();
 
                 if ("pix".equalsIgnoreCase(meio)) {
@@ -225,7 +226,7 @@ public class PagamentoServer {
                     System.out.println("   ✅ Pix gerado com sucesso!");
                 } else {
                     String pedidoId = String.valueOf(System.currentTimeMillis());
-                    String link = criarLinkMercadoPago(codPeca, "Pedido PORTOBELLA", total, pedidoId);
+                    String link = criarLinkMercadoPago(codPeca,"Pedido PORTOBELLA", total, pedidoId, email, destinatario, telefone);
                     if (link != null && !link.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "CREDITO");
@@ -994,6 +995,8 @@ public class PagamentoServer {
                 String nome = params.get("nome");
                 double frete = Double.parseDouble(params.getOrDefault("frete", "0"));
                 double valorTotal = preco + frete;
+                String email = params.getOrDefault("email", "cliente@email.com");
+                String telefone = params.getOrDefault("telefone", "51999999999");
 
                 System.out.println("📝 Criando pagamento para: " + nome + " - R$ " + valorTotal);
                 System.out.println("   Meio: " + meio);
@@ -1010,7 +1013,7 @@ public class PagamentoServer {
                     System.out.println("   ✅ Payload Pix gerado com sucesso!");
                 } else if ("mercado_pago".equalsIgnoreCase(meio)) {
                     String pedidoId = String.valueOf(System.currentTimeMillis());
-                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal, pedidoId);
+                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal, pedidoId, email, nome, telefone);
                     if (linkPagamento != null && !linkPagamento.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "mercado_pago");
@@ -1274,7 +1277,8 @@ public class PagamentoServer {
     // ==========================================
     // MERCADO PAGO
     // ==========================================
-    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor, String pedidoId){
+    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor, String pedidoId, 
+                                            String emailCliente, String nomeCliente, String telefone){
         try {
             String precoFormatado = String.format(java.util.Locale.US, "%.2f", valor);
 
@@ -1282,11 +1286,20 @@ public class PagamentoServer {
                     + "\"items\": [{"
                     + "\"id\": \"" + codPeca + "\","
                     + "\"title\": \"" + titulo + "\","
+                    + "\"description\": \"" + titulo + "\","
                     + "\"quantity\": 1,"
                     + "\"currency_id\": \"BRL\","
                     + "\"unit_price\": " + precoFormatado
                     + "}],"
-                    + "\"external_reference\": \"" + pedidoId + "\"," // 🔥 ADICIONE ESTA LINHA
+                    + "\"payer\": {"
+                    + "\"email\": \"" + emailCliente + "\","
+                    + "\"name\": \"" + nomeCliente + "\","
+                    + "\"phone\": {"
+                    + "\"area_code\": \"51\","
+                    + "\"number\": \"" + telefone.replaceAll("\\D", "") + "\""
+                    + "}"
+                    + "},"
+                    + "\"external_reference\": \"" + pedidoId + "\","
                     + "\"back_urls\": {"
                     + "\"success\": \"https://portobellavitrine.com?status=approved\","
                     + "\"failure\": \"https://portobellavitrine.com?status=failure\","
