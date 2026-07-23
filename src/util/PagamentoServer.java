@@ -1077,20 +1077,8 @@ public class PagamentoServer {
                 String query = exchange.getRequestURI().getQuery();
 
                 // 🔥 1. Se for GET (teste do MP), processa os parâmetros da URL
-                if ("GET".equalsIgnoreCase(method)) {
-                    System.out.println("📢 Webhook GET recebido: " + query);
-                    Map<String, String> params = parseQueryParams(query);
-                    String topic = params.get("topic");
-                    String paymentId = params.get("id");
-
-                    if ("payment".equals(topic) && paymentId != null) {
-                        System.out.println("   🔍 Teste de webhook para paymentId: " + paymentId);
-                        // Consulta o status para confirmar que está funcionando
-                        String status = consultarStatusPagamento(paymentId);
-                        System.out.println("   📊 Status retornado: " + status);
-                    }
-
-                    // Sempre retorna 200 OK para o teste do MP
+//                String method = exchange.getRequestMethod();
+                if ("GET".equalsIgnoreCase(method) || "OPTIONS".equalsIgnoreCase(method)) {
                     sendResponse(exchange, 200, "{\"status\":\"ok\"}");
                     return;
                 }
