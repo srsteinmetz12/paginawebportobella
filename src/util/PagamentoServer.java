@@ -1072,45 +1072,52 @@ public class PagamentoServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
+            String method = exchange.getRequestMethod();
+
             try {
-                // 1. Lê o corpo da requisição
+                // 🔥 Aceita GET (teste do MP) e POST (notificações reais)
+                if ("GET".equals(method)) {
+                    // Retorna 200 OK para o teste do Mercado Pago
+                    String query = exchange.getRequestURI().getQuery();
+                    System.out.println("📢 Webhook GET (teste): " + query);
+                    sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+                    return;
+                }
+
+                if (!"POST".equals(method)) {
+                    sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                    return;
+                }
+
+                // POST - processa a notificação
                 String body = new BufferedReader(
                         new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                         .lines().reduce("", (a, b) -> a + b);
 
-                System.out.println("📢 Webhook recebido: " + body);
+                System.out.println("📢 Webhook POST recebido: " + body);
 
-                // 2. Parse do JSON
+                // Processa a notificação (já implementado)
                 JsonObject notification = gson.fromJson(body, JsonObject.class);
                 String type = notification.get("type").getAsString();
 
-                // 3. Só processa se for notificação de pagamento
                 if ("payment".equals(type)) {
                     String paymentId = notification.get("data").getAsJsonObject().get("id").getAsString();
                     System.out.println("   🔍 Payment ID: " + paymentId);
 
-                    // 4. Consulta o status do pagamento
                     String status = consultarStatusPagamento(paymentId);
                     System.out.println("   📊 Status: " + status);
 
-                    // 5. Se aprovado, finaliza o pedido
                     if ("approved".equals(status)) {
                         System.out.println("   ✅ Pagamento aprovado! Finalizando pedido...");
                         finalizarPedido(paymentId);
-                    } else {
-                        System.out.println("   ⚠️ Pagamento com status: " + status + " (não processado)");
                     }
-                } else {
-                    System.out.println("   ℹ️ Notificação ignorada (tipo: " + type + ")");
                 }
 
-                // 6. Sempre retorna 200 OK
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
 
             } catch (JsonSyntaxException | IOException e) {
                 System.err.println("❌ Erro no webhook: " + e.getMessage());
-                // Em caso de erro, retorna 200 para não gerar reenvios
-                sendResponse(exchange, 200, "{\"status\":\"ok\"}");
+                sendResponse(exchange, 200, "{\"status\":\"ok\"}"); // sempre 200
             }
         }
 
