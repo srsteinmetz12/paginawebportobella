@@ -1417,6 +1417,12 @@ public class PagamentoServer {
     // SEND RESPONSE (AUXILIAR)
     // ==========================================
     private static void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        // 🔥 CORS em todas as respostas
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
+
         byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.sendResponseHeaders(statusCode, bytes.length);
