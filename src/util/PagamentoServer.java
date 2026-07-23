@@ -195,6 +195,14 @@ public class PagamentoServer {
                 String cep = json.get("cep").getAsString();
                 String endereco = json.get("endereco").getAsString();
                 String email = json.get("email").getAsString();
+                // 🔥 VALIDAÇÃO OBRIGATÓRIA
+                if (email == null || email.trim().isEmpty() || !email.contains("@")) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("success", false);
+                    error.put("error", "E-mail é obrigatório e deve ser válido");
+                    sendResponse(exchange, 400, gson.toJson(error));
+                    return;
+                }
                 String destinatario = json.get("destinatario").getAsString();
                 String telefone = json.get("telefone").getAsString();
 
@@ -237,10 +245,16 @@ public class PagamentoServer {
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
-            } catch (JsonSyntaxException | IOException e) {
+            } catch (JsonSyntaxException | IllegalStateException e) {
+                // Campos faltando ou JSON inválido
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("error", e.getMessage());
+                error.put("error", "Dados incompletos: " + e.getMessage());
+                sendResponse(exchange, 400, gson.toJson(error));
+            } catch (IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", "Erro interno: " + e.getMessage());
                 sendResponse(exchange, 500, gson.toJson(error));
             }
         }
@@ -996,9 +1010,7 @@ public class PagamentoServer {
                     response.put("success", false);
                     response.put("error", "Meio de pagamento inválido: " + meio);
                 }
-
                 sendResponse(exchange, 200, gson.toJson(response));
-//                addCorsHeaders(exchange);
             } catch (IOException | NumberFormatException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
