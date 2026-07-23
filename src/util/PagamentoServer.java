@@ -169,12 +169,9 @@ public class PagamentoServer {
     static class FinalizarCompraHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -255,12 +252,9 @@ public class PagamentoServer {
     static class CalcularFreteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -416,12 +410,8 @@ public class PagamentoServer {
     static class VerificarDisponibilidadeHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
-
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -486,12 +476,9 @@ public class PagamentoServer {
     static class ListarProdutosHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -548,13 +535,9 @@ public class PagamentoServer {
     static class ReservarLoteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -694,12 +677,9 @@ public class PagamentoServer {
     static class NotificarSistemaHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -825,12 +805,9 @@ public class PagamentoServer {
     static class ConsultarNotificacoesHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -896,13 +873,8 @@ public class PagamentoServer {
     static class ConfirmarPedidoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
                 return;
             }
 
@@ -976,12 +948,9 @@ public class PagamentoServer {
     static class CriarPagamentoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
+                sendResponse(exchange, 204, ""); // 🔥 Passa pelo sendResponse, que tem CORS
                 return;
             }
 
@@ -1045,8 +1014,11 @@ public class PagamentoServer {
     static class StatusPagamentoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 204, ""); // 🔥 Passa pelo sendResponse, que tem CORS
+                return;
+            }
 
             try {
                 String path = exchange.getRequestURI().getPath();
@@ -1074,7 +1046,10 @@ public class PagamentoServer {
     static class WebhookHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
+                return;
+            }
             try {
                 String method = exchange.getRequestMethod();
                 String query = exchange.getRequestURI().getQuery();
