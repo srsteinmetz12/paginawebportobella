@@ -1269,9 +1269,9 @@ public class PagamentoServer {
                     + "}],"
                     + "\"external_reference\": \"" + pedidoId + "\"," // 🔥 ADICIONE ESTA LINHA
                     + "\"back_urls\": {"
-                    + "\"success\": \"https://srsteinmetz12.github.io/sucesso.html\","
-                    + "\"failure\": \"https://srsteinmetz12.github.io/falha.html\","
-                    + "\"pending\": \"https://srsteinmetz12.github.io/pendente.html\""
+                    + "\"success\": \"https://portobellavitrine.com?status=approved\","
+                    + "\"failure\": \"https://portobellavitrine.com?status=failure\","
+                    + "\"pending\": \"https://portobellavitrine.com?status=pending\""
                     + "},"
                     + "\"auto_return\": \"approved\""
                     + "}";
