@@ -35,7 +35,7 @@ public class PagamentoServer {
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
     private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI";
     private static final String CIDADE = "PORTO ALEGRE";
-    private static final String TOKEN_MP = "APP_USR-5504079628127234-061707-4f72faca8cd75c397d89abc34651960f-3480421128";
+    private static final String TOKEN_MP = "APP_USR-3014844290064894-072221-cdc55b4a7b650f02e5c869d88fda9f5d-3562162374";
 
     // ==========================================
     // CLASSE AUXILIAR NOTIFICACAO
@@ -224,7 +224,8 @@ public class PagamentoServer {
                     response.put("pedidoId", System.currentTimeMillis());
                     System.out.println("   ✅ Pix gerado com sucesso!");
                 } else {
-                    String link = criarLinkMercadoPago(codPeca, "Pedido PORTOBELLA", total);
+                    String pedidoId = String.valueOf(System.currentTimeMillis());
+                    String link = criarLinkMercadoPago(codPeca, "Pedido PORTOBELLA", total, pedidoId);
                     if (link != null && !link.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "CREDITO");
@@ -1008,7 +1009,8 @@ public class PagamentoServer {
                     response.put("produto", nome);
                     System.out.println("   ✅ Payload Pix gerado com sucesso!");
                 } else if ("mercado_pago".equalsIgnoreCase(meio)) {
-                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal);
+                    String pedidoId = String.valueOf(System.currentTimeMillis());
+                    String linkPagamento = criarLinkMercadoPago(produtoId, nome, valorTotal, pedidoId);
                     if (linkPagamento != null && !linkPagamento.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "mercado_pago");
@@ -1071,16 +1073,94 @@ public class PagamentoServer {
         public void handle(HttpExchange exchange) throws IOException {
             addCorsHeaders(exchange);
             try {
+                // 1. Lê o corpo da requisição
                 String body = new BufferedReader(
                         new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                         .lines().reduce("", (a, b) -> a + b);
 
-                System.out.println("📢 Webhook: " + body);
+                System.out.println("📢 Webhook recebido: " + body);
+
+                // 2. Parse do JSON
+                JsonObject notification = gson.fromJson(body, JsonObject.class);
+                String type = notification.get("type").getAsString();
+
+                // 3. Só processa se for notificação de pagamento
+                if ("payment".equals(type)) {
+                    String paymentId = notification.get("data").getAsJsonObject().get("id").getAsString();
+                    System.out.println("   🔍 Payment ID: " + paymentId);
+
+                    // 4. Consulta o status do pagamento
+                    String status = consultarStatusPagamento(paymentId);
+                    System.out.println("   📊 Status: " + status);
+
+                    // 5. Se aprovado, finaliza o pedido
+                    if ("approved".equals(status)) {
+                        System.out.println("   ✅ Pagamento aprovado! Finalizando pedido...");
+                        finalizarPedido(paymentId);
+                    } else {
+                        System.out.println("   ⚠️ Pagamento com status: " + status + " (não processado)");
+                    }
+                } else {
+                    System.out.println("   ℹ️ Notificação ignorada (tipo: " + type + ")");
+                }
+
+                // 6. Sempre retorna 200 OK
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
 
-            } catch (IOException e) {
+            } catch (JsonSyntaxException | IOException e) {
+                System.err.println("❌ Erro no webhook: " + e.getMessage());
+                // Em caso de erro, retorna 200 para não gerar reenvios
                 sendResponse(exchange, 200, "{\"status\":\"ok\"}");
             }
+        }
+
+        private String consultarStatusPagamento(String paymentId) {
+            try {
+                String url = "https://api.mercadopago.com/v1/payments/" + paymentId;
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    try (BufferedReader in = new BufferedReader(
+                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = in.readLine()) != null) {
+                            response.append(line);
+                        }
+                        JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
+                        return json.get("status").getAsString();
+                    }
+                } else {
+                    System.err.println("   ❌ Erro ao consultar pagamento. Código: " + responseCode);
+                    return null;
+                }
+            } catch (JsonSyntaxException | IOException e) {
+                System.err.println("   ❌ Erro ao consultar pagamento: " + e.getMessage());
+                return null;
+            }
+        }
+
+        private void finalizarPedido(String paymentId) {
+            // Consulta o pagamento e extrai o external_reference
+            String pedidoId = buscarExternalReference(paymentId);
+            // Agora você sabe qual pedido foi pago
+            // Busca os dados do pedido no banco e finaliza
+            // 1. Buscar o pedido associado a este paymentId (usando external_reference)
+            // 2. Reservar os itens (chamar o método reservarLote)
+            // 3. Notificar a loja (chamar o método notificarSistema)
+            // 4. Atualizar status no banco
+
+            System.out.println("   🚀 Finalizando pedido com paymentId: " + paymentId);
+
+            // Exemplo de como você pode buscar o pedido:
+            // String pedidoId = buscarPedidoPorPaymentId(paymentId);
+            // if (pedidoId != null) {
+            //     reservarLote(itens, pedidoId, email);
+            //     notificarSistema(...);
+            // }
         }
     }
 
@@ -1177,7 +1257,7 @@ public class PagamentoServer {
     // ==========================================
     // MERCADO PAGO
     // ==========================================
-    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor) {
+    private static String criarLinkMercadoPago(String codPeca, String titulo, double valor, String pedidoId){
         try {
             String precoFormatado = String.format(java.util.Locale.US, "%.2f", valor);
 
@@ -1189,6 +1269,7 @@ public class PagamentoServer {
                     + "\"currency_id\": \"BRL\","
                     + "\"unit_price\": " + precoFormatado
                     + "}],"
+                    + "\"external_reference\": \"" + pedidoId + "\"," // 🔥 ADICIONE ESTA LINHA
                     + "\"back_urls\": {"
                     + "\"success\": \"https://srsteinmetz12.github.io/sucesso.html\","
                     + "\"failure\": \"https://srsteinmetz12.github.io/falha.html\","
@@ -1244,6 +1325,37 @@ public class PagamentoServer {
             System.err.println("   ❌ Erro MP: " + e.getMessage());
         }
 
+        return null;
+    }
+    
+    private static String buscarExternalReference(String paymentId) {
+        try {
+            String url = "https://api.mercadopago.com/v1/payments/" + paymentId;
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        response.append(line);
+                    }
+                    JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
+                    // Extrai o campo external_reference
+                    if (json.has("external_reference") && !json.get("external_reference").isJsonNull()) {
+                        return json.get("external_reference").getAsString();
+                    }
+                }
+            } else {
+                System.err.println("   ❌ Erro ao consultar pagamento. Código: " + responseCode);
+            }
+        } catch (JsonSyntaxException | IOException e) {
+            System.err.println("   ❌ Erro ao buscar external_reference: " + e.getMessage());
+        }
         return null;
     }
 
