@@ -29,7 +29,7 @@ public class GerarEEnviar {
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             int responseCode = conn.getResponseCode();
-            if (responseCode == 200) {
+            if (responseCode == 201) {
                 System.out.println("   ✅ Deploy Hook acionado com sucesso!");
             } else {
                 System.err.println("   ❌ Deploy Hook retornou código: " + responseCode);
