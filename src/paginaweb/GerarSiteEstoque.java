@@ -236,76 +236,76 @@ public class GerarSiteEstoque {
             System.out.println("\n============ INICIANDO EXTRAÇÃO DE PRODUTOS ============");
 
             while (rs.next()) {
-                contador++;
-                String codigoItem = rs.getString("codpeca");
-                String descricao = rs.getString("itemdesc");
-                String tamanho = rs.getString("tamanho");
-                double preco = rs.getDouble("precosug");
-                String imagensConcatenadas = rs.getString("imagem");
-
-                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
-
-                // ==========================================
-                // SEPARA AS IMAGENS POR ;
-                // ==========================================
-                String[] imagens = new String[0];
-                if (imagensConcatenadas != null && !imagensConcatenadas.trim().isEmpty()) {
-                    imagens = imagensConcatenadas.split(";");
-                    for (int i = 0; i < imagens.length; i++) {
-                        imagens[i] = imagens[i].trim();
-                    }
-                }
-
-                // ==========================================
-                // CARD DO PRODUTO
-                // ==========================================
-                String marca = rs.getString("marca") != null ? rs.getString("marca") : "";
-                String marcaExibicao = (marca != null && !marca.isEmpty()) ? marca : "Sem marca";
-                writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " " + tamanho.toLowerCase() + " " + codExibicao.toLowerCase() + " " + marca.toLowerCase() + "' data-codigo='" + codExibicao + "'>");
-
-                // ==========================================
-                // GALERIA DE IMAGENS (CARROSSEL)
-                // ==========================================
-                writer.println("        <div class='galeria' id='galeria-" + codExibicao + "'>");
-
-                if (imagens.length == 0 || (imagens.length == 1 && imagens[0].isEmpty())) {
-                    writer.println("          <div class='sem-foto'>Sem Foto</div>");
-                } else {
-                    int totalImagens = Math.min(imagens.length, 5);
-
-                    for (int i = 0; i < totalImagens; i++) {
-                        String classeAtivo = (i == 0) ? " ativo" : "";
-                        writer.println("          <img src='" + imagens[i] + "' alt='" + descricao + " - Foto " + (i + 1) + "' class='slide" + classeAtivo + "'>");
-                    }
-
-                    if (totalImagens > 1) {
-                        writer.println("          <button class='seta anterior' onclick='mudarSlide(\"" + codExibicao + "\", -1)'>❮</button>");
-                        writer.println("          <button class='seta proximo' onclick='mudarSlide(\"" + codExibicao + "\", 1)'>❯</button>");
-
-                        writer.println("          <div class='indicadores' id='indicadores-" + codExibicao + "'>");
-                        for (int i = 0; i < totalImagens; i++) {
-                            String classeDot = (i == 0) ? " ativo" : "";
-                            writer.println("            <span class='dot" + classeDot + "' onclick='irParaSlide(\"" + codExibicao + "\", " + i + ")'></span>");
-                        }
-                        writer.println("          </div>");
-
-                        writer.println("          <span class='contador-fotos'>1/" + totalImagens + "</span>");
-                    }
-                }
-
-                writer.println("        </div>");
-
-                // ==========================================
-                // INFORMAÇÕES DO PRODUTO
-                // ==========================================
-                writer.println("        <h3>" + descricao + "</h3>");
-                writer.println("        <div class='info'>Tamanho: " + tamanho + "</div>");
-                writer.println("        <div class='codigo-item'>" + marcaExibicao + "</div>");
-                writer.println("        <div class='preco'>R$ " + String.format("%.2f", preco).replace(".", ",") + "</div>");
-                writer.println("        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho(\"" + codExibicao + "\", \"" + descricao.replace("\"", "\\\"") + "\", " + preco + ")'>");
-                writer.println("          🛒 Adicionar ao Carrinho");
-                writer.println("        </button>");
-                writer.println("      </div>");
+//                contador++;
+//                String codigoItem = rs.getString("codpeca");
+//                String descricao = rs.getString("itemdesc");
+//                String tamanho = rs.getString("tamanho");
+//                double preco = rs.getDouble("precosug");
+//                String imagensConcatenadas = rs.getString("imagem");
+////
+////                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
+//
+//                // ==========================================
+//                // SEPARA AS IMAGENS POR ;
+//                // ==========================================
+//                String[] imagens = new String[0];
+//                if (imagensConcatenadas != null && !imagensConcatenadas.trim().isEmpty()) {
+//                    imagens = imagensConcatenadas.split(";");
+//                    for (int i = 0; i < imagens.length; i++) {
+//                        imagens[i] = imagens[i].trim();
+//                    }
+//                }
+//
+//                // ==========================================
+//                // CARD DO PRODUTO
+//                // ==========================================
+//                String marca = rs.getString("marca") != null ? rs.getString("marca") : "";
+//                String marcaExibicao = (marca != null && !marca.isEmpty()) ? marca : "Sem marca";
+//                writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " " + tamanho.toLowerCase() + " " + codExibicao.toLowerCase() + " " + marca.toLowerCase() + "' data-codigo='" + codExibicao + "'>");
+//
+//                // ==========================================
+//                // GALERIA DE IMAGENS (CARROSSEL)
+//                // ==========================================
+//                writer.println("        <div class='galeria' id='galeria-" + codExibicao + "'>");
+//
+//                if (imagens.length == 0 || (imagens.length == 1 && imagens[0].isEmpty())) {
+//                    writer.println("          <div class='sem-foto'>Sem Foto</div>");
+//                } else {
+//                    int totalImagens = Math.min(imagens.length, 5);
+//
+//                    for (int i = 0; i < totalImagens; i++) {
+//                        String classeAtivo = (i == 0) ? " ativo" : "";
+//                        writer.println("          <img src='" + imagens[i] + "' alt='" + descricao + " - Foto " + (i + 1) + "' class='slide" + classeAtivo + "'>");
+//                    }
+//
+//                    if (totalImagens > 1) {
+//                        writer.println("          <button class='seta anterior' onclick='mudarSlide(\"" + codExibicao + "\", -1)'>❮</button>");
+//                        writer.println("          <button class='seta proximo' onclick='mudarSlide(\"" + codExibicao + "\", 1)'>❯</button>");
+//
+//                        writer.println("          <div class='indicadores' id='indicadores-" + codExibicao + "'>");
+//                        for (int i = 0; i < totalImagens; i++) {
+//                            String classeDot = (i == 0) ? " ativo" : "";
+//                            writer.println("            <span class='dot" + classeDot + "' onclick='irParaSlide(\"" + codExibicao + "\", " + i + ")'></span>");
+//                        }
+//                        writer.println("          </div>");
+//
+//                        writer.println("          <span class='contador-fotos'>1/" + totalImagens + "</span>");
+//                    }
+//                }
+//
+//                writer.println("        </div>");
+//
+//                // ==========================================
+//                // INFORMAÇÕES DO PRODUTO
+//                // ==========================================
+//                writer.println("        <h3>" + descricao + "</h3>");
+//                writer.println("        <div class='info'>Tamanho: " + tamanho + "</div>");
+//                writer.println("        <div class='codigo-item'>" + marcaExibicao + "</div>");
+//                writer.println("        <div class='preco'>R$ " + String.format("%.2f", preco).replace(".", ",") + "</div>");
+//                writer.println("        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho(\"" + codExibicao + "\", \"" + descricao.replace("\"", "\\\"") + "\", " + preco + ")'>");
+//                writer.println("          🛒 Adicionar ao Carrinho");
+//                writer.println("        </button>");
+//                writer.println("      </div>");
             }
             writer.println("    </div>");
             writer.println("  </div>");
@@ -1375,6 +1375,8 @@ public class GerarSiteEstoque {
             writer.println("");
             writer.println("      // Inicializa a interface");
             writer.println("      toggleEntrega();");
+            writer.println("      // 🔥 Carrega produtos via API");
+            writer.println("      carregarProdutos();");
             writer.println("");
             writer.println("      // 🔥 Verifica se há compra pendente no sessionStorage (para mobile)");
             writer.println("      try {");
