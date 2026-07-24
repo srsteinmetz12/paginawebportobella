@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import paginaweb.EmailServiceSendGrid;
+import paginaweb.GerarEEnviar;
 import paginaweb.GerarSiteEstoque;
 
 public class PagamentoServer {
@@ -647,7 +648,7 @@ public class PagamentoServer {
                     new Thread(() -> {
                         try {
                             System.out.println("   🌐 Gerando novo site...");
-                            GerarSiteEstoque.main(new String[0]);
+                            GerarEEnviar.main(new String[0]);
                             System.out.println("   ✅ Site gerado com sucesso!");
                         } catch (Exception e) {
                             System.err.println("   ❌ Erro ao gerar site: " + e.getMessage());
@@ -1594,6 +1595,17 @@ public class PagamentoServer {
 
             // 🔥 NOTIFICA A LOJA (REUTILIZA A LÓGICA DO NOTIFICAR)
             notificarLoja(dados, pedidoId);
+            
+            // 🔥 ADICIONE A THREAD AQUI – APÓS A NOTIFICAÇÃO E ANTES DO RETURN
+            new Thread(() -> {
+                try {
+                    System.out.println("   🌐 Gerando e enviando site (MP)...");
+                    GerarEEnviar.main(new String[0]);
+                    System.out.println("   ✅ Site gerado e enviado com sucesso (MP)!");
+                } catch (Exception e) {
+                    System.err.println("   ❌ Erro ao gerar/enviar site (MP): " + e.getMessage());
+                }
+            }).start();
 
             System.out.println("✅ Pedido " + pedidoId + " finalizado com sucesso (fallback)");
             return true;
