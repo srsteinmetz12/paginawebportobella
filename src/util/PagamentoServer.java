@@ -571,7 +571,7 @@ public class PagamentoServer {
 
             try {
                 con = ConnectionDB.getConnectionCloud();
-                String sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
+                String sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
                 stmt = con.prepareStatement(sql);
                 stmt.setQueryTimeout(10);
                 rs = stmt.executeQuery();
@@ -584,6 +584,7 @@ public class PagamentoServer {
                     p.put("tamanho", rs.getString("tamanho"));
                     p.put("precosug", rs.getDouble("precosug"));
                     p.put("imagem", rs.getString("imagem"));
+                    p.put("marca", rs.getString("marca"));
                     produtos.add(p);
                 }
 
