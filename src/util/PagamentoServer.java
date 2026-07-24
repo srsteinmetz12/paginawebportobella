@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import paginaweb.EmailServiceSendGrid;
 import paginaweb.GerarSiteEstoque;
 
@@ -31,6 +34,7 @@ public class PagamentoServer {
     // ==========================================
     private static final Gson gson = new Gson();
     private static HttpServer server;
+    private static final Map<String, DadosPedido> pedidosPendentes = new ConcurrentHashMap<>();
 
     private static final String CHAVE_PIX = "portobella.brecho@gmail.com";
     private static final String NOME_RECEBEDOR = "VANDERLEIA VIEI";
@@ -98,6 +102,7 @@ public class PagamentoServer {
         server.createContext("/api/pedidos/confirmar", new ConfirmarPedidoHandler());
         server.createContext("/api/produtos", new ListarProdutosHandler());
         server.createContext("/api/pagamentos/verificar-disponibilidade", new VerificarDisponibilidadeHandler());
+        server.createContext("/api/pagamentos/finalizar-mp", new FinalizarMercadoPagoHandler());
 
         server.setExecutor(null);
         server.start();
@@ -116,6 +121,19 @@ public class PagamentoServer {
     public static void parar() {
         if (server != null) server.stop(0);
     }
+    
+    private static class DadosPedido {
+        List<Map<String, Object>> itens;
+        String email;
+        String destinatario;
+        String telefone;
+        String endereco;
+        boolean retirarLoja;
+        double subtotal;
+        double frete;
+        double total;
+    }
+    
     // ==========================================
     // HANDLER: ROOT HANDLER
     // ==========================================    
@@ -169,9 +187,8 @@ public class PagamentoServer {
     static class FinalizarCompraHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            System.out.println("Método recebido: " + exchange.getRequestMethod());
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                sendResponse(exchange, 204, ""); // ✅ CORS garantido
+                sendResponse(exchange, 204, "");
                 return;
             }
 
@@ -188,6 +205,16 @@ public class PagamentoServer {
                 System.out.println("📥 Body recebido: " + body);
 
                 JsonObject json = gson.fromJson(body, JsonObject.class);
+
+                // 🔥 CAMPO EMAIL OBRIGATÓRIO – VALIDAÇÃO
+                if (!json.has("email") || json.get("email").getAsString().trim().isEmpty() || !json.get("email").getAsString().contains("@")) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("success", false);
+                    error.put("error", "E-mail é obrigatório e deve ser válido");
+                    sendResponse(exchange, 400, gson.toJson(error));
+                    return;
+                }
+
                 String meio = json.get("meio").getAsString();
                 double subtotal = json.get("subtotal").getAsDouble();
                 double frete = json.get("frete").getAsDouble();
@@ -195,16 +222,9 @@ public class PagamentoServer {
                 String cep = json.get("cep").getAsString();
                 String endereco = json.get("endereco").getAsString();
                 String email = json.get("email").getAsString();
-                // 🔥 VALIDAÇÃO OBRIGATÓRIA
-                if (email == null || email.trim().isEmpty() || !email.contains("@")) {
-                    Map<String, Object> error = new HashMap<>();
-                    error.put("success", false);
-                    error.put("error", "E-mail é obrigatório e deve ser válido");
-                    sendResponse(exchange, 400, gson.toJson(error));
-                    return;
-                }
                 String destinatario = json.get("destinatario").getAsString();
                 String telefone = json.get("telefone").getAsString();
+                boolean retirarLoja = json.has("retirarLoja") && json.get("retirarLoja").getAsBoolean();
 
                 com.google.gson.JsonArray itensArray = json.getAsJsonArray("itens");
                 String codPeca = itensArray.get(0).getAsJsonObject().get("id").getAsString();
@@ -231,25 +251,54 @@ public class PagamentoServer {
                     System.out.println("   ✅ Pix gerado com sucesso!");
                 } else {
                     String pedidoId = String.valueOf(System.currentTimeMillis());
-                    String link = criarLinkMercadoPago(codPeca,"Pedido PORTOBELLA", total, pedidoId, email, destinatario, telefone);
+
+                    // Salva dados para fallback
+                    DadosPedido dados = new DadosPedido();
+                    List<Map<String, Object>> itensConvertidos = new ArrayList<>();
+                    if (itensArray != null) {
+                        for (int i = 0; i < itensArray.size(); i++) {
+                            JsonObject item = itensArray.get(i).getAsJsonObject();
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id", item.get("id").getAsString());
+                            map.put("nome", item.get("nome").getAsString());
+                            map.put("preco", item.get("preco").getAsDouble());
+                            map.put("quantidade", item.get("quantidade").getAsInt());
+                            itensConvertidos.add(map);
+                        }
+                    }
+                    dados.itens = itensConvertidos;
+                    dados.email = email;
+                    dados.destinatario = destinatario;
+                    dados.telefone = telefone;
+                    dados.endereco = endereco;
+                    dados.retirarLoja = retirarLoja;
+                    dados.subtotal = subtotal;
+                    dados.frete = frete;
+                    dados.total = total;
+                    pedidosPendentes.put(pedidoId, dados);
+
+                    // Gera link do Mercado Pago
+                    String link = criarLinkMercadoPago(codPeca, "Pedido PORTOBELLA", total, pedidoId, email, destinatario, telefone);
+
                     if (link != null && !link.isEmpty()) {
                         response.put("success", true);
                         response.put("meio", "CREDITO");
                         response.put("paymentUrl", link);
+                        response.put("pedidoId", pedidoId);
                         System.out.println("   ✅ Link MP gerado: " + link);
                     } else {
                         response.put("success", false);
                         response.put("error", "Erro ao gerar link do Mercado Pago");
+                        System.err.println("   ❌ Falha ao gerar link MP para o pedido " + pedidoId);
                     }
                 }
 
                 sendResponse(exchange, 200, gson.toJson(response));
 
-            } catch (JsonSyntaxException | IllegalStateException e) {
-                // Campos faltando ou JSON inválido
+            } catch (JsonSyntaxException e) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("error", "Dados incompletos: " + e.getMessage());
+                error.put("error", "JSON inválido: " + e.getMessage());
                 sendResponse(exchange, 400, gson.toJson(error));
             } catch (IOException e) {
                 Map<String, Object> error = new HashMap<>();
@@ -258,6 +307,20 @@ public class PagamentoServer {
                 sendResponse(exchange, 500, gson.toJson(error));
             }
         }
+    }
+    private List<Map<String, Object>> converterItensArray(com.google.gson.JsonArray itensArray) {
+        List<Map<String, Object>> lista = new ArrayList<>();
+        if (itensArray == null) return lista;
+        for (int i = 0; i < itensArray.size(); i++) {
+            JsonObject item = itensArray.get(i).getAsJsonObject();
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", item.get("id").getAsString());
+            map.put("nome", item.get("nome").getAsString());
+            map.put("preco", item.get("preco").getAsDouble());
+            map.put("quantidade", item.get("quantidade").getAsInt());
+            lista.add(map);
+        }
+        return lista;
     }
 
     // ==========================================
@@ -608,80 +671,156 @@ public class PagamentoServer {
             }
         }
 
-        private boolean reservarLote(List<String> codPecas, String pedidoId, String emailCliente) {
-            System.out.println("📥 [RESERVA-LOTE] INICIANDO RESERVA..."); // 🔥 LOG 1
-            Connection con = null;
-            PreparedStatement stmt = null;
-            ResultSet rs = null;
+//        private static boolean reservarLote(List<String> codPecas, String pedidoId, String emailCliente) {
+//            System.out.println("📥 [RESERVA-LOTE] INICIANDO RESERVA..."); // 🔥 LOG 1
+//            Connection con = null;
+//            PreparedStatement stmt = null;
+//            ResultSet rs = null;
+//
+//            try {
+//                System.out.println("📥 [RESERVA-LOTE] Tentando conectar ao banco..."); // 🔥 LOG 2
+//                con = ConnectionDB.getConnectionCloud();
+//                System.out.println("✅ [RESERVA-LOTE] Conectado com sucesso!"); // 🔥 LOG 3
+//
+//                con.setAutoCommit(false);
+//                System.out.println("✅ [RESERVA-LOTE] AutoCommit desabilitado!"); // 🔥 LOG 4
+//
+//                // 🔥 1. Verifica se todos os itens estão disponíveis
+//                for (String codPeca : codPecas) {
+//                    System.out.println("🔍 [RESERVA-LOTE] Verificando item: " + codPeca); // 🔥 LOG 5
+//                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL'";
+//                    stmt = con.prepareStatement(sqlCheck);
+//                    stmt.setString(1, codPeca);
+//                    rs = stmt.executeQuery();
+//
+//                    if (!rs.next()) {
+//                        System.out.println("❌ [RESERVA-LOTE] Item NÃO DISPONÍVEL: " + codPeca); // 🔥 LOG 6
+//                        con.rollback();
+//                        return false;
+//                    }
+//
+//                    int qtd = rs.getInt("quantidade");
+//                    System.out.println("   📝 Quantidade: " + qtd); // 🔥 LOG 7
+//                    if (qtd < 1) {
+//                        System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca); // 🔥 LOG 8
+//                        con.rollback();
+//                        return false;
+//                    }
+//                }
+//
+//                // 🔥 2. Atualiza estoque para RESERVADO
+//                for (String codPeca : codPecas) {
+//                    System.out.println("🔄 [RESERVA-LOTE] Atualizando estoque: " + codPeca); // 🔥 LOG 9
+//                    String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
+//                    stmt = con.prepareStatement(sqlUpdate);
+//                    stmt.setString(1, codPeca);
+//                    int rows = stmt.executeUpdate();
+//                    System.out.println("   📝 Atualizadas " + rows + " linha(s)"); // 🔥 LOG 10
+//                }
+//
+//                // 🔥 3. Insere na tabela reservas
+//                String codPecaStr = String.join(",", codPecas);
+//                System.out.println("📝 [RESERVA-LOTE] Inserindo reserva: " + codPecaStr); // 🔥 LOG 11
+//
+//                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, email, quantidade, data_reserva, status) VALUES (?, ?, ?, ?, NOW(), 'RESERVADO')";
+//                stmt = con.prepareStatement(sqlReserva);
+//                stmt.setString(1, codPecaStr);
+//                stmt.setString(2, pedidoId);
+//                stmt.setString(3, emailCliente);   // 🔥 NOVO
+//                stmt.setInt(4, codPecas.size());
+//                int rows = stmt.executeUpdate();
+//                System.out.println("   📝 Inseridas " + rows + " linha(s) na reserva"); // 🔥 LOG 12
+//
+//                con.commit();
+//                System.out.println("✅ [RESERVA-LOTE] Reserva finalizada com sucesso!"); // 🔥 LOG 13
+//                return true;
+//
+//            } catch (ClassNotFoundException | SQLException e) {
+//                System.err.println("❌ [RESERVA-LOTE] ERRO: " + e.getMessage());
+//                // 🔥 IMPRIME O ERRO COMPLETO
+//                try { if (con != null) con.rollback(); } catch (SQLException ex) {System.out.println("❌ Erro: "+ex);}
+//                return false;
+//            } finally {
+//                try { if (rs != null) rs.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
+//                try { if (stmt != null) stmt.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
+//                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
+//            }
+//        }
+    }
+    
+    private static boolean reservarLote(List<String> codPecas, String pedidoId, String emailCliente) {
+        System.out.println("📥 [RESERVA-LOTE] INICIANDO RESERVA..."); // 🔥 LOG 1
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
 
-            try {
-                System.out.println("📥 [RESERVA-LOTE] Tentando conectar ao banco..."); // 🔥 LOG 2
-                con = ConnectionDB.getConnectionCloud();
-                System.out.println("✅ [RESERVA-LOTE] Conectado com sucesso!"); // 🔥 LOG 3
+        try {
+            System.out.println("📥 [RESERVA-LOTE] Tentando conectar ao banco..."); // 🔥 LOG 2
+            con = ConnectionDB.getConnectionCloud();
+            System.out.println("✅ [RESERVA-LOTE] Conectado com sucesso!"); // 🔥 LOG 3
 
-                con.setAutoCommit(false);
-                System.out.println("✅ [RESERVA-LOTE] AutoCommit desabilitado!"); // 🔥 LOG 4
+            con.setAutoCommit(false);
+            System.out.println("✅ [RESERVA-LOTE] AutoCommit desabilitado!"); // 🔥 LOG 4
 
-                // 🔥 1. Verifica se todos os itens estão disponíveis
-                for (String codPeca : codPecas) {
-                    System.out.println("🔍 [RESERVA-LOTE] Verificando item: " + codPeca); // 🔥 LOG 5
-                    String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL'";
-                    stmt = con.prepareStatement(sqlCheck);
-                    stmt.setString(1, codPeca);
-                    rs = stmt.executeQuery();
+            // 🔥 1. Verifica se todos os itens estão disponíveis
+            for (String codPeca : codPecas) {
+                System.out.println("🔍 [RESERVA-LOTE] Verificando item: " + codPeca); // 🔥 LOG 5
+                String sqlCheck = "SELECT status, quantidade FROM estoque WHERE codpeca = ? AND status = 'DISPONIVEL'";
+                stmt = con.prepareStatement(sqlCheck);
+                stmt.setString(1, codPeca);
+                rs = stmt.executeQuery();
 
-                    if (!rs.next()) {
-                        System.out.println("❌ [RESERVA-LOTE] Item NÃO DISPONÍVEL: " + codPeca); // 🔥 LOG 6
-                        con.rollback();
-                        return false;
-                    }
-
-                    int qtd = rs.getInt("quantidade");
-                    System.out.println("   📝 Quantidade: " + qtd); // 🔥 LOG 7
-                    if (qtd < 1) {
-                        System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca); // 🔥 LOG 8
-                        con.rollback();
-                        return false;
-                    }
+                if (!rs.next()) {
+                    System.out.println("❌ [RESERVA-LOTE] Item NÃO DISPONÍVEL: " + codPeca); // 🔥 LOG 6
+                    con.rollback();
+                    return false;
                 }
 
-                // 🔥 2. Atualiza estoque para RESERVADO
-                for (String codPeca : codPecas) {
-                    System.out.println("🔄 [RESERVA-LOTE] Atualizando estoque: " + codPeca); // 🔥 LOG 9
-                    String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
-                    stmt = con.prepareStatement(sqlUpdate);
-                    stmt.setString(1, codPeca);
-                    int rows = stmt.executeUpdate();
-                    System.out.println("   📝 Atualizadas " + rows + " linha(s)"); // 🔥 LOG 10
+                int qtd = rs.getInt("quantidade");
+                System.out.println("   📝 Quantidade: " + qtd); // 🔥 LOG 7
+                if (qtd < 1) {
+                    System.out.println("❌ [RESERVA-LOTE] Estoque insuficiente: " + codPeca); // 🔥 LOG 8
+                    con.rollback();
+                    return false;
                 }
-
-                // 🔥 3. Insere na tabela reservas
-                String codPecaStr = String.join(",", codPecas);
-                System.out.println("📝 [RESERVA-LOTE] Inserindo reserva: " + codPecaStr); // 🔥 LOG 11
-
-                String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, email, quantidade, data_reserva, status) VALUES (?, ?, ?, ?, NOW(), 'RESERVADO')";
-                stmt = con.prepareStatement(sqlReserva);
-                stmt.setString(1, codPecaStr);
-                stmt.setString(2, pedidoId);
-                stmt.setString(3, emailCliente);   // 🔥 NOVO
-                stmt.setInt(4, codPecas.size());
-                int rows = stmt.executeUpdate();
-                System.out.println("   📝 Inseridas " + rows + " linha(s) na reserva"); // 🔥 LOG 12
-
-                con.commit();
-                System.out.println("✅ [RESERVA-LOTE] Reserva finalizada com sucesso!"); // 🔥 LOG 13
-                return true;
-
-            } catch (ClassNotFoundException | SQLException e) {
-                System.err.println("❌ [RESERVA-LOTE] ERRO: " + e.getMessage());
-                // 🔥 IMPRIME O ERRO COMPLETO
-                try { if (con != null) con.rollback(); } catch (SQLException ex) {System.out.println("❌ Erro: "+ex);}
-                return false;
-            } finally {
-                try { if (rs != null) rs.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
-                try { if (stmt != null) stmt.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
-                try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
             }
+
+            // 🔥 2. Atualiza estoque para RESERVADO
+            for (String codPeca : codPecas) {
+                System.out.println("🔄 [RESERVA-LOTE] Atualizando estoque: " + codPeca); // 🔥 LOG 9
+                String sqlUpdate = "UPDATE estoque SET status = 'RESERVADO', quantidade = quantidade - 1 WHERE codpeca = ?";
+                stmt = con.prepareStatement(sqlUpdate);
+                stmt.setString(1, codPeca);
+                int rows = stmt.executeUpdate();
+                System.out.println("   📝 Atualizadas " + rows + " linha(s)"); // 🔥 LOG 10
+            }
+
+            // 🔥 3. Insere na tabela reservas
+            String codPecaStr = String.join(",", codPecas);
+            System.out.println("📝 [RESERVA-LOTE] Inserindo reserva: " + codPecaStr); // 🔥 LOG 11
+
+            String sqlReserva = "INSERT INTO reservas (cod_peca, pedido_id, email, quantidade, data_reserva, status) VALUES (?, ?, ?, ?, NOW(), 'RESERVADO')";
+            stmt = con.prepareStatement(sqlReserva);
+            stmt.setString(1, codPecaStr);
+            stmt.setString(2, pedidoId);
+            stmt.setString(3, emailCliente);   // 🔥 NOVO
+            stmt.setInt(4, codPecas.size());
+            int rows = stmt.executeUpdate();
+            System.out.println("   📝 Inseridas " + rows + " linha(s) na reserva"); // 🔥 LOG 12
+
+            con.commit();
+            System.out.println("✅ [RESERVA-LOTE] Reserva finalizada com sucesso!"); // 🔥 LOG 13
+            return true;
+
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("❌ [RESERVA-LOTE] ERRO: " + e.getMessage());
+            // 🔥 IMPRIME O ERRO COMPLETO
+            try { if (con != null) con.rollback(); } catch (SQLException ex) {System.out.println("❌ Erro: "+ex);}
+            return false;
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
+            try { if (stmt != null) stmt.close(); } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException ex) {System.err.println("❌ Erro: "+ex);}
         }
     }
 
@@ -1064,7 +1203,7 @@ public class PagamentoServer {
             }
             try {
                 String method = exchange.getRequestMethod();
-                String query = exchange.getRequestURI().getQuery();
+//                String query = exchange.getRequestURI().getQuery();
 
                 // 🔥 1. Se for GET (teste do MP), processa os parâmetros da URL
 //                String method = exchange.getRequestMethod();
@@ -1123,34 +1262,34 @@ public class PagamentoServer {
             }
         }
 
-        private String consultarStatusPagamento(String paymentId) {
-            try {
-                String url = "https://api.mercadopago.com/v1/payments/" + paymentId;
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 200) {
-                    try (BufferedReader in = new BufferedReader(
-                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            response.append(line);
-                        }
-                        JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
-                        return json.get("status").getAsString();
-                    }
-                } else {
-                    System.err.println("   ❌ Erro ao consultar pagamento. Código: " + responseCode);
-                    return null;
-                }
-            } catch (JsonSyntaxException | IOException e) {
-                System.err.println("   ❌ Erro ao consultar pagamento: " + e.getMessage());
-                return null;
-            }
-        }
+//        private String consultarStatusPagamento(String paymentId) {
+//            try {
+//                String url = "https://api.mercadopago.com/v1/payments/" + paymentId;
+//                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+//                conn.setRequestMethod("GET");
+//                conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
+//
+//                int responseCode = conn.getResponseCode();
+//                if (responseCode == 200) {
+//                    try (BufferedReader in = new BufferedReader(
+//                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+//                        StringBuilder response = new StringBuilder();
+//                        String line;
+//                        while ((line = in.readLine()) != null) {
+//                            response.append(line);
+//                        }
+//                        JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
+//                        return json.get("status").getAsString();
+//                    }
+//                } else {
+//                    System.err.println("   ❌ Erro ao consultar pagamento. Código: " + responseCode);
+//                    return null;
+//                }
+//            } catch (JsonSyntaxException | IOException e) {
+//                System.err.println("   ❌ Erro ao consultar pagamento: " + e.getMessage());
+//                return null;
+//            }
+//        }
 
         private void finalizarPedido(String paymentId) {
             // Consulta o pagamento e extrai o external_reference
@@ -1162,12 +1301,12 @@ public class PagamentoServer {
             System.out.println("   🆔 Pedido ID: " + pedidoId);
 
             System.out.println("   🚀 Finalizando pedido com paymentId: " + paymentId);
-
-            // Agora você pode usar o pedidoId para:
-            // 1. Buscar os dados do pedido no banco (itens, cliente, etc.)
-            // 2. Chamar reservarLote
-            // 3. Notificar a loja
-            // 4. Atualizar status
+            boolean finalizado = PagamentoServer.finalizarPedidoPorPedidoId(pedidoId);
+            if (finalizado) {
+                System.out.println("   ✅ Pedido " + pedidoId + " finalizado com sucesso via webhook.");
+            } else {
+                System.err.println("   ❌ Falha ao finalizar pedido " + pedidoId + " via webhook.");
+            }
         }
     }
 
@@ -1375,6 +1514,195 @@ public class PagamentoServer {
         }
         return null;
     }
+    
+    // ==========================================
+    // HANDLER: FINALIZAR MP (FALLBACK)
+    // ==========================================
+    static class FinalizarMercadoPagoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 204, "");
+                return;
+            }
+
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                return;
+            }
+
+            try {
+                String body = new BufferedReader(
+                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                        .lines().reduce("", (a, b) -> a + b);
+
+                JsonObject json = gson.fromJson(body, JsonObject.class);
+                String paymentId = json.get("paymentId").getAsString();
+                String pedidoId = json.get("pedidoId").getAsString();
+
+                System.out.println("📥 [FALLBACK-MP] Payment ID: " + paymentId);
+                System.out.println("📥 [FALLBACK-MP] Pedido ID: " + pedidoId);
+
+                // 🔥 CONSULTA O STATUS DO PAGAMENTO
+                String status = consultarStatusPagamento(paymentId);
+                System.out.println("📊 [FALLBACK] Status: " + status);
+
+                if (!"approved".equals(status)) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("success", false);
+                    error.put("error", "Pagamento não aprovado. Status: " + status);
+                    sendResponse(exchange, 200, gson.toJson(error)); // 🔥 AQUI ERA json.toJson
+                    return;
+                }
+
+                // 🔥 FINALIZA O PEDIDO
+                boolean finalizado = finalizarPedidoPorPedidoId(pedidoId);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", finalizado);
+                response.put("mensagem", finalizado ? "Pedido finalizado com sucesso!" : "Erro ao finalizar pedido.");
+                sendResponse(exchange, 200, gson.toJson(response)); // 🔥 AQUI ERA json.toJson
+
+            } catch (JsonSyntaxException | IOException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            }
+        }
+    }
+    
+    private static boolean finalizarPedidoPorPedidoId(String pedidoId) {
+        DadosPedido dados = pedidosPendentes.remove(pedidoId);
+        if (dados == null) {
+            System.err.println("❌ Dados do pedido não encontrados para: " + pedidoId);
+            return false;
+        }
+
+        try {
+            // 🔥 EXTRAI OS CÓDIGOS DOS ITENS
+            List<String> codPecas = dados.itens.stream()
+                    .map(item -> (String) item.get("id"))
+                    .collect(Collectors.toList());
+
+            // 🔥 CHAMA A RESERVA (REUTILIZA A LÓGICA DO RESERVAR-LOTE)
+            boolean reservado = reservarLote(codPecas, pedidoId, dados.email);
+            if (!reservado) {
+                System.err.println("❌ Falha ao reservar itens para o pedido " + pedidoId);
+                return false;
+            }
+
+            // 🔥 NOTIFICA A LOJA (REUTILIZA A LÓGICA DO NOTIFICAR)
+            notificarLoja(dados, pedidoId);
+
+            System.out.println("✅ Pedido " + pedidoId + " finalizado com sucesso (fallback)");
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao finalizar pedido " + pedidoId + ": " + e.getMessage());
+            return false;
+        }
+    }
+    
+    private static String consultarStatusPagamento(String paymentId) {
+        try {
+            String url = "https://api.mercadopago.com/v1/payments/" + paymentId;
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + TOKEN_MP);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        response.append(line);
+                    }
+                    JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
+                    return json.get("status").getAsString();
+                }
+            } else {
+                System.err.println("   ❌ Erro ao consultar pagamento. Código: " + responseCode);
+                return null;
+            }
+        } catch (JsonSyntaxException | IOException e) {
+            System.err.println("   ❌ Erro ao consultar pagamento: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    private static void notificarLoja(DadosPedido dados, String pedidoId) {
+        try {
+            // 🔥 PREPARA OS DADOS PARA NOTIFICAÇÃO
+            Map<String, Object> notificacao = new HashMap<>();
+            notificacao.put("codPeca", dados.itens.stream()
+                    .map(i -> (String) i.get("id"))
+                    .collect(Collectors.joining(",")));
+            notificacao.put("destinatario", dados.destinatario);
+            notificacao.put("telefone", dados.telefone);
+            notificacao.put("email", dados.email);
+            notificacao.put("total", dados.total);
+            notificacao.put("subtotal", dados.subtotal);
+            notificacao.put("frete", dados.frete);
+            notificacao.put("meio", "mercado_pago");
+            notificacao.put("endereco", dados.endereco);
+            notificacao.put("retirarLoja", dados.retirarLoja);
+            notificacao.put("pedidoId", pedidoId);
+            notificacao.put("itens", dados.itens);
+
+            // 🔥 CHAMA O MESMO MÉTODO QUE O NOTIFICARSISTEMAHANDLER USA
+            // Você pode extrair a lógica de salvarNotificacaoNoBanco e enviar e-mails
+            // para um método utilitário, ou chamar diretamente o handler (não é trivial)
+            // Por simplicidade, reimplemente a chamada:
+
+            Connection con = ConnectionDB.getConnectionCloud();
+            String sql = "INSERT INTO notificacoes_pendentes " +
+                    "(pedido_id, cod_peca, cliente, telefone, email, valor, frete, meio_pagamento, " +
+                    "endereco, retirar_loja, itens, data_criacao, status, lida) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'PENDENTE', 0)";
+            PreparedStatement stmt = con.prepareStatement(sql);
+            stmt.setString(1, pedidoId);
+            stmt.setString(2, (String) notificacao.get("codPeca"));
+            stmt.setString(3, dados.destinatario);
+            stmt.setString(4, dados.telefone);
+            stmt.setString(5, dados.email);
+            stmt.setDouble(6, dados.total);
+            stmt.setDouble(7, dados.frete);
+            stmt.setString(8, "mercado_pago");
+            stmt.setString(9, dados.endereco);
+            stmt.setBoolean(10, dados.retirarLoja);
+            stmt.setString(11, gson.toJson(dados.itens));
+            stmt.executeUpdate();
+            stmt.close();
+            con.close();
+
+            // 🔥 ENVIA E-MAILS
+            EmailServiceSendGrid.enviarPedidoRecebidoCliente(dados.email, dados.destinatario, pedidoId,
+                    dados.subtotal, dados.frete, dados.total, gson.toJson(dados.itens));
+            EmailServiceSendGrid.enviarNovaVendaParaLoja(pedidoId, dados.destinatario, dados.email,
+                    dados.telefone, dados.total, dados.frete, "mercado_pago", dados.retirarLoja,
+                    dados.endereco, gson.toJson(dados.itens));
+
+            System.out.println("   ✅ Loja notificada para o pedido " + pedidoId);
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("   ❌ Erro ao notificar loja: " + e.getMessage());
+        }
+    }
+    
+//    private List<Map<String, Object>> converterItensArray(JsonArray itensArray) {
+//        List<Map<String, Object>> lista = new ArrayList<>();
+//        for (int i = 0; i < itensArray.size(); i++) {
+//            JsonObject item = itensArray.get(i).getAsJsonObject();
+//            Map<String, Object> map = new HashMap<>();
+//            map.put("id", item.get("id").getAsString());
+//            map.put("nome", item.get("nome").getAsString());
+//            map.put("preco", item.get("preco").getAsDouble());
+//            map.put("quantidade", item.get("quantidade").getAsInt());
+//            lista.add(map);
+//        }
+//        return lista;
+//    }
 
     // ==========================================
     // PARSE QUERY PARAMS (AUXILIAR)
