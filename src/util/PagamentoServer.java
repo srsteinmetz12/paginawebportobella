@@ -362,7 +362,7 @@ public class PagamentoServer {
 
                 String uf = buscarUFViaCEP(cep);
                 double valorFrete = calcularFretePorCEP(uf);
-                String prazo = estimarPrazoPorUF(uf);
+                String prazo = estimarPrazoPorCEP(uf);
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
@@ -448,45 +448,188 @@ public class PagamentoServer {
         }
 
         private double calcularFretePorCEP(String cep) {
-            if (cep == null || cep.length() < 3) {
-                return 35.90; // fallback
-            }
+            if (cep == null || cep.length() < 3) return 35.90;
+            int faixa = Integer.parseInt(cep.substring(0, 3));
 
-            // Pega os 3 primeiros dígitos do CEP
-            String prefixo = cep.substring(0, 3);
-            int prefixoInt = Integer.parseInt(prefixo);
+            // ==================== SUL ====================
+            // RS
+            if (faixa >= 900 && faixa <= 919) return 13.90;
+            if (faixa >= 920 && faixa <= 939) return 16.90;
+            if (faixa >= 940 && faixa <= 969) return 22.90;
+            if (faixa >= 970 && faixa <= 989) return 22.90;
+            if (faixa >= 990 && faixa <= 999) return 27.90;
 
-            // Tabela baseada na distância de Porto Alegre (CEP 90560-025)
-            if (prefixoInt >= 900 && prefixoInt <= 999) {
-                return 15.90; // Rio Grande do Sul (local)
-            } else if (prefixoInt >= 800 && prefixoInt <= 899) {
-                return 20.90; // Paraná, Santa Catarina
-            } else if (prefixoInt >= 100 && prefixoInt <= 299) {
-                return 25.90; // São Paulo, Rio de Janeiro
-            } else if (prefixoInt >= 300 && prefixoInt <= 499) {
-                return 30.90; // Minas Gerais, Espírito Santo, Bahia
-            } else if (prefixoInt >= 500 && prefixoInt <= 799) {
-                return 40.90; // Nordeste (PE, CE, etc.) e Centro-Oeste
-            } else if (prefixoInt >= 600 && prefixoInt <= 699) {
-                return 55.90; // Norte (PA, AM, etc.)
-            } else {
-                return 35.90; // fallback (ex: CEPs inválidos ou não mapeados)
-            }
+            // SC
+            if (faixa >= 880 && faixa <= 889) return 29.90;
+            if (faixa >= 890 && faixa <= 899) return 34.90;
+
+            // PR
+            if (faixa >= 800 && faixa <= 809) return 32.90;
+            if (faixa >= 810 && faixa <= 839) return 39.90;
+            if (faixa >= 840 && faixa <= 859) return 42.90;
+            if (faixa >= 860 && faixa <= 879) return 36.90;
+
+            // ==================== SUDESTE ====================
+            // SP
+            if (faixa >= 100 && faixa <= 599) return 46.90;
+            if (faixa >= 600 && faixa <= 999) return 46.90;
+            if (faixa >= 110 && faixa <= 139) return 51.90;
+            if (faixa >= 140 && faixa <= 159) return 44.90;
+            if (faixa >= 160 && faixa <= 199) return 41.90;
+
+            // RJ
+            if (faixa >= 200 && faixa <= 289) return 55.90;
+
+            // MG
+            if (faixa >= 300 && faixa <= 319) return 58.90;
+            if (faixa >= 320 && faixa <= 349) return 57.90;
+            if (faixa >= 350 && faixa <= 359) return 51.90;
+            if (faixa >= 360 && faixa <= 399) return 53.90;
+
+            // ES
+            if (faixa >= 290 && faixa <= 299) return 63.90;
+
+            // ==================== CENTRO-OESTE ====================
+            // DF
+            if (faixa >= 700 && faixa <= 729) return 61.90;
+
+            // GO
+            if (faixa >= 730 && faixa <= 749) return 58.90;
+            if (faixa >= 750 && faixa <= 769) return 58.90;
+
+            // MT
+            if (faixa >= 780 && faixa <= 789) return 70.90;
+            if (faixa >= 790 && faixa <= 799) return 67.90;
+
+            // MS (já incluso na faixa 790-799, mas mantido)
+            if (faixa >= 790 && faixa <= 799) return 56.90;
+
+            // ==================== NORDESTE ====================
+            // BA
+            if (faixa >= 400 && faixa <= 419) return 70.90;
+            if (faixa >= 420 && faixa <= 449) return 68.90;
+            if (faixa >= 450 && faixa <= 489) return 65.90;
+
+            // PE
+            if (faixa >= 500 && faixa <= 509) return 79.90;
+            if (faixa >= 510 && faixa <= 549) return 76.90;
+            if (faixa >= 550 && faixa <= 569) return 72.90;
+
+            // CE
+            if (faixa >= 600 && faixa <= 619) return 82.90;
+            if (faixa >= 620 && faixa <= 639) return 79.90;
+
+            // PB
+            if (faixa >= 580 && faixa <= 589) return 77.90;
+
+            // RN
+            if (faixa >= 590 && faixa <= 599) return 85.90;
+
+            // AL
+            if (faixa >= 570 && faixa <= 579) return 77.90;
+
+            // SE
+            if (faixa >= 490 && faixa <= 499) return 72.90;
+
+            // PI
+            if (faixa >= 640 && faixa <= 649) return 77.90;
+
+            // MA
+            if (faixa >= 650 && faixa <= 659) return 82.90;
+
+            // ==================== NORTE ====================
+            // PA
+            if (faixa >= 660 && faixa <= 669) return 94.90;
+            if (faixa >= 670 && faixa <= 689) return 90.90;
+
+            // AM
+            if (faixa >= 690 && faixa <= 699) return 102.90;
+
+            // RR
+            if (faixa >= 693 && faixa <= 693) return 110.90;
+
+            // AP
+            if (faixa >= 689 && faixa <= 689) return 102.90;
+
+            // AC
+            if (faixa >= 699 && faixa <= 699) return 110.90;
+
+            // RO
+            if (faixa >= 768 && faixa <= 769) return 82.90;
+
+            // TO
+            if (faixa >= 770 && faixa <= 779) return 70.90;
+
+            // ==================== FALLBACK ====================
+            String uf = estimarUFporCEP(cep);
+            return calcularFretePorCEP(uf);
         }
 
-        private String estimarPrazoPorUF(String uf) {
-            if (uf == null || uf.isEmpty()) return "5 a 7 dias úteis";
-            switch (uf.toUpperCase()) {
-                case "SP": case "RJ": return "2 a 4 dias úteis";
-                case "MG": case "ES": return "3 a 5 dias úteis";
-                case "PR": case "SC": return "4 a 6 dias úteis";
-                case "RS": return "5 a 7 dias úteis";
-                case "DF": case "GO": return "5 a 7 dias úteis";
-                case "BA": case "SE": return "5 a 8 dias úteis";
-                case "PE": case "PB": case "RN": case "CE": return "6 a 9 dias úteis";
-                case "AM": case "PA": case "AC": case "RR": case "RO": case "AP": case "TO": return "8 a 12 dias úteis";
-                default: return "5 a 7 dias úteis";
-            }
+        private String estimarPrazoPorCEP(String cep) {
+            if (cep == null || cep.length() < 3) return "5 a 7 dias úteis";
+            int faixa = Integer.parseInt(cep.substring(0, 3));
+
+            // RS
+            if (faixa >= 900 && faixa <= 919) return "1 a 2 dias úteis";
+            if (faixa >= 920 && faixa <= 939) return "2 a 3 dias úteis";
+            if (faixa >= 940 && faixa <= 969) return "3 a 5 dias úteis";
+            if (faixa >= 970 && faixa <= 989) return "3 a 5 dias úteis";
+            if (faixa >= 990 && faixa <= 999) return "4 a 6 dias úteis";
+
+            // SC
+            if (faixa >= 880 && faixa <= 889) return "4 a 6 dias úteis";
+            if (faixa >= 890 && faixa <= 899) return "5 a 7 dias úteis";
+
+            // PR
+            if (faixa >= 800 && faixa <= 809) return "5 a 7 dias úteis";
+            if (faixa >= 810 && faixa <= 839) return "6 a 8 dias úteis";
+            if (faixa >= 840 && faixa <= 859) return "6 a 8 dias úteis";
+            if (faixa >= 860 && faixa <= 879) return "5 a 7 dias úteis";
+
+            // SP
+            if (faixa >= 100 && faixa <= 599) return "6 a 8 dias úteis";
+            if (faixa >= 600 && faixa <= 999) return "6 a 8 dias úteis";
+            if (faixa >= 110 && faixa <= 139) return "7 a 9 dias úteis";
+            if (faixa >= 140 && faixa <= 159) return "6 a 8 dias úteis";
+            if (faixa >= 160 && faixa <= 199) return "5 a 7 dias úteis";
+
+            // RJ
+            if (faixa >= 200 && faixa <= 289) return "7 a 9 dias úteis";
+
+            // MG
+            if (faixa >= 300 && faixa <= 319) return "8 a 10 dias úteis";
+            if (faixa >= 320 && faixa <= 349) return "7 a 9 dias úteis";
+            if (faixa >= 350 && faixa <= 359) return "7 a 9 dias úteis";
+            if (faixa >= 360 && faixa <= 399) return "7 a 9 dias úteis";
+
+            // ES
+            if (faixa >= 290 && faixa <= 299) return "8 a 10 dias úteis";
+
+            // DF, GO
+            if (faixa >= 700 && faixa <= 769) return "8 a 10 dias úteis";
+
+            // MT, MS
+            if (faixa >= 780 && faixa <= 799) return "9 a 11 dias úteis";
+
+            // BA
+            if (faixa >= 400 && faixa <= 489) return "9 a 11 dias úteis";
+
+            // PE, PB, RN, AL, SE, PI, MA
+            if (faixa >= 490 && faixa <= 659) return "10 a 12 dias úteis";
+
+            // CE
+            if (faixa >= 600 && faixa <= 639) return "10 a 12 dias úteis";
+
+            // Norte
+            if (faixa >= 660 && faixa <= 699) return "12 a 15 dias úteis";
+
+            // TO
+            if (faixa >= 770 && faixa <= 779) return "9 a 11 dias úteis";
+
+            // RO
+            if (faixa >= 768 && faixa <= 769) return "11 a 13 dias úteis";
+
+            return "5 a 7 dias úteis"; // fallback
         }
 
         private String lerResposta(java.net.HttpURLConnection conn) throws IOException {
