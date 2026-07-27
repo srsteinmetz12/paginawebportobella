@@ -361,7 +361,7 @@ public class PagamentoServer {
                 System.out.println("📦 Calculando frete para CEP: " + cep);
 
                 String uf = buscarUFViaCEP(cep);
-                double valorFrete = calcularFretePorUF(uf);
+                double valorFrete = calcularFretePorCEP(uf);
                 String prazo = estimarPrazoPorUF(uf);
 
                 Map<String, Object> response = new HashMap<>();
@@ -447,15 +447,30 @@ public class PagamentoServer {
             }
         }
 
-        private double calcularFretePorUF(String uf) {
-            if (uf == null || uf.isEmpty()) return 35.90;
-            switch (uf.toUpperCase()) {
-                case "SP": case "RJ": case "MG": case "ES": return 25.90;
-                case "PR": case "SC": case "RS": return 35.90;
-                case "DF": case "GO": case "MT": case "MS": return 40.90;
-                case "BA": case "SE": case "AL": case "PE": case "PB": case "RN": case "CE": case "PI": case "MA": return 45.90;
-                case "PA": case "AM": case "AC": case "RR": case "RO": case "AP": case "TO": return 55.90;
-                default: return 35.90;
+        private double calcularFretePorCEP(String cep) {
+            if (cep == null || cep.length() < 3) {
+                return 35.90; // fallback
+            }
+
+            // Pega os 3 primeiros dígitos do CEP
+            String prefixo = cep.substring(0, 3);
+            int prefixoInt = Integer.parseInt(prefixo);
+
+            // Tabela baseada na distância de Porto Alegre (CEP 90560-025)
+            if (prefixoInt >= 900 && prefixoInt <= 999) {
+                return 15.90; // Rio Grande do Sul (local)
+            } else if (prefixoInt >= 800 && prefixoInt <= 899) {
+                return 20.90; // Paraná, Santa Catarina
+            } else if (prefixoInt >= 100 && prefixoInt <= 299) {
+                return 25.90; // São Paulo, Rio de Janeiro
+            } else if (prefixoInt >= 300 && prefixoInt <= 499) {
+                return 30.90; // Minas Gerais, Espírito Santo, Bahia
+            } else if (prefixoInt >= 500 && prefixoInt <= 799) {
+                return 40.90; // Nordeste (PE, CE, etc.) e Centro-Oeste
+            } else if (prefixoInt >= 600 && prefixoInt <= 699) {
+                return 55.90; // Norte (PA, AM, etc.)
+            } else {
+                return 35.90; // fallback (ex: CEPs inválidos ou não mapeados)
             }
         }
 
