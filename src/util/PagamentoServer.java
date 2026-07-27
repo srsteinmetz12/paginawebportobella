@@ -330,9 +330,10 @@ public class PagamentoServer {
     static class CalcularFreteHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange); // método addCorsHeaders deve estar definido
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                sendResponse(exchange, 204, ""); // ✅ CORS garantido
+                exchange.sendResponseHeaders(204, -1);
                 return;
             }
 
@@ -360,9 +361,15 @@ public class PagamentoServer {
 
                 System.out.println("📦 Calculando frete para CEP: " + cep);
 
+                // Busca UF e cidade (para informação)
                 String uf = buscarUFViaCEP(cep);
-                double valorFrete = calcularFretePorCEP(uf);
-                String prazo = estimarPrazoPorCEP(uf);
+                String cidade = buscarCidadeViaCEP(cep);
+
+                // 🔥 CALCULA FRETE PELA TABELA DETALHADA POR CEP
+                double valorFrete = calcularFretePorCEP(cep);
+
+                // 🔥 CALCULA PRAZO PELA TABELA DETALHADA POR CEP
+                String prazo = estimarPrazoPorCEP(cep);
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
@@ -370,7 +377,7 @@ public class PagamentoServer {
                 response.put("uf", uf);
                 response.put("frete", valorFrete);
                 response.put("prazo", prazo);
-                response.put("cidade", buscarCidadeViaCEP(cep));
+                response.put("cidade", cidade);
 
                 System.out.println("   UF: " + uf);
                 System.out.println("   Frete: R$ " + valorFrete);
@@ -386,6 +393,9 @@ public class PagamentoServer {
             }
         }
 
+        // ==========================================
+        // MÉTODOS AUXILIARES (BUSCA VIA CEP, ETC.)
+        // ==========================================
         private String buscarUFViaCEP(String cep) {
             try {
                 String url = "https://viacep.com.br/ws/" + cep + "/json/";
@@ -431,6 +441,7 @@ public class PagamentoServer {
         }
 
         private String estimarUFporCEP(String cep) {
+            if (cep == null || cep.isEmpty()) return "SP";
             String prefixo = cep.substring(0, 1);
             switch (prefixo) {
                 case "0": return "SP";
@@ -447,127 +458,144 @@ public class PagamentoServer {
             }
         }
 
+        // ==========================================
+        // 🔥 NOVA TABELA DE FRETE DETALHADA POR CEP
+        // ==========================================
         private double calcularFretePorCEP(String cep) {
             if (cep == null || cep.length() < 3) return 35.90;
-            int faixa = Integer.parseInt(cep.substring(0, 3));
+            int faixa;
+            try {
+                faixa = Integer.parseInt(cep.substring(0, 3));
+            } catch (NumberFormatException e) {
+                return 35.90;
+            }
 
             // ==================== SUL ====================
-            // RS
+            // RS (90000-99999)
             if (faixa >= 900 && faixa <= 919) return 13.90;
             if (faixa >= 920 && faixa <= 939) return 16.90;
             if (faixa >= 940 && faixa <= 969) return 22.90;
             if (faixa >= 970 && faixa <= 989) return 22.90;
             if (faixa >= 990 && faixa <= 999) return 27.90;
 
-            // SC
+            // SC (88000-89999)
             if (faixa >= 880 && faixa <= 889) return 29.90;
             if (faixa >= 890 && faixa <= 899) return 34.90;
 
-            // PR
+            // PR (80000-87999)
             if (faixa >= 800 && faixa <= 809) return 32.90;
             if (faixa >= 810 && faixa <= 839) return 39.90;
             if (faixa >= 840 && faixa <= 859) return 42.90;
             if (faixa >= 860 && faixa <= 879) return 36.90;
 
             // ==================== SUDESTE ====================
-            // SP
+            // SP (01000-19999)
             if (faixa >= 100 && faixa <= 599) return 46.90;
             if (faixa >= 600 && faixa <= 999) return 46.90;
             if (faixa >= 110 && faixa <= 139) return 51.90;
             if (faixa >= 140 && faixa <= 159) return 44.90;
             if (faixa >= 160 && faixa <= 199) return 41.90;
 
-            // RJ
+            // RJ (20000-28999)
             if (faixa >= 200 && faixa <= 289) return 55.90;
 
-            // MG
+            // MG (30000-39999)
             if (faixa >= 300 && faixa <= 319) return 58.90;
             if (faixa >= 320 && faixa <= 349) return 57.90;
             if (faixa >= 350 && faixa <= 359) return 51.90;
             if (faixa >= 360 && faixa <= 399) return 53.90;
 
-            // ES
+            // ES (29000-29999)
             if (faixa >= 290 && faixa <= 299) return 63.90;
 
             // ==================== CENTRO-OESTE ====================
-            // DF
+            // DF (70000-72999)
             if (faixa >= 700 && faixa <= 729) return 61.90;
 
-            // GO
+            // GO (73000-76999)
             if (faixa >= 730 && faixa <= 749) return 58.90;
             if (faixa >= 750 && faixa <= 769) return 58.90;
 
-            // MT
+            // MT (78000-79999)
             if (faixa >= 780 && faixa <= 789) return 70.90;
             if (faixa >= 790 && faixa <= 799) return 67.90;
 
-            // MS (já incluso na faixa 790-799, mas mantido)
+            // MS (79000-79999) – já incluso, mas mantido
             if (faixa >= 790 && faixa <= 799) return 56.90;
 
             // ==================== NORDESTE ====================
-            // BA
+            // BA (40000-48999)
             if (faixa >= 400 && faixa <= 419) return 70.90;
             if (faixa >= 420 && faixa <= 449) return 68.90;
             if (faixa >= 450 && faixa <= 489) return 65.90;
 
-            // PE
+            // PE (50000-56999)
             if (faixa >= 500 && faixa <= 509) return 79.90;
             if (faixa >= 510 && faixa <= 549) return 76.90;
             if (faixa >= 550 && faixa <= 569) return 72.90;
 
-            // CE
+            // CE (60000-63999)
             if (faixa >= 600 && faixa <= 619) return 82.90;
             if (faixa >= 620 && faixa <= 639) return 79.90;
 
-            // PB
+            // PB (58000-58999)
             if (faixa >= 580 && faixa <= 589) return 77.90;
 
-            // RN
+            // RN (59000-59999)
             if (faixa >= 590 && faixa <= 599) return 85.90;
 
-            // AL
+            // AL (57000-57999)
             if (faixa >= 570 && faixa <= 579) return 77.90;
 
-            // SE
+            // SE (49000-49999)
             if (faixa >= 490 && faixa <= 499) return 72.90;
 
-            // PI
+            // PI (64000-64999)
             if (faixa >= 640 && faixa <= 649) return 77.90;
 
-            // MA
+            // MA (65000-65999)
             if (faixa >= 650 && faixa <= 659) return 82.90;
 
             // ==================== NORTE ====================
-            // PA
+            // PA (66000-68999)
             if (faixa >= 660 && faixa <= 669) return 94.90;
             if (faixa >= 670 && faixa <= 689) return 90.90;
 
-            // AM
+            // AM (69000-69999)
             if (faixa >= 690 && faixa <= 699) return 102.90;
 
-            // RR
+            // RR (69300-69399)
             if (faixa >= 693 && faixa <= 693) return 110.90;
 
-            // AP
+            // AP (68900-68999)
             if (faixa >= 689 && faixa <= 689) return 102.90;
 
-            // AC
+            // AC (69900-69999)
             if (faixa >= 699 && faixa <= 699) return 110.90;
 
-            // RO
+            // RO (76800-76999)
             if (faixa >= 768 && faixa <= 769) return 82.90;
 
-            // TO
+            // TO (77000-77999)
             if (faixa >= 770 && faixa <= 779) return 70.90;
 
             // ==================== FALLBACK ====================
+            // Se não mapeado, usa a UF estimada
             String uf = estimarUFporCEP(cep);
-            return calcularFretePorCEP(uf);
+            return calcularFretePorUF(uf);
         }
 
+        // ==========================================
+        // 🔥 NOVA TABELA DE PRAZO DETALHADA POR CEP
+        // ==========================================
         private String estimarPrazoPorCEP(String cep) {
             if (cep == null || cep.length() < 3) return "5 a 7 dias úteis";
-            int faixa = Integer.parseInt(cep.substring(0, 3));
+            int faixa;
+            try {
+                faixa = Integer.parseInt(cep.substring(0, 3));
+            } catch (NumberFormatException e) {
+                return "5 a 7 dias úteis";
+            }
 
             // RS
             if (faixa >= 900 && faixa <= 919) return "1 a 2 dias úteis";
@@ -629,7 +657,26 @@ public class PagamentoServer {
             // RO
             if (faixa >= 768 && faixa <= 769) return "11 a 13 dias úteis";
 
-            return "5 a 7 dias úteis"; // fallback
+            // Fallback
+            return "5 a 7 dias úteis";
+        }
+
+        // ==========================================
+        // TABELA DE FRETE POR UF (FALLBACK)
+        // ==========================================
+        private double calcularFretePorUF(String uf) {
+            if (uf == null || uf.isEmpty()) return 35.90;
+            switch (uf.toUpperCase()) {
+                case "RS": return 15.90;
+                case "PR": case "SC": case "SP": case "RJ": case "MG": case "ES":
+                    return 25.90;
+                case "DF": case "GO": case "MT": case "MS":
+                case "BA": case "SE": case "AL": case "PE": case "PB": case "RN": case "CE": case "PI": case "MA":
+                    return 40.90;
+                case "PA": case "AM": case "AC": case "RR": case "RO": case "AP": case "TO":
+                    return 55.90;
+                default: return 35.90;
+            }
         }
 
         private String lerResposta(java.net.HttpURLConnection conn) throws IOException {
