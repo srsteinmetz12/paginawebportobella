@@ -430,10 +430,10 @@
       }
       let html = '';
       produtos.forEach(produto => {
-        const nome = produto.itemdesc || 'PRODUTO';
-        const codigo = produto.codpeca || '0000';
+        const nome = produto.nome || produto.itemdesc || 'PRODUTO';
+        const codigo = produto.id || produto.codpeca || '0000';
         const tamanho = produto.tamanho || 'U';
-        const preco = produto.precosug || 0;
+        const preco = produto.preco || produto.precosug || 0;
         const marca = produto.marca || '';
         const marcaExibicao = marca || 'Sem marca';
         // ==========================================
@@ -441,9 +441,14 @@
         // ==========================================
         let isNovo = false;
         if (produto.dataCriacao) {
-          const dataCriacao = new Date(produto.dataCriacao);
-          const dias = (Date.now() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24);
+          const dataCriacao = new Date(produto.dataCriacao + 'T00:00:00'); // força horário local
+          const agora = new Date();
+          const diff = agora - dataCriacao;
+          const dias = diff / (1000 * 60 * 60 * 24);
           isNovo = dias <= 30;
+          console.log(`🆕 ${nome}: ${produto.dataCriacao} -> ${dias.toFixed(1)} dias -> isNovo=${isNovo}`);
+        } else {
+          console.log(`⚠️ ${nome}: dataCriacao não disponível`);
         }
         let badges = [];
         if (isNovo) badges.push('Novo');
@@ -453,8 +458,11 @@
         // IMAGENS
         // ==========================================
         let imagens = [];
-        if (produto.imagem && produto.imagem.length > 0) {
-          imagens = produto.imagem.split(';').map(img => img.trim());
+        if (produto.foto || produto.imagem) {
+          const imgStr = produto.foto || produto.imagem;
+          if (typeof imgStr === 'string' && imgStr.length > 0) {
+            imagens = imgStr.split(';').map(img => img.trim());
+          }
         }
         // ==========================================
         // PALAVRAS-CHAVE PARA BUSCA

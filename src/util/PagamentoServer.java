@@ -773,8 +773,10 @@ public class PagamentoServer {
 
             try {
                 con = ConnectionDB.getConnectionCloud();
+                System.out.println("Buscando os itens na base para carregar na vitrine...");
                 String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade, data " +
                      "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY itemdesc ASC";
+                System.out.println("Buscando: "+sql);
                 stmt = con.prepareStatement(sql);
                 stmt.setQueryTimeout(10);
                 rs = stmt.executeQuery();
@@ -791,6 +793,7 @@ public class PagamentoServer {
                     p.put("quantidade", rs.getInt("quantidade"));
                     p.put("status", rs.getString("status"));
                     p.put("dataCriacao", rs.getDate("data"));
+                    System.out.println("Datas geradas: "+"data" + "dataCriacao");
                     produtos.add(p);
                 }
 
