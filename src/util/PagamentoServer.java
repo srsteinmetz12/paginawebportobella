@@ -790,7 +790,7 @@ public class PagamentoServer {
                     p.put("marca", rs.getString("marca"));
                     p.put("quantidade", rs.getInt("quantidade"));
                     p.put("status", rs.getString("status"));
-                    p.put("data", rs.getDate("data"));
+                    p.put("dataCriacao", rs.getDate("data"));
                     produtos.add(p);
                 }
 
