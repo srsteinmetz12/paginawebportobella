@@ -50,7 +50,7 @@ public class ListarProdutosHandler implements HttpHandler {
         JsonArray lista = new JsonArray();
 
         String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade, data " +
-                     "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY itemdesc ASC";
+                     "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY itemdesc ASC";
 
         try (Connection con = ConnectionDB.getConnectionCloud();
              PreparedStatement stmt = con.prepareStatement(sql);

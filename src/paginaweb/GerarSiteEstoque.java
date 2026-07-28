@@ -1,11 +1,6 @@
 package paginaweb;
 
 import connection.ConnectionDB;
-//import java.io.BufferedReader;
-//import java.io.File;
-//import java.io.FileWriter;
-//import java.io.IOException;
-//import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,22 +66,15 @@ public class GerarSiteEstoque {
         String caminhoArquivo = System.getenv("RENDER") != null ? 
             diretorioDocumentos + "/index.html" : 
             diretorioDocumentos + "\\index.html";
-
-        
+      
         con2 = ConnectionDB.getConnectionCloud();
         sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY itemdesc ASC";
         System.out.println("Gerando catálogo web premium: " + sql);
-
-//        String diretorioDocumentos = "C:\\Users\\DBC\\Documents\\estoqueVitrineWeb";
-//        String caminhoArquivo = diretorioDocumentos + "\\index.html";
 
         String subpastaFotosWeb = System.getenv("RENDER") != null ?
         diretorioDocumentos + "/fotos" :
         diretorioDocumentos + "\\fotos";
         new java.io.File(subpastaFotosWeb).mkdirs();
-
-//        String subpastaFotosWeb = diretorioDocumentos + "\\fotos";
-//        new java.io.File(subpastaFotosWeb).mkdirs();
 
         try (java.io.PrintWriter writer = new java.io.PrintWriter(caminhoArquivo, "UTF-8");
              PreparedStatement localStmt2 = con2.prepareStatement(sql)) {
@@ -298,9 +286,6 @@ public class GerarSiteEstoque {
             int contador = 0;
             System.out.println("\n============ INICIANDO EXTRAÇÃO DE PRODUTOS ============");
 
-            while (rs.next()) {
-
-            }
             writer.println("    </div>");
             writer.println("  </div>");
             // ==========================================
@@ -1640,4 +1625,3 @@ public class GerarSiteEstoque {
         }
     }
 }
-

@@ -4,13 +4,10 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import connection.ConnectionDB;
 
-//import javax.swing.*;
-//import java.awt.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import paginaweb.EmailServiceSendGrid;
-//import paginaweb.GerarEEnviar;
 import paginaweb.GerarSiteEstoque;
 
 public class PagamentoServer {
