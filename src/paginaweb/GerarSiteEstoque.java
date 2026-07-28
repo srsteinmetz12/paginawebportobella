@@ -208,15 +208,16 @@ public class GerarSiteEstoque {
             writer.println("        opacity: 1;");
             writer.println("        max-height: 1000px;");
             writer.println("    }");
+            // ==========================================
+            // MEDIA QUERIES 
+            // ==========================================
             writer.println("    /* ===== RESPONSIVIDADE ===== */");
             writer.println("    @media (max-width: 768px) {");
-            writer.println("      header { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 10px 15px; gap: 5px; }");
-            writer.println("      header h1 {  font-size: 18px; letter-spacing: 2px; }");
+            writer.println("      header { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 10px 15px; }");
+            writer.println("      header h1 { font-size: 18px; }");
             writer.println("      header p { font-size: 10px; }");
-            writer.println("      .carrinho-icon { font-size: 24px; }");
-            writer.println("      .carrinho-contador { font-size: 10px; padding: 1px 6px; top: -6px; right: -6px; }");
-            writer.println("      .busca-container { top: 75px; padding: 8px 15px; }");
-            writer.println("      .busca-input { font-size: 13px; padding: 10px 12px 10px 36px; }");
+            writer.println("      .busca-container { top: 75px; padding: 10px 15px; width: 100%; }"); // 🔥 width: 100%
+            writer.println("      .busca-input { font-size: 14px; padding: 12px 15px 12px 44px; width: 100%; }"); // 🔥 width: 100%
             writer.println("      .vitrine { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }");
             writer.println("      .card { padding: 12px 10px 14px; }");
             writer.println("      .card h3 { font-size: 12px; min-height: 32px; }");
@@ -230,13 +231,10 @@ public class GerarSiteEstoque {
             writer.println("      .qr-container canvas, .qr-container img { max-width: 160px; }");
             writer.println("    }");
             writer.println("    @media (max-width: 480px) {");
-            writer.println("      header { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 8px 10px; }");
-            writer.println("      header h1 { font-size: 15px; letter-spacing: 1px; }");
-            writer.println("      header p { font-size: 8px; }");
-            writer.println("      .carrinho-icon { font-size: 20px; }");
-            writer.println("      .carrinho-contador { font-size: 10px; padding: 1px 6px; top: -6px; right: -6px; }");
-            writer.println("      .busca-container { top: 70px; padding: 6px 10px; }");
-            writer.println("      .busca-input { font-size: 9px; padding: 1px 5px; top: -5px; right: -5px; }");
+            writer.println("      header h1 { font-size: 16px; letter-spacing: 1px; }");
+            writer.println("      header p { font-size: 9px; }");
+            writer.println("      .busca-container { top: 70px; padding: 8px 12px; width: 100%; }"); // 🔥 width: 100%
+            writer.println("      .busca-input { font-size: 14px; padding: 10px 12px 10px 38px; width: 100%; }"); // 🔥 width: 100%
             writer.println("      .vitrine { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }");
             writer.println("      .card { padding: 10px 8px 12px; border-radius: 12px; }");
             writer.println("      .card .galeria { height: 160px; border-radius: 8px; }");
