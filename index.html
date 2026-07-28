@@ -159,6 +159,36 @@
       #divEntrega { padding: 10px; }
       #divEntrega input { font-size: 13px; padding: 8px; }
     }
+    .badges-container {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: flex;
+        gap: 6px;
+        z-index: 15;
+    }
+    .badge-novo {
+        background: #00a650;
+        color: #FFF;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .badge-promocao {
+        background: #e53e3e;
+        color: #FFF;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
@@ -437,23 +467,17 @@
         const marca = produto.marca || '';
         const marcaExibicao = marca || 'Sem marca';
         // ==========================================
-        // 🔥 LÓGICA DOS BADGES (NOVO + PROMOÇÃO)
+        // 🔥 LÓGICA DOS BADGES
         // ==========================================
         let isNovo = false;
         if (produto.dataCriacao) {
-          const dataCriacao = new Date(produto.dataCriacao + 'T00:00:00'); // força horário local
-          const agora = new Date();
-          const diff = agora - dataCriacao;
-          const dias = diff / (1000 * 60 * 60 * 24);
+          const dataCriacao = new Date(produto.dataCriacao + 'T00:00:00');
+          const dias = (Date.now() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24);
           isNovo = dias <= 30;
-          console.log(`🆕 ${nome}: ${produto.dataCriacao} -> ${dias.toFixed(1)} dias -> isNovo=${isNovo}`);
-        } else {
-          console.log(`⚠️ ${nome}: dataCriacao não disponível`);
         }
-        let badges = [];
-        if (isNovo) badges.push('Novo');
-        if (preco > 100) badges.push('Promoção');
-        const badgeText = badges.join(' '); // Ex: 'Novo Promoção'
+        let badgesHtml = '';
+        if (isNovo) badgesHtml += `<span class="badge badge-novo">Novo</span>`;
+        if (preco > 100) badgesHtml += `<span class="badge badge-promocao">Promoção</span>`;
         // ==========================================
         // IMAGENS
         // ==========================================
@@ -469,9 +493,8 @@
         // ==========================================
         const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();
         let palavrasChave = dadosBusca;
-        if (badgeText) {
-          palavrasChave += ' ' + badgeText.toLowerCase();
-        }
+        if (isNovo) palavrasChave += ' novo';
+        if (preco > 100) palavrasChave += ' promocao';
         let favoritos = JSON.parse(localStorage.getItem('favoritos') || '[]');
         if (favoritos.includes(codigo)) {
           palavrasChave += ' favorito';
@@ -500,9 +523,9 @@
             html += `    </div>`;
             html += `    <span class="contador-fotos">1/${total}</span>`;
           }
-          // 🔥 BADGE (se houver)
-          if (badgeText) {
-            html += `    <span class="badge">${badgeText}</span>`;
+          // 🔥 BADGES INDEPENDENTES
+          if (badgesHtml) {
+            html += `    <div class="badges-container">${badgesHtml}</div>`;
           }
           html += `    <button class="favorito" onclick="favoritar('${codigo}')">♡</button>`;
         }
