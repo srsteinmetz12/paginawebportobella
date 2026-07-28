@@ -472,7 +472,7 @@ public class PagamentoServer {
 
             // ==================== SUL ====================
             // RS (90000-99999)
-            if (faixa >= 900 && faixa <= 919) return 13.90;
+            if (faixa >= 900 && faixa <= 919) return 15.90;
             if (faixa >= 920 && faixa <= 939) return 16.90;
             if (faixa >= 940 && faixa <= 969) return 22.90;
             if (faixa >= 970 && faixa <= 989) return 22.90;
