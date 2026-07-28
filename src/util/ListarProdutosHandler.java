@@ -1,4 +1,4 @@
-package util;
+package paginaweb;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -49,8 +49,8 @@ public class ListarProdutosHandler implements HttpHandler {
     private JsonArray listarProdutosDisponiveis() throws ClassNotFoundException, SQLException {
         JsonArray lista = new JsonArray();
 
-        String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade " +
-                     "FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
+        String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade, data " +
+                     "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY itemdesc ASC";
 
         try (Connection con = ConnectionDB.getConnectionCloud();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -66,6 +66,12 @@ public class ListarProdutosHandler implements HttpHandler {
                 produto.addProperty("foto", rs.getString("imagem") != null ? rs.getString("imagem") : "default.jpg");
                 produto.addProperty("status", rs.getString("status"));
                 produto.addProperty("quantidade", rs.getInt("quantidade"));
+                java.sql.Date data = rs.getDate("data");
+                if (data != null) {
+                    produto.addProperty("dataCriacao", data.toString()); // Formato YYYY-MM-DD
+                } else {
+                    produto.addProperty("dataCriacao", "");
+                }
                 lista.add(produto);
             }
         }
