@@ -110,34 +110,40 @@ public class GerarSiteEstoque {
             writer.println("    .carrinho-icon { position: relative; cursor: pointer; font-size: 28px; }");
             writer.println("    .carrinho-contador { position: absolute; top: -8px; right: -8px; background: #00a650; color: #FFF; border-radius: 50%; padding: 2px 8px; font-size: 12px; font-weight: bold; }");
             writer.println("    .busca-container { max-width: 1160px; margin: 0 auto; padding: 10px 20px; position: sticky; top: 60px; background-color: #1E1E1E; z-index: 99; border-bottom: 1px solid #2D2D2D; }");
-            writer.println("    .busca-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; }");
+            writer.println("    .busca-input { width: 100%; padding: 12px 15px 12px 44px; border-radius: 30px; border: 1px solid #464646; background-color: #2D2D2D; color: #FFFFFF; font-size: 14px; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"%23A0A0A0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"/></svg>'); background-repeat: no-repeat; background-position: 16px center; }");
+            writer.println("    .busca-input:focus { border-color: #D4AF37; outline: none; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }");
             writer.println("    .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }");
-            writer.println("    .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }");
-
+            writer.println("    .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 28px; }");
             // ==========================================
             // ESTILOS DO CARROSSEL
             // ==========================================
-            writer.println("    .card { background-color: #2D2D2D; border: 1px solid #464646; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between; position: relative; }");
-            writer.println("    .galeria { position: relative; width: 100%; height: 280px; overflow: hidden; border-radius: 8px; background: #141414; margin-bottom: 12px; }");
-            writer.println("    .galeria .slide { width: 100%; height: 100%; object-fit: cover; display: none; }");
-            writer.println("    .galeria .slide.ativo { display: block; }");
-            writer.println("    .galeria .seta { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; z-index: 10; transition: background 0.3s; }");
-            writer.println("    .galeria .seta:hover { background: rgba(0,0,0,0.9); }");
-            writer.println("    .galeria .seta.anterior { left: 5px; }");
-            writer.println("    .galeria .seta.proximo { right: 5px; }");
-            writer.println("    .galeria .indicadores { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }");
-            writer.println("    .galeria .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; }");
-            writer.println("    .galeria .dot.ativo { background: #FFFFFF; transform: scale(1.2); }");
-            writer.println("    .galeria .contador-fotos { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #FFF; padding: 2px 10px; border-radius: 12px; font-size: 11px; z-index: 10; }");
-            writer.println("    .card .sem-foto { width: 100%; height: 280px; border-radius: 8px; background-color: #141414; display: flex; align-items: center; justify-content: center; color: #666666; font-size: 13px; font-weight: bold; border: 1px dashed #464646; margin-bottom: 12px; }");
-            writer.println("    .card h3 { margin: 5px 0 2px 0; font-size: 14px; color: #FFFFFF; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }");
+            writer.println("    .card { background: #2D2D2D; border-radius: 16px; padding: 18px 16px 20px; border: 1px solid #464646; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; position: relative; }");
+            writer.println("    .card:hover { transform: translateY(-8px); background: #353535; box-shadow: 0 12px 28px rgba(0,0,0,0.5); border-color: #D4AF37; }");
+            writer.println("    .card .galeria { position: relative; width: 100%; height: 280px; overflow: hidden; border-radius: 12px; background: #141414; margin-bottom: 12px; }");
+            writer.println("    .card .galeria .slide { width: 100%; height: 100%; object-fit: cover; display: none; }");
+            writer.println("    .card .galeria .slide.ativo { display: block; }");
+            writer.println("    .card .galeria .seta { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; z-index: 10; transition: background 0.3s; }");
+            writer.println("    .card .galeria .seta:hover { background: rgba(0,0,0,0.9); }");
+            writer.println("    .card .galeria .seta.anterior { left: 5px; }");
+            writer.println("    .card .galeria .seta.proximo { right: 5px; }");
+            writer.println("    .card .galeria .indicadores { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }");
+            writer.println("    .card .galeria .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; }");
+            writer.println("    .card .galeria .dot.ativo { background: #FFFFFF; transform: scale(1.2); }");
+            writer.println("    .card .galeria .contador-fotos { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #FFF; padding: 2px 10px; border-radius: 12px; font-size: 11px; z-index: 10; }");
+            writer.println("    .card .badge { position: absolute; top: 12px; left: 12px; background: #D4AF37; color: #1E1E1E; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 15; }");
+            writer.println("    .card .favorito { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 18px; cursor: pointer; transition: background 0.3s, transform 0.3s; z-index: 15; border: none; }");
+            writer.println("    .card .favorito:hover { background: #D4AF37; color: #1E1E1E; transform: scale(1.1); }");
+            writer.println("    .card .sem-foto { width: 100%; height: 280px; border-radius: 12px; background-color: #141414; display: flex; align-items: center; justify-content: center; color: #666; font-size: 13px; font-weight: bold; border: 1px dashed #464646; margin-bottom: 12px; }");
+            writer.println("    .card h3 { margin: 5px 0 2px 0; font-size: 14px; font-weight: 600; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; min-height: 40px; }");
             writer.println("    .card .info { color: #B0B0B0; font-size: 12px; margin: 4px 0 2px 0; }");
-            writer.println("    .card .codigo-item { color: #A0A0A0; font-size: 12px; font-weight: bold; margin: 4px 0; text-transform: uppercase; }");
-            writer.println("    .card .preco { color: #FFFFFF; font-size: 20px; font-weight: 800; margin: 8px 0; border-top: 1px solid #3D3D3D; padding-top: 10px; }");
-            writer.println("    .btn-add-carrinho { display: block; width: 100%; background-color: #009ee3; color: #FFFFFF; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; margin-top: 10px; text-align: center; transition: background 0.3s; }");
-            writer.println("    .btn-add-carrinho:hover { background-color: #0077b3; }");
+            writer.println("    .card .codigo-item { color: #A0A0A0; font-size: 12px; font-weight: 600; margin: 4px 0; text-transform: uppercase; letter-spacing: 0.3px; }");
+            writer.println("    .card .preco { color: #FFFFFF; font-size: 22px; font-weight: 800; margin: 10px 0 4px; border-top: 1px solid #3D3D3D; padding-top: 12px; display: flex; flex-direction: column; line-height: 1.2; }");
+            writer.println("    .card .preco .parcelamento { font-size: 13px; font-weight: 400; color: #A0A0A0; margin-top: 2px; }");
+            writer.println("    .card .preco .parcelamento strong { color: #D4AF37; font-weight: 600; }");
+            writer.println("    .btn-add-carrinho { display: block; width: 100%; background: linear-gradient(135deg, #D4AF37, #c5a032); color: #1E1E1E; padding: 14px 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer; margin-top: 14px; text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2); }");
+            writer.println("    .btn-add-carrinho:hover { background: linear-gradient(135deg, #c5a032, #a07d25); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35); }");
+            writer.println("    .btn-add-carrinho:active { transform: scale(0.96); }");
             writer.println("    footer { text-align: center; padding: 30px; color: #555555; font-size: 11px; margin-top: 20px; border-top: 1px solid #2D2D2D; }");
-
             // ==========================================
             // ESTILOS DOS MODAIS
             // ==========================================
@@ -202,6 +208,62 @@ public class GerarSiteEstoque {
             writer.println("        opacity: 1;");
             writer.println("        max-height: 1000px;");
             writer.println("    }");
+            writer.println("    /* ===== RESPONSIVIDADE ===== */");
+            writer.println("    @media (max-width: 768px) {");
+            writer.println("      header { flex-direction: column; gap: 10px; padding: 15px; }");
+            writer.println("      header h1 { font-size: 18px; }");
+            writer.println("      header p { font-size: 10px; }");
+            writer.println("      .busca-container { top: 75px; padding: 8px 15px; }");
+            writer.println("      .busca-input { font-size: 13px; padding: 10px 12px 10px 36px; }");
+            writer.println("      .vitrine { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }");
+            writer.println("      .card { padding: 12px 10px 14px; }");
+            writer.println("      .card h3 { font-size: 12px; min-height: 32px; }");
+            writer.println("      .card .info, .card .codigo-item { font-size: 11px; }");
+            writer.println("      .card .preco { font-size: 18px; }");
+            writer.println("      .card .galeria { height: 200px; }");
+            writer.println("      .btn-add-carrinho { font-size: 11px; padding: 10px 8px; }");
+            writer.println("      .modal-content { padding: 20px; max-width: 95%; }");
+            writer.println("      .modal-content .produto-preco { font-size: 20px; }");
+            writer.println("      .qr-container { min-height: 180px; min-width: 180px; }");
+            writer.println("      .qr-container canvas, .qr-container img { max-width: 160px; }");
+            writer.println("    }");
+            writer.println("    @media (max-width: 480px) {");
+            writer.println("      header h1 { font-size: 16px; letter-spacing: 1px; }");
+            writer.println("      header p { font-size: 9px; }");
+            writer.println("      .busca-container { top: 70px; padding: 6px 10px; }");
+            writer.println("      .busca-input { font-size: 12px; padding: 8px 10px 8px 32px; background-size: 14px; background-position: 12px center; }");
+            writer.println("      .vitrine { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }");
+            writer.println("      .card { padding: 10px 8px 12px; border-radius: 12px; }");
+            writer.println("      .card .galeria { height: 160px; border-radius: 8px; }");
+            writer.println("      .card h3 { font-size: 11px; min-height: 28px; }");
+            writer.println("      .card .info { font-size: 10px; }");
+            writer.println("      .card .codigo-item { font-size: 9px; }");
+            writer.println("      .card .preco { font-size: 16px; margin-top: 6px; padding-top: 8px; }");
+            writer.println("      .card .badge { font-size: 8px; padding: 2px 10px; top: 8px; left: 8px; }");
+            writer.println("      .card .favorito { width: 28px; height: 28px; font-size: 14px; top: 8px; right: 8px; }");
+            writer.println("      .card .galeria .seta { width: 24px; height: 24px; font-size: 12px; }");
+            writer.println("      .card .galeria .dot { width: 6px; height: 6px; }");
+            writer.println("      .btn-add-carrinho { font-size: 10px; padding: 8px 6px; margin-top: 10px; border-radius: 6px; }");
+            writer.println("      .modal-content { padding: 15px; max-width: 98%; }");
+            writer.println("      .modal-content h3 { font-size: 18px; }");
+            writer.println("      .modal-content .produto-preco { font-size: 18px; }");
+            writer.println("      .modal-content .btn-mercadopago, .modal-content .btn-pix { font-size: 13px; padding: 10px; }");
+            writer.println("      .modal-pix-content { padding: 20px; max-width: 95%; }");
+            writer.println("      .modal-pix-content h3 { font-size: 17px; }");
+            writer.println("      .modal-pix-content .valor { font-size: 24px; }");
+            writer.println("      .qr-container { min-height: 150px; min-width: 150px; }");
+            writer.println("      .qr-container canvas, .qr-container img { max-width: 140px; }");
+            writer.println("      .pix-code-area textarea { font-size: 10px; }");
+            writer.println("      .btn-copiar, .btn-copiar-alt { font-size: 12px; padding: 8px 12px; }");
+            writer.println("      .carrinho-item-info .nome { font-size: 12px; }");
+            writer.println("      .carrinho-item-info .detalhe { font-size: 10px; }");
+            writer.println("      .carrinho-item-preco { font-size: 13px; }");
+            writer.println("      .carrinho-item-remover { font-size: 16px; }");
+            writer.println("      .carrinho-resumo .total { font-size: 17px; }");
+            writer.println("      .notificacao { font-size: 13px; padding: 12px 18px; bottom: 15px; right: 15px; }");
+            writer.println("      #divEntrega { padding: 10px; }");
+            writer.println("      #divEntrega input { font-size: 13px; padding: 8px; }");
+            writer.println("    }");
             writer.println("  </style>");
             writer.println("</head>");
             writer.println("<body>");
@@ -218,14 +280,12 @@ public class GerarSiteEstoque {
             writer.println("      <span class='carrinho-contador' id='carrinhoContador'>0</span>");
             writer.println("    </div>");
             writer.println("  </header>");
-
             // ==========================================
             // BUSCA
             // ==========================================
             writer.println("  <div class='busca-container'>");
             writer.println("    <input type='text' id='inputBusca' onkeyup='filtrarProdutos()' placeholder='Buscar por nome, tamanho, código ou marca...' class='busca-input'>");
             writer.println("  </div>");
-
             // ==========================================
             // VITRINE
             // ==========================================
@@ -236,76 +296,7 @@ public class GerarSiteEstoque {
             System.out.println("\n============ INICIANDO EXTRAÇÃO DE PRODUTOS ============");
 
             while (rs.next()) {
-//                contador++;
-//                String codigoItem = rs.getString("codpeca");
-//                String descricao = rs.getString("itemdesc");
-//                String tamanho = rs.getString("tamanho");
-//                double preco = rs.getDouble("precosug");
-//                String imagensConcatenadas = rs.getString("imagem");
-////
-////                String codExibicao = (codigoItem == null) ? "S/C" : codigoItem;
-//
-//                // ==========================================
-//                // SEPARA AS IMAGENS POR ;
-//                // ==========================================
-//                String[] imagens = new String[0];
-//                if (imagensConcatenadas != null && !imagensConcatenadas.trim().isEmpty()) {
-//                    imagens = imagensConcatenadas.split(";");
-//                    for (int i = 0; i < imagens.length; i++) {
-//                        imagens[i] = imagens[i].trim();
-//                    }
-//                }
-//
-//                // ==========================================
-//                // CARD DO PRODUTO
-//                // ==========================================
-//                String marca = rs.getString("marca") != null ? rs.getString("marca") : "";
-//                String marcaExibicao = (marca != null && !marca.isEmpty()) ? marca : "Sem marca";
-//                writer.println("      <div class='card' data-busca='" + descricao.toLowerCase() + " " + tamanho.toLowerCase() + " " + codExibicao.toLowerCase() + " " + marca.toLowerCase() + "' data-codigo='" + codExibicao + "'>");
-//
-//                // ==========================================
-//                // GALERIA DE IMAGENS (CARROSSEL)
-//                // ==========================================
-//                writer.println("        <div class='galeria' id='galeria-" + codExibicao + "'>");
-//
-//                if (imagens.length == 0 || (imagens.length == 1 && imagens[0].isEmpty())) {
-//                    writer.println("          <div class='sem-foto'>Sem Foto</div>");
-//                } else {
-//                    int totalImagens = Math.min(imagens.length, 5);
-//
-//                    for (int i = 0; i < totalImagens; i++) {
-//                        String classeAtivo = (i == 0) ? " ativo" : "";
-//                        writer.println("          <img src='" + imagens[i] + "' alt='" + descricao + " - Foto " + (i + 1) + "' class='slide" + classeAtivo + "'>");
-//                    }
-//
-//                    if (totalImagens > 1) {
-//                        writer.println("          <button class='seta anterior' onclick='mudarSlide(\"" + codExibicao + "\", -1)'>❮</button>");
-//                        writer.println("          <button class='seta proximo' onclick='mudarSlide(\"" + codExibicao + "\", 1)'>❯</button>");
-//
-//                        writer.println("          <div class='indicadores' id='indicadores-" + codExibicao + "'>");
-//                        for (int i = 0; i < totalImagens; i++) {
-//                            String classeDot = (i == 0) ? " ativo" : "";
-//                            writer.println("            <span class='dot" + classeDot + "' onclick='irParaSlide(\"" + codExibicao + "\", " + i + ")'></span>");
-//                        }
-//                        writer.println("          </div>");
-//
-//                        writer.println("          <span class='contador-fotos'>1/" + totalImagens + "</span>");
-//                    }
-//                }
-//
-//                writer.println("        </div>");
-//
-//                // ==========================================
-//                // INFORMAÇÕES DO PRODUTO
-//                // ==========================================
-//                writer.println("        <h3>" + descricao + "</h3>");
-//                writer.println("        <div class='info'>Tamanho: " + tamanho + "</div>");
-//                writer.println("        <div class='codigo-item'>" + marcaExibicao + "</div>");
-//                writer.println("        <div class='preco'>R$ " + String.format("%.2f", preco).replace(".", ",") + "</div>");
-//                writer.println("        <button class='btn-add-carrinho' onclick='adicionarAoCarrinho(\"" + codExibicao + "\", \"" + descricao.replace("\"", "\\\"") + "\", " + preco + ")'>");
-//                writer.println("          🛒 Adicionar ao Carrinho");
-//                writer.println("        </button>");
-//                writer.println("      </div>");
+
             }
             writer.println("    </div>");
             writer.println("  </div>");
@@ -315,7 +306,6 @@ public class GerarSiteEstoque {
             writer.println("  <footer>");
             writer.println("    <p>&copy; 2026 PORTOBELLA Brechó & Outlet. Todos os direitos reservados.</p>");
             writer.println("  </footer>");
-
             // ==========================================
             // MODAL DO CARRINHO (COM CHECKBOX E DESTINATÁRIO)
             // ==========================================
@@ -567,14 +557,11 @@ public class GerarSiteEstoque {
             writer.println("    // ========================================");
             writer.println("    function renderizarProdutos(produtos) {");
             writer.println("      const vitrine = document.getElementById('listaVitrine');");
-            writer.println("      ");
             writer.println("      if (!produtos || produtos.length === 0) {");
             writer.println("        vitrine.innerHTML = '<p style=\"text-align:center;padding:50px;\">Nenhum produto disponível</p>';");
             writer.println("        return;");
             writer.println("      }");
-            writer.println("      ");
             writer.println("      let html = '';");
-            writer.println("      ");
             writer.println("      produtos.forEach(produto => {");
             writer.println("        const nome = produto.itemdesc || 'PRODUTO';");
             writer.println("        const codigo = produto.codpeca || '0000';");
@@ -582,20 +569,22 @@ public class GerarSiteEstoque {
             writer.println("        const preco = produto.precosug || 0;");
             writer.println("        const marca = produto.marca || '';");
             writer.println("        const marcaExibicao = marca || 'Sem marca';");
-            writer.println("        ");
+            writer.println("        let isNovo = false;");
+            writer.println("        if (produto.data_criacao) {");
+            writer.println("          const dataCriacao = new Date(produto.data_criacao);");
+            writer.println("          const dias = (Date.now() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24);");
+            writer.println("          isNovo = dias <= 30;");
+            writer.println("        }");
+            writer.println("        const badgeText = isNovo ? 'Novo' : (preco > 100 ? 'Promoção' : '');");
             writer.println("        let imagens = [];");
             writer.println("        if (produto.imagem && produto.imagem.length > 0) {");
             writer.println("          imagens = produto.imagem.split(';').map(img => img.trim());");
             writer.println("        }");
-            writer.println("        ");
             writer.println("        const dadosBusca = (nome + ' ' + codigo + ' ' + tamanho + ' ' + marca).toLowerCase();");
-            writer.println("        ");
-            writer.println("        // 🔥 ESTRUTURA IDÊNTICA AO HTML GERADO PELO JAVA");
-            writer.println("        html += `<div class=\"card\" data-busca=\"${dadosBusca}\">`;");
+            writer.println("        html += `<div class=\"card\" data-busca=\"${dadosBusca}\" data-codigo=\"${codigo}\">`;");
             writer.println("        html += `  <div class=\"galeria\" id=\"galeria-${codigo}\">`;");
-            writer.println("");
             writer.println("        if (imagens.length === 0 || (imagens.length === 1 && imagens[0] === '')) {");
-            writer.println("          html += `    <div class=\"sem-foto\">Sem Foto</div>`;");
+            writer.println("          html += `    <div class=\"sem-foto\">📸 Sem Foto</div>`;");
             writer.println("        } else {");
             writer.println("          const total = Math.min(imagens.length, 5);");
             writer.println("          for (let i = 0; i < total; i++) {");
@@ -613,17 +602,21 @@ public class GerarSiteEstoque {
             writer.println("            html += `    </div>`;");
             writer.println("            html += `    <span class=\"contador-fotos\">1/${total}</span>`;");
             writer.println("          }");
+            writer.println("          if (badgeText) {");
+            writer.println("            html += `    <span class=\"badge\">${badgeText}</span>`;");
+            writer.println("          }");
+            writer.println("          html += `    <button class=\"favorito\" onclick=\"favoritar('${codigo}')\">♡</button>`;");
             writer.println("        }");
-            writer.println("");
             writer.println("        html += `  </div>`;");
             writer.println("        html += `  <h3>${nome}</h3>`;");
             writer.println("        html += `  <div class=\"info\">Tamanho: ${tamanho}</div>`;");
             writer.println("        html += `  <div class=\"codigo-item\">${marcaExibicao}</div>`;");
-            writer.println("        html += `  <div class=\"preco\">R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}</div>`;");
+            writer.println("        html += `  <div class=\"preco\">`;");
+            writer.println("        html += `    R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}`;");
+            writer.println("        html += `  </div>`;");
             writer.println("        html += `  <button class=\"btn-add-carrinho\" onclick=\"adicionarAoCarrinho('${codigo}', '${nome.replace(/'/g, '')}', ${preco})\">🛒 Adicionar ao Carrinho</button>`;");
             writer.println("        html += `</div>`;");
             writer.println("      });");
-            writer.println("      ");
             writer.println("      vitrine.innerHTML = html;");
             writer.println("    }");
             writer.println("");
@@ -1555,6 +1548,36 @@ public class GerarSiteEstoque {
             writer.println("                Fechar");
             writer.println("            </button>");
             writer.println("        `;");
+            writer.println("    }");
+            writer.println("    function favoritar(codigo) {");
+            writer.println("      // Pega a lista de favoritos do localStorage");
+            writer.println("      let favoritos = JSON.parse(localStorage.getItem('favoritos') || '[]');");
+            writer.println("");
+            writer.println("      // Verifica se o item já está favoritado");
+            writer.println("      const index = favoritos.indexOf(codigo);");
+            writer.println("      if (index > -1) {");
+            writer.println("        // Se já está, remove (desfavoritar)");
+            writer.println("        favoritos.splice(index, 1);");
+            writer.println("        localStorage.setItem('favoritos', JSON.stringify(favoritos));");
+            writer.println("        mostrarNotificacao('💔 ' + codigo + ' removido dos favoritos');");
+            writer.println("        // Altera visual do botão (opcional)");
+            writer.println("        const btn = document.querySelector(`.favorito[onclick*=\"'${codigo}'\"]`);");
+            writer.println("        if (btn) {");
+            writer.println("          btn.textContent = '♡';");
+            writer.println("          btn.style.color = '#FFF';");
+            writer.println("        }");
+            writer.println("      } else {");
+            writer.println("        // Se não está, adiciona");
+            writer.println("        favoritos.push(codigo);");
+            writer.println("        localStorage.setItem('favoritos', JSON.stringify(favoritos));");
+            writer.println("        mostrarNotificacao('❤️ Produto ' + codigo + ' favoritado!');");
+            writer.println("        // Altera visual do botão (opcional)");
+            writer.println("        const btn = document.querySelector(`.favorito[onclick*=\"'${codigo}'\"]`);");
+            writer.println("        if (btn) {");
+            writer.println("          btn.textContent = '♥';");
+            writer.println("          btn.style.color = '#D4AF37';");
+            writer.println("        }");
+            writer.println("      }");
             writer.println("    }");
             writer.println("  </script>");
             writer.println("</body>");
