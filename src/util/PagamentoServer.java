@@ -792,8 +792,8 @@ public class PagamentoServer {
                     p.put("marca", rs.getString("marca"));
                     p.put("quantidade", rs.getInt("quantidade"));
                     p.put("status", rs.getString("status"));
-                    p.put("dataCriacao", rs.getDate("data"));
-                    System.out.println("Datas geradas: "+"data" + "dataCriacao");
+                    java.sql.Date data = rs.getDate("data");
+                    p.put("dataCriacao", data != null ? data.toString() : "");
                     produtos.add(p);
                 }
 
