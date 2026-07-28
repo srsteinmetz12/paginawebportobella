@@ -753,62 +753,66 @@ public class PagamentoServer {
     // ==========================================
     // HANDLER: LISTAR PRODUTOS (API PARA VERCEL)
     // ==========================================
-//    static class ListarProdutosHandler implements HttpHandler {
-//        @Override
-//        public void handle(HttpExchange exchange) throws IOException {
-//
-//            if ("OPTIONS".equals(exchange.getRequestMethod())) {
-//                sendResponse(exchange, 204, ""); // ✅ CORS garantido
-//                return;
-//            }
-//
-//            if (!"GET".equals(exchange.getRequestMethod())) {
-//                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
-//                return;
-//            }
-//
-//            Connection con = null;
-//            PreparedStatement stmt = null;
-//            ResultSet rs = null;
-//
-//            try {
-//                con = ConnectionDB.getConnectionCloud();
-//                String sql = "SELECT codpeca, itemdesc, tamanho, precosug, imagem, marca FROM estoque WHERE status = 'DISPONIVEL' ORDER BY itemdesc ASC";
-//                stmt = con.prepareStatement(sql);
-//                stmt.setQueryTimeout(10);
-//                rs = stmt.executeQuery();
-//
-//                List<Map<String, Object>> produtos = new ArrayList<>();
-//                while (rs.next()) {
-//                    Map<String, Object> p = new HashMap<>();
-//                    p.put("codpeca", rs.getString("codpeca"));
-//                    p.put("itemdesc", rs.getString("itemdesc"));
-//                    p.put("tamanho", rs.getString("tamanho"));
-//                    p.put("precosug", rs.getDouble("precosug"));
-//                    p.put("imagem", rs.getString("imagem"));
-//                    p.put("marca", rs.getString("marca"));
-//                    produtos.add(p);
-//                }
-//
-//                Map<String, Object> response = new HashMap<>();
-//                response.put("success", true);
-//                response.put("produtos", produtos);
-//                response.put("total", produtos.size());
-//
-//                sendResponse(exchange, 200, gson.toJson(response));
-//
-//            } catch (ClassNotFoundException | SQLException e) {
-//                Map<String, Object> error = new HashMap<>();
-//                error.put("success", false);
-//                error.put("error", e.getMessage());
-//                sendResponse(exchange, 500, gson.toJson(error));
-//            } finally {
-//                try { if (rs != null) rs.close(); } catch (SQLException e) {}
-//                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
-//                try { if (con != null) con.close(); } catch (SQLException e) {}
-//            }
-//        }
-//    }
+    static class ListarProdutosHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 204, ""); // ✅ CORS garantido
+                return;
+            }
+
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Método não permitido\"}");
+                return;
+            }
+
+            Connection con = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+
+            try {
+                con = ConnectionDB.getConnectionCloud();
+                String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade, data " +
+                     "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY itemdesc ASC";
+                stmt = con.prepareStatement(sql);
+                stmt.setQueryTimeout(10);
+                rs = stmt.executeQuery();
+
+                List<Map<String, Object>> produtos = new ArrayList<>();
+                while (rs.next()) {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("codpeca", rs.getString("codpeca"));
+                    p.put("itemdesc", rs.getString("itemdesc"));
+                    p.put("tamanho", rs.getString("tamanho"));
+                    p.put("precosug", rs.getDouble("precosug"));
+                    p.put("imagem", rs.getString("imagem"));
+                    p.put("marca", rs.getString("marca"));
+                    p.put("quantidade", rs.getInt("quantidade"));
+                    p.put("status", rs.getString("status"));
+                    p.put("data", rs.getDate("data"));
+                    produtos.add(p);
+                }
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("produtos", produtos);
+                response.put("total", produtos.size());
+
+                sendResponse(exchange, 200, gson.toJson(response));
+
+            } catch (ClassNotFoundException | SQLException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("error", e.getMessage());
+                sendResponse(exchange, 500, gson.toJson(error));
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException e) {}
+                try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
+                try { if (con != null) con.close(); } catch (SQLException e) {}
+            }
+        }
+    }
 
     // ==========================================
     // HANDLER: RESERVAR LOTE (MÚLTIPLOS ITENS)
