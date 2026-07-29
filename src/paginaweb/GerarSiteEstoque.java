@@ -118,7 +118,7 @@ public class GerarSiteEstoque {
             writer.println("    .card .galeria .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; }");
             writer.println("    .card .galeria .dot.ativo { background: #FFFFFF; transform: scale(1.2); }");
             writer.println("    .card .galeria .contador-fotos { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #FFF; padding: 2px 10px; border-radius: 12px; font-size: 11px; z-index: 10; }");
-            writer.println("    .card .badge { position: absolute; top: 12px; left: 12px; background: #D4AF37; color: #1E1E1E; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 15; }");
+//            writer.println("    .card .badge { position: absolute; top: 12px; left: 12px; background: #D4AF37; color: #1E1E1E; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 15; }");
             writer.println("    .card .favorito { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 18px; cursor: pointer; transition: background 0.3s, transform 0.3s; z-index: 15; border: none; }");
             writer.println("    .card .favorito:hover { background: #D4AF37; color: #1E1E1E; transform: scale(1.1); }");
             writer.println("    .card .sem-foto { width: 100%; height: 280px; border-radius: 12px; background-color: #141414; display: flex; align-items: center; justify-content: center; color: #666; font-size: 13px; font-weight: bold; border: 1px dashed #464646; margin-bottom: 12px; }");
@@ -230,7 +230,7 @@ public class GerarSiteEstoque {
             writer.println("      .card .info { font-size: 10px; }");
             writer.println("      .card .codigo-item { font-size: 9px; }");
             writer.println("      .card .preco { font-size: 16px; margin-top: 6px; padding-top: 8px; }");
-            writer.println("      .card .badge { font-size: 8px; padding: 2px 10px; top: 8px; left: 8px; }");
+//            writer.println("      .card .badge { font-size: 8px; padding: 2px 10px; top: 8px; left: 8px; }");
             writer.println("      .card .favorito { width: 28px; height: 28px; font-size: 14px; top: 8px; right: 8px; }");
             writer.println("      .card .galeria .seta { width: 24px; height: 24px; font-size: 12px; }");
             writer.println("      .card .galeria .dot { width: 6px; height: 6px; }");
