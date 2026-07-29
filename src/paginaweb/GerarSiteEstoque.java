@@ -255,17 +255,22 @@ public class GerarSiteEstoque {
             writer.println("      #divEntrega { padding: 10px; }");
             writer.println("      #divEntrega input { font-size: 13px; padding: 8px; }");
             writer.println("    }");
+            // ==========================================
+            // ESTILOS DOS BADGES INDEPENDENTES
+            // ==========================================
             writer.println("    .badges-container {");
             writer.println("        position: absolute;");
             writer.println("        top: 12px;");
             writer.println("        left: 12px;");
             writer.println("        display: flex;");
+            writer.println("        flex-direction: column;");
             writer.println("        gap: 6px;");
             writer.println("        z-index: 15;");
+            writer.println("        pointer-events: none;");
             writer.println("    }");
             writer.println("    .badge-novo {");
             writer.println("        background: #00a650;");
-            writer.println("        color: #FFF;");
+            writer.println("        color: #FFFFFF;");
             writer.println("        padding: 4px 12px;");
             writer.println("        border-radius: 20px;");
             writer.println("        font-size: 10px;");
@@ -273,10 +278,12 @@ public class GerarSiteEstoque {
             writer.println("        text-transform: uppercase;");
             writer.println("        letter-spacing: 0.5px;");
             writer.println("        box-shadow: 0 2px 8px rgba(0,0,0,0.3);");
+            writer.println("        display: inline-block;");
+            writer.println("        width: fit-content;");
             writer.println("    }");
             writer.println("    .badge-promocao {");
             writer.println("        background: #e53e3e;");
-            writer.println("        color: #FFF;");
+            writer.println("        color: #FFFFFF;");
             writer.println("        padding: 4px 12px;");
             writer.println("        border-radius: 20px;");
             writer.println("        font-size: 10px;");
@@ -284,6 +291,8 @@ public class GerarSiteEstoque {
             writer.println("        text-transform: uppercase;");
             writer.println("        letter-spacing: 0.5px;");
             writer.println("        box-shadow: 0 2px 8px rgba(0,0,0,0.3);");
+            writer.println("        display: inline-block;");
+            writer.println("        width: fit-content;");
             writer.println("    }");
             writer.println("  </style>");
             writer.println("</head>");
