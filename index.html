@@ -1476,34 +1476,53 @@
         `;
     }
     function favoritar(codigo) {
-      // Pega a lista de favoritos do localStorage
+      console.log('⭐ Favoritando/desfavoritando:', codigo);
+      
       let favoritos = JSON.parse(localStorage.getItem('favoritos') || '[]');
-
-      // Verifica se o item já está favoritado
       const index = favoritos.indexOf(codigo);
+      
+      const card = document.querySelector(`.card[data-codigo="${codigo}"]`);
+      if (!card) {
+        console.warn('⚠️ Card não encontrado para o código:', codigo);
+        return;
+      }
+      
+      let buscaAtual = card.getAttribute('data-busca') || '';
+      console.log('📌 Busca atual:', buscaAtual);
+      
       if (index > -1) {
-        // Se já está, remove (desfavoritar)
         favoritos.splice(index, 1);
         localStorage.setItem('favoritos', JSON.stringify(favoritos));
-        mostrarNotificacao('💔 ' + codigo + ' removido dos favoritos');
-        // Altera visual do botão (opcional)
-        const btn = document.querySelector(`.favorito[onclick*="'${codigo}'"]`);
+        mostrarNotificacao('💔 Removido dos favoritos');
+        
+        buscaAtual = buscaAtual.replace(/\sfavorito/g, '').trim();
+        card.setAttribute('data-busca', buscaAtual);
+        
+        const btn = card.querySelector('.favorito');
         if (btn) {
           btn.textContent = '♡';
           btn.style.color = '#FFF';
         }
+        console.log('🗑️ Removido favorito. Novo data-busca:', buscaAtual);
       } else {
-        // Se não está, adiciona
         favoritos.push(codigo);
         localStorage.setItem('favoritos', JSON.stringify(favoritos));
-        mostrarNotificacao('❤️ Produto ' + codigo + ' favoritado!');
-        // Altera visual do botão (opcional)
-        const btn = document.querySelector(`.favorito[onclick*="'${codigo}'"]`);
+        mostrarNotificacao('❤️ Favoritado!');
+        
+        if (!buscaAtual.includes('favorito')) {
+          buscaAtual += ' favorito';
+          card.setAttribute('data-busca', buscaAtual);
+        }
+        
+        const btn = card.querySelector('.favorito');
         if (btn) {
           btn.textContent = '♥';
           btn.style.color = '#D4AF37';
         }
+        console.log('❤️ Adicionado favorito. Novo data-busca:', buscaAtual);
       }
+      
+      filtrarProdutos();
     }
   </script>
 </body>
