@@ -775,7 +775,7 @@ public class PagamentoServer {
                 con = ConnectionDB.getConnectionCloud();
                 System.out.println("Buscando os itens na base para carregar na vitrine...");
                 String sql = "SELECT codpeca, itemdesc, marca, tamanho, precosug, imagem, status, quantidade, data " +
-                     "FROM estoque WHERE status = 'DISPONIVEL' AND data >= DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY itemdesc ASC";
+                     "FROM estoque WHERE status = 'DISPONIVEL' AND exposto = 1 ORDER BY itemdesc ASC";
                 System.out.println("Buscando: "+sql);
                 stmt = con.prepareStatement(sql);
                 stmt.setQueryTimeout(10);
